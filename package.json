@@ -1,0 +1,42 @@
+{
+  "name": "colocale",
+  "version": "0.1.0",
+  "description": "A lightweight i18n library for Next.js App Router with fragment collocation pattern",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "i18n",
+    "internationalization",
+    "localization",
+    "translation",
+    "nextjs",
+    "react",
+    "typescript",
+    "pluralization"
+  ],
+  "scripts": {
+    "dev": "bun run --watch src/index.ts",
+    "build": "bun build src/index.ts --outdir ./dist --target node && tsc --emitDeclarationOnly --declaration --outDir ./dist",
+    "start": "bun run src/index.ts",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "bun run build && bun run test"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.7.2"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
