@@ -1,0 +1,6 @@
+{
+  "submit": "送信",
+  "cancel": "キャンセル",
+  "itemCount_one": "1件のアイテム",
+  "itemCount_other": "{count}件のアイテム"
+}

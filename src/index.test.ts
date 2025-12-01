@@ -279,8 +279,10 @@ describe("createTranslator", () => {
       "common.itemCount_other": "{count}件のアイテム",
     };
     const t = createTranslator(messages, "common");
+    // count === 0 の場合、_zero がなければ _other にフォールバック
     expect(t("itemCount", { count: 0 })).toBe("0件のアイテム");
-    expect(t("itemCount", { count: 1 })).toBe("1件のアイテム");
+    // count === 1 の場合、_one が必須なので見つからない（react-i18next互換）
+    expect(t("itemCount", { count: 1 })).toBe("itemCount");
     expect(t("itemCount", { count: 5 })).toBe("5件のアイテム");
   });
 

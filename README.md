@@ -25,21 +25,25 @@ bun add colocale
 
 ### 1. 翻訳ファイルを作成
 
+名前空間ごとに JSON ファイルを作成します。
+
 ```json
-// messages/ja.json
+// messages/ja/common.json
 {
-  "common": {
-    "submit": "送信",
-    "cancel": "キャンセル",
-    "itemCount_zero": "アイテムがありません",
-    "itemCount_one": "1件のアイテム",
-    "itemCount_other": "{count}件のアイテム"
-  },
-  "user": {
-    "profile": {
-      "name": "名前",
-      "email": "メールアドレス"
-    }
+  "submit": "送信",
+  "cancel": "キャンセル",
+  "itemCount_zero": "アイテムがありません",
+  "itemCount_one": "1件のアイテム",
+  "itemCount_other": "{count}件のアイテム"
+}
+```
+
+```json
+// messages/ja/user.json
+{
+  "profile": {
+    "name": "名前",
+    "email": "メールアドレス"
   }
 }
 ```
@@ -110,9 +114,11 @@ import { pickMessages } from "colocale";
 import UserPage, { userPageTranslations } from "@/components/UserPage";
 
 export default async function Page({ params }: { params: { locale: string } }) {
-  // 全翻訳ファイルをロード
-  const allMessages = (await import(`@/messages/${params.locale}.json`))
-    .default;
+  // 動的インポートで必要なロケールの翻訳のみロード
+  const allMessages = {
+    common: (await import(`@/messages/${params.locale}/common.json`)).default,
+    user: (await import(`@/messages/${params.locale}/user.json`)).default,
+  };
 
   // 必要な翻訳のみを抽出
   const messages = pickMessages(allMessages, userPageTranslations);
@@ -198,11 +204,13 @@ t("itemCount", { count: 1 }); // "1件のアイテム"
 t("itemCount", { count: 5 }); // "5件のアイテム"
 ```
 
-**複数形のルール:**
+**複数形のルール（react-i18next 互換）:**
 
-- `count === 0` → `{key}_zero`（なければ `_other` にフォールバック）
-- `count === 1` → `{key}_one`（なければ `_other` にフォールバック）
+- `count === 0` → `{key}_zero`（なければ `_other` を使用）
+- `count === 1` → `{key}_one`（必須）
 - その他 → `{key}_other`（必須）
+
+**注意:** `_one` と `_other` は必須です。これらが存在しない場合、基本キー（サフィックスなし）があればそれが使用されますが、複数形として正しく機能しません。`_zero` のみオプションで、省略すると `count === 0` の場合に `_other` が使用されます。
 
 ### 複数形 + プレースホルダー
 
@@ -244,6 +252,70 @@ const t = createTranslator(messages, "user");
 
 t("profile.name"); // "名前"
 t("profile.email"); // "メールアドレス"
+```
+
+## 翻訳ファイルの検証
+
+翻訳ファイルが正しい形式になっているかをチェックするコマンドが用意されています。
+
+### コマンドラインから実行
+
+```bash
+# ローカルで開発時
+bun run check messages/ja
+
+# 複数のロケールをチェック
+bun run check messages/ja messages/en
+
+# パッケージをインストールした後
+npx colocale-check messages/ja
+```
+
+### プログラムから実行
+
+```typescript
+import { validateTranslations } from "colocale";
+
+const translations = {
+  common: {
+    itemCount_one: "1件のアイテム",
+    // itemCount_other が不足している場合、エラーになる
+  },
+};
+
+const result = validateTranslations(translations);
+
+if (!result.valid) {
+  console.error("翻訳ファイルにエラーがあります:");
+  for (const error of result.errors) {
+    console.error(`  [${error.namespace}] ${error.key}: ${error.message}`);
+  }
+}
+```
+
+### 検証内容
+
+- **複数形キーの整合性**: `_one` と `_other` が必須（`_zero` はオプション）
+- **ネストの深さ**: 1 階層まで許可
+- **キーの命名規則**: 英数字とアンダースコアのみ使用可能
+- **プレースホルダーの形式**: `{name}` 形式で、名前は英数字とアンダースコアのみ
+
+### CI/CD での使用例
+
+```yaml
+# .github/workflows/check-translations.yml
+name: Check Translations
+
+on: [push, pull_request]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: oven-sh/setup-bun@v1
+      - run: bun install
+      - run: bun run check messages/*
 ```
 
 ## 型安全性
