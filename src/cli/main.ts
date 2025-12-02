@@ -75,7 +75,7 @@ program
       } else {
         throw new Error("No locales found");
       }
-    } catch {
+    } catch (error) {
       // Fallback to single-locale mode (original behavior)
       for (const arg of paths) {
         const path = resolve(arg);

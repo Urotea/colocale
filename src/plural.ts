@@ -1,4 +1,4 @@
-import type { Messages } from "./types";
+import type { Messages, NamespaceTranslations } from "./types";
 import { getNestedValue } from "./utils";
 
 /**

@@ -45,15 +45,13 @@
     "codegen": "bun run src/cli/main.ts codegen",
     "test": "bun test",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint .",
+    "lint": "biome lint .",
     "prepublishOnly": "bun run build && bun run test"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.1",
+    "@biomejs/biome": "^1.9.4",
     "@types/bun": "latest",
-    "eslint": "^9.39.1",
-    "typescript": "^5.7.2",
-    "typescript-eslint": "^8.48.1"
+    "typescript": "^5.7.2"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
