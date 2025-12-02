@@ -20,6 +20,8 @@ export type {
   TypedTranslationRequirement,
   ExtractKeys,
   TypedTranslator,
+  RequirementKeys,
+  ConstrainedTranslatorFunction,
 } from "./types";
 
 // Validation
@@ -46,6 +48,7 @@ import type {
   Messages,
   PlaceholderValues,
   TranslatorFunction,
+  ConstrainedTranslatorFunction,
 } from "./types";
 
 /**
@@ -131,11 +134,36 @@ export function pickMessages<K extends string = string>(
 export function createTranslator<K extends string = string>(
   messages: Messages<K>,
   namespace: string
-): TranslatorFunction<K> {
+): TranslatorFunction<K>;
+
+/**
+ * Generate a translation function bound to a specific namespace with keys constrained by TranslationRequirement
+ *
+ * When values contain a count property, automatic plural handling is performed
+ *
+ * @template R - TranslationRequirement type that defines allowed keys
+ * @param messages - Messages object
+ * @param requirement - TranslationRequirement that defines the namespace and allowed keys
+ * @returns Translation function constrained to keys in the requirement
+ */
+export function createTranslator<R extends TranslationRequirement<string>>(
+  messages: Messages<string>,
+  requirement: R
+): ConstrainedTranslatorFunction<R>;
+
+// Implementation
+export function createTranslator<K extends string = string>(
+  messages: Messages<K> | Messages<string>,
+  namespaceOrRequirement: string | TranslationRequirement<string>
+): TranslatorFunction<K> | ConstrainedTranslatorFunction<TranslationRequirement<string>> {
   const isDev = process.env.NODE_ENV === "development";
   const messagesRecord = messages as Record<string, string>;
+  const namespace =
+    typeof namespaceOrRequirement === "string"
+      ? namespaceOrRequirement
+      : namespaceOrRequirement.namespace;
 
-  return (key: K, values?: PlaceholderValues): string => {
+  return (key: K | string, values?: PlaceholderValues): string => {
     let message: string | undefined;
 
     // If count is provided, attempt plural handling
@@ -143,7 +171,7 @@ export function createTranslator<K extends string = string>(
       message = resolvePluralMessage(
         messagesRecord,
         namespace,
-        key,
+        key as string,
         values.count
       );
     }
@@ -159,7 +187,7 @@ export function createTranslator<K extends string = string>(
       if (isDev) {
         console.warn(`[colocale] Translation not found: "${namespace}.${key}"`);
       }
-      return key;
+      return key as string;
     }
 
     // Replace placeholders

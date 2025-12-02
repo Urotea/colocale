@@ -345,3 +345,61 @@ describe("Edge cases", () => {
     expect(t("itemCount", { count: 0.5 })).toBe("0.5件のアイテム");
   });
 });
+
+describe("createTranslator with TranslationRequirement", () => {
+  test("Basic translation with requirement", () => {
+    const messages: Messages = {
+      "user.profile.name": "名前",
+      "user.profile.email": "メールアドレス",
+    };
+    const requirement: TranslationRequirement<"profile.name" | "profile.email"> = {
+      keys: ["profile.name", "profile.email"] as const,
+      namespace: "user",
+    };
+    const t = createTranslator(messages, requirement);
+    expect(t("profile.name")).toBe("名前");
+    expect(t("profile.email")).toBe("メールアドレス");
+  });
+
+  test("Translation with requirement and placeholders", () => {
+    const messages: Messages = {
+      "results.greeting": "こんにちは、{name}さん",
+    };
+    const requirement: TranslationRequirement<"greeting"> = {
+      keys: ["greeting"] as const,
+      namespace: "results",
+    };
+    const t = createTranslator(messages, requirement);
+    expect(t("greeting", { name: "田中" })).toBe("こんにちは、田中さん");
+  });
+
+  test("Translation with requirement and plural handling", () => {
+    const messages: Messages = {
+      "common.itemCount_zero": "アイテムがありません",
+      "common.itemCount_one": "1件のアイテム",
+      "common.itemCount_other": "{count}件のアイテム",
+    };
+    const requirement: TranslationRequirement<"itemCount"> = {
+      keys: ["itemCount"] as const,
+      namespace: "common",
+    };
+    const t = createTranslator(messages, requirement);
+    expect(t("itemCount", { count: 0 })).toBe("アイテムがありません");
+    expect(t("itemCount", { count: 1 })).toBe("1件のアイテム");
+    expect(t("itemCount", { count: 5 })).toBe("5件のアイテム");
+  });
+
+  test("Non-existent key with requirement", () => {
+    const messages: Messages = {
+      "common.submit": "送信",
+    };
+    const requirement: TranslationRequirement<"submit" | "nonexistent"> = {
+      keys: ["submit", "nonexistent"] as const,
+      namespace: "common",
+    };
+    const t = createTranslator(messages, requirement);
+    expect(t("submit")).toBe("送信");
+    // Even if key is in requirement, if message doesn't exist, return key
+    expect(t("nonexistent")).toBe("nonexistent");
+  });
+});

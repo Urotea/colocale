@@ -147,3 +147,22 @@ export type TypedTranslator<
   key: K,
   values?: PlaceholderValues
 ) => string;
+
+/**
+ * Type utility to extract keys from a TranslationRequirement
+ * @template R - TranslationRequirement type
+ */
+export type RequirementKeys<R> = R extends TranslationRequirement<infer K>
+  ? K
+  : R extends TypedTranslationRequirement<infer _N, infer K>
+  ? K
+  : never;
+
+/**
+ * Translator function type constrained to specific keys from a TranslationRequirement
+ * @template R - TranslationRequirement type that defines allowed keys
+ */
+export type ConstrainedTranslatorFunction<R> = (
+  key: RequirementKeys<R>,
+  values?: PlaceholderValues
+) => string;
