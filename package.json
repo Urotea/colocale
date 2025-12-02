@@ -1,0 +1,65 @@
+{
+  "name": "colocale",
+  "version": "0.1.1",
+  "description": "A lightweight i18n library for Next.js App Router with fragment collocation pattern",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "bin": {
+    "colocale": "./dist/cli/main.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "author": "Urotea",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Urotea/colocale.git"
+  },
+  "homepage": "https://github.com/Urotea/colocale#readme",
+  "bugs": {
+    "url": "https://github.com/Urotea/colocale/issues"
+  },
+  "keywords": [
+    "i18n",
+    "internationalization",
+    "localization",
+    "translation",
+    "nextjs",
+    "react",
+    "typescript",
+    "pluralization"
+  ],
+  "scripts": {
+    "dev": "bun run --watch src/index.ts",
+    "build": "bun build src/index.ts --outdir ./dist --target node && bun build src/cli/main.ts --outdir ./dist/cli --target node && tsc --emitDeclarationOnly --declaration --outDir ./dist",
+    "start": "bun run src/index.ts",
+    "check": "bun run src/cli/main.ts check",
+    "codegen": "bun run src/cli/main.ts codegen",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "bun run build && bun run test"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.7.2"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "peerDependenciesMeta": {
+    "typescript": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "commander": "^14.0.2"
+  }
+}

@@ -1,0 +1,27 @@
+# Source files
+src/
+*.test.ts
+
+# Config files
+tsconfig.json
+.prettierrc
+
+# Dev container
+.devcontainer/
+
+# VSCode
+.vscode/
+
+# Git
+.git/
+.gitignore
+
+# Test files
+test-messages/
+
+# Documentation
+spec.md
+
+# Build artifacts (will be included via "files" in package.json)
+node_modules/
+bun.lock
