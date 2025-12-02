@@ -24,15 +24,20 @@ export function defineRequirement<const K extends readonly string[]>(
  * @returns Found string, or undefined
  */
 export function getNestedValue(
-  obj: Record<string, any>,
+  obj: Record<string, unknown>,
   path: string
 ): string | undefined {
   const keys = path.split(".");
-  let current: any = obj;
+  let current: unknown = obj;
 
   for (const key of keys) {
-    if (current && typeof current === "object" && key in current) {
-      current = current[key];
+    if (
+      current &&
+      typeof current === "object" &&
+      current !== null &&
+      key in current
+    ) {
+      current = (current as Record<string, unknown>)[key];
     } else {
       return undefined;
     }

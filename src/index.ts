@@ -60,7 +60,7 @@ export function mergeRequirements(
  * @param requirements - List of required translation keys
  * @returns Messages object (key format: "namespace.key")
  */
-export function pickMessages<R extends readonly TranslationRequirement<any>[]>(
+export function pickMessages<R extends readonly TranslationRequirement[]>(
   allMessages: TranslationFile,
   requirements: R
 ): Messages {
@@ -81,7 +81,7 @@ export function pickMessages<R extends readonly TranslationRequirement<any>[]>(
     for (const key of keys) {
       // Check direct key
       if (typeof namespaceData[key] === "string") {
-        messages[`${namespace}.${key}`] = namespaceData[key] as string;
+        messages[`${namespace}.${key}`] = namespaceData[key];
       } else {
         // Check nested key
         const value = getNestedValue(namespaceData, key);
@@ -137,7 +137,6 @@ export function createTranslator<R extends TranslationRequirement<string>>(
   requirement: R
 ): ConstrainedTranslatorFunction<R> {
   const isDev = process.env.NODE_ENV === "development";
-  const messagesRecord = messages as Record<string, string>;
   const namespace = requirement.namespace;
 
   return (key: string, values?: PlaceholderValues): string => {
@@ -145,18 +144,13 @@ export function createTranslator<R extends TranslationRequirement<string>>(
 
     // If count is provided, attempt plural handling
     if (values && "count" in values && typeof values.count === "number") {
-      message = resolvePluralMessage(
-        messagesRecord,
-        namespace,
-        key as string,
-        values.count
-      );
+      message = resolvePluralMessage(messages, namespace, key, values.count);
     }
 
     // If not plural or plural resolution failed, try regular key
     if (message === undefined) {
       const fullKey = `${namespace}.${key}`;
-      message = messagesRecord[fullKey];
+      message = messages[fullKey];
     }
 
     // If message not found, return key as-is
@@ -164,7 +158,7 @@ export function createTranslator<R extends TranslationRequirement<string>>(
       if (isDev) {
         console.warn(`[colocale] Translation not found: "${namespace}.${key}"`);
       }
-      return key as string;
+      return key;
     }
 
     // Replace placeholders
