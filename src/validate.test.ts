@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { validateTranslations, type TranslationFile } from "./index";
 
 describe("validateTranslations", () => {
-  test("正常な翻訳ファイル", () => {
+  test("Valid translation file", () => {
     const translations: TranslationFile = {
       common: {
         submit: "送信",
@@ -17,7 +17,7 @@ describe("validateTranslations", () => {
     expect(result.errors).toHaveLength(0);
   });
 
-  test("複数形キー: _one が不足", () => {
+  test("Plural keys: missing _one", () => {
     const translations: TranslationFile = {
       common: {
         itemCount_other: "{count}件のアイテム",
@@ -31,7 +31,7 @@ describe("validateTranslations", () => {
     expect(result.errors[0].key).toBe("itemCount");
   });
 
-  test("複数形キー: _other が不足", () => {
+  test("Plural keys: missing _other", () => {
     const translations: TranslationFile = {
       common: {
         itemCount_one: "1件のアイテム",
@@ -45,7 +45,7 @@ describe("validateTranslations", () => {
     expect(result.errors[0].key).toBe("itemCount");
   });
 
-  test("複数形キー: _one と _other が両方不足", () => {
+  test("Plural keys: missing both _one and _other", () => {
     const translations: TranslationFile = {
       common: {
         itemCount_zero: "アイテムがありません",
@@ -59,7 +59,7 @@ describe("validateTranslations", () => {
     expect(result.errors[1].type).toBe("missing-plural-other");
   });
 
-  test("複数形キー: _zero はオプション", () => {
+  test("Plural keys: _zero is optional", () => {
     const translations: TranslationFile = {
       common: {
         itemCount_one: "1件のアイテム",
@@ -72,7 +72,7 @@ describe("validateTranslations", () => {
     expect(result.errors).toHaveLength(0);
   });
 
-  test("ネストした複数形キー", () => {
+  test("Nested plural keys", () => {
     const translations: TranslationFile = {
       shop: {
         cart: {
@@ -87,7 +87,7 @@ describe("validateTranslations", () => {
     expect(result.errors).toHaveLength(0);
   });
 
-  test("ネストの深さ: 1階層（正常）", () => {
+  test("Nesting depth: 1 level (valid)", () => {
     const translations: TranslationFile = {
       user: {
         profile: {
@@ -102,7 +102,7 @@ describe("validateTranslations", () => {
     expect(result.errors).toHaveLength(0);
   });
 
-  test("ネストの深さ: 2階層以上（エラー）", () => {
+  test("Nesting depth: 2+ levels (error)", () => {
     const translations: TranslationFile = {
       user: {
         profile: {
@@ -119,7 +119,7 @@ describe("validateTranslations", () => {
     expect(result.errors[0].type).toBe("invalid-nesting");
   });
 
-  test("キー名: 有効な形式", () => {
+  test("Key names: valid format", () => {
     const translations: TranslationFile = {
       common: {
         submit_button: "送信",
@@ -133,7 +133,7 @@ describe("validateTranslations", () => {
     expect(result.errors).toHaveLength(0);
   });
 
-  test("キー名: 無効な形式（ハイフン）", () => {
+  test("Key names: invalid format (hyphen)", () => {
     const translations: TranslationFile = {
       common: {
         "submit-button": "送信",
@@ -146,7 +146,7 @@ describe("validateTranslations", () => {
     expect(result.errors[0].type).toBe("invalid-key-name");
   });
 
-  test("キー名: 無効な形式（数字で始まる）", () => {
+  test("Key names: invalid format (starts with number)", () => {
     const translations: TranslationFile = {
       common: {
         "123button": "送信",
@@ -159,7 +159,7 @@ describe("validateTranslations", () => {
     expect(result.errors[0].type).toBe("invalid-key-name");
   });
 
-  test("プレースホルダー: 有効な形式", () => {
+  test("Placeholders: valid format", () => {
     const translations: TranslationFile = {
       results: {
         greeting: "こんにちは、{name}さん",
@@ -172,7 +172,7 @@ describe("validateTranslations", () => {
     expect(result.errors).toHaveLength(0);
   });
 
-  test("プレースホルダー: 無効な形式（ハイフン）", () => {
+  test("Placeholders: invalid format (hyphen)", () => {
     const translations: TranslationFile = {
       results: {
         greeting: "こんにちは、{user-name}さん",
@@ -185,7 +185,7 @@ describe("validateTranslations", () => {
     expect(result.errors[0].type).toBe("invalid-placeholder");
   });
 
-  test("プレースホルダー: 無効な形式（スペース）", () => {
+  test("Placeholders: invalid format (space)", () => {
     const translations: TranslationFile = {
       results: {
         greeting: "こんにちは、{user name}さん",
@@ -198,11 +198,11 @@ describe("validateTranslations", () => {
     expect(result.errors[0].type).toBe("invalid-placeholder");
   });
 
-  test("複数の名前空間とエラー", () => {
+  test("Multiple namespaces with errors", () => {
     const translations: TranslationFile = {
       common: {
         itemCount_one: "1件",
-        // itemCount_other が不足
+        // itemCount_other is missing
       },
       user: {
         "invalid-key": "無効",
@@ -214,7 +214,7 @@ describe("validateTranslations", () => {
     expect(result.errors.length).toBeGreaterThanOrEqual(2);
   });
 
-  test("空の翻訳ファイル", () => {
+  test("Empty translation file", () => {
     const translations: TranslationFile = {};
 
     const result = validateTranslations(translations);
@@ -222,7 +222,7 @@ describe("validateTranslations", () => {
     expect(result.errors).toHaveLength(0);
   });
 
-  test("空の名前空間", () => {
+  test("Empty namespace", () => {
     const translations: TranslationFile = {
       common: {},
     };

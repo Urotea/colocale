@@ -42,9 +42,9 @@ import type {
 } from "./types";
 
 /**
- * 複数の翻訳要求を1つの配列にマージ
- * @param requirements - 翻訳要求またはその配列（可変長引数）
- * @returns フラット化された翻訳要求の配列
+ * Merge multiple translation requirements into a single array
+ * @param requirements - Translation requirement(s) or array of requirements (variadic)
+ * @returns Flattened array of translation requirements
  */
 export function mergeRequirements(
   ...requirements: (TranslationRequirement | TranslationRequirement[])[]
@@ -53,13 +53,13 @@ export function mergeRequirements(
 }
 
 /**
- * 翻訳ファイルから必要な翻訳のみを抽出
+ * Extract only the required translations from translation files
  *
- * 基本キーが指定された場合、_zero, _one, _other サフィックス付きキーも自動的に抽出
+ * When base keys are specified, keys with _zero, _one, _other suffixes are automatically extracted
  *
- * @param allMessages - 全翻訳データを含むオブジェクト
- * @param requirements - 必要な翻訳キーのリスト
- * @returns Messages オブジェクト（キー形式: "namespace.key"）
+ * @param allMessages - Object containing all translation data
+ * @param requirements - List of required translation keys
+ * @returns Messages object (key format: "namespace.key")
  */
 export function pickMessages(
   allMessages: TranslationFile,
@@ -80,11 +80,11 @@ export function pickMessages(
     }
 
     for (const key of keys) {
-      // 直接キーをチェック
+      // Check direct key
       if (typeof namespaceData[key] === "string") {
         messages[`${namespace}.${key}`] = namespaceData[key] as string;
       } else {
-        // ネストしたキーをチェック
+        // Check nested key
         const value = getNestedValue(namespaceData, key);
         if (value !== undefined) {
           messages[`${namespace}.${key}`] = value;
@@ -95,7 +95,7 @@ export function pickMessages(
         }
       }
 
-      // 複数形キーの自動抽出を試みる
+      // Attempt automatic extraction of plural keys
       const pluralKeys = extractPluralKeys(allMessages, namespace, key);
       for (const pluralKey of pluralKeys) {
         const value = getNestedValue(namespaceData, pluralKey);
@@ -110,13 +110,13 @@ export function pickMessages(
 }
 
 /**
- * 特定の名前空間に紐づいた翻訳関数を生成
+ * Generate a translation function bound to a specific namespace
  *
- * values に count プロパティが含まれている場合、自動的に複数形処理を行う
+ * When values contain a count property, automatic plural handling is performed
  *
- * @param messages - Messages オブジェクト
- * @param namespace - 翻訳の名前空間
- * @returns 翻訳関数
+ * @param messages - Messages object
+ * @param namespace - Translation namespace
+ * @returns Translation function
  */
 export function createTranslator(
   messages: Messages,
@@ -127,18 +127,18 @@ export function createTranslator(
   return (key: string, values?: PlaceholderValues): string => {
     let message: string | undefined;
 
-    // count が提供されている場合、複数形処理を試みる
+    // If count is provided, attempt plural handling
     if (values && "count" in values && typeof values.count === "number") {
       message = resolvePluralMessage(messages, namespace, key, values.count);
     }
 
-    // 複数形でない、または複数形の解決に失敗した場合、通常のキーを試す
+    // If not plural or plural resolution failed, try regular key
     if (message === undefined) {
       const fullKey = `${namespace}.${key}`;
       message = messages[fullKey];
     }
 
-    // メッセージが見つからない場合、キーをそのまま返す
+    // If message not found, return key as-is
     if (message === undefined) {
       if (isDev) {
         console.warn(`[colocale] Translation not found: "${namespace}.${key}"`);
@@ -146,7 +146,7 @@ export function createTranslator(
       return key;
     }
 
-    // プレースホルダーの置換
+    // Replace placeholders
     if (values) {
       return replacePlaceholders(message, values);
     }

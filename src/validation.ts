@@ -6,7 +6,7 @@ import type {
 } from "./types";
 
 /**
- * 複数形キーの整合性をチェック
+ * Check plural key consistency
  */
 function validatePluralKeys(
   namespace: string,
@@ -16,7 +16,7 @@ function validatePluralKeys(
   const keys = new Set<string>();
   const pluralKeys = new Map<string, Set<string>>();
 
-  // すべてのキーを収集（ネストしたキーも含む）
+  // Collect all keys (including nested keys)
   function collectKeys(obj: any, prefix = "") {
     for (const key in obj) {
       const fullKey = prefix ? `${prefix}.${key}` : key;
@@ -30,7 +30,7 @@ function validatePluralKeys(
 
   collectKeys(translations);
 
-  // 複数形キーを分類
+  // Classify plural keys
   for (const key of keys) {
     const match = key.match(/^(.+)_(zero|one|other)$/);
     if (match) {
@@ -67,7 +67,7 @@ function validatePluralKeys(
 }
 
 /**
- * ネスト深度をチェック
+ * Check nesting depth
  */
 function validateNesting(
   namespace: string,
@@ -100,7 +100,7 @@ function validateNesting(
 }
 
 /**
- * キーの命名規則をチェック
+ * Check key naming rules
  */
 function validateKeyNames(
   namespace: string,
@@ -133,7 +133,7 @@ function validateKeyNames(
 }
 
 /**
- * プレースホルダーの妥当性をチェック
+ * Check placeholder validity
  */
 function validatePlaceholders(
   namespace: string,
@@ -171,10 +171,10 @@ function validatePlaceholders(
 }
 
 /**
- * 翻訳ファイル全体を検証
+ * Validate entire translation file
  *
- * @param translations - 検証する翻訳ファイル
- * @returns 検証結果
+ * @param translations - Translation file to validate
+ * @returns Validation result
  */
 export function validateTranslations(
   translations: TranslationFile
@@ -185,7 +185,7 @@ export function validateTranslations(
   for (const namespace in translations) {
     const namespaceTranslations = translations[namespace];
 
-    // 各種検証を実行
+    // Execute various validations
     errors.push(...validatePluralKeys(namespace, namespaceTranslations));
     errors.push(...validateNesting(namespace, namespaceTranslations));
     errors.push(...validateKeyNames(namespace, namespaceTranslations));

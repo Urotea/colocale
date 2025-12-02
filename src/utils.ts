@@ -1,10 +1,10 @@
 import type { PlaceholderValues } from "./types";
 
 /**
- * ドット記法のパスからネストしたオブジェクトの値を取得
- * @param obj - 検索対象のオブジェクト
- * @param path - ドット記法のパス（例: "profile.name"）
- * @returns 見つかった文字列、または undefined
+ * Get nested object value from dot notation path
+ * @param obj - Object to search
+ * @param path - Dot notation path (e.g., "profile.name")
+ * @returns Found string, or undefined
  */
 export function getNestedValue(
   obj: Record<string, any>,
@@ -25,11 +25,11 @@ export function getNestedValue(
 }
 
 /**
- * メッセージ内のプレースホルダーを値で置換
- * プレースホルダー形式: {name}
- * @param message - プレースホルダーを含む文字列
- * @param values - 置換する値のオブジェクト
- * @returns 置換後の文字列
+ * Replace placeholders in message with values
+ * Placeholder format: {name}
+ * @param message - String containing placeholders
+ * @param values - Object with replacement values
+ * @returns String after replacement
  */
 export function replacePlaceholders(
   message: string,

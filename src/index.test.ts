@@ -8,7 +8,7 @@ import {
   type Messages,
 } from "./index";
 
-// テスト用の翻訳ファイル
+// Test translation files
 const testMessages: TranslationFile = {
   common: {
     submit: "送信",
@@ -40,7 +40,7 @@ const testMessages: TranslationFile = {
 };
 
 describe("mergeRequirements", () => {
-  test("単一の翻訳要求をマージ", () => {
+  test("Merge single translation requirement", () => {
     const req: TranslationRequirement = {
       keys: ["submit"],
       namespace: "common",
@@ -49,7 +49,7 @@ describe("mergeRequirements", () => {
     expect(result).toEqual([req]);
   });
 
-  test("複数の翻訳要求をマージ", () => {
+  test("Merge multiple translation requirements", () => {
     const req1: TranslationRequirement = {
       keys: ["submit"],
       namespace: "common",
@@ -62,7 +62,7 @@ describe("mergeRequirements", () => {
     expect(result).toEqual([req1, req2]);
   });
 
-  test("配列をフラット化", () => {
+  test("Flatten arrays", () => {
     const req1: TranslationRequirement = {
       keys: ["submit"],
       namespace: "common",
@@ -75,7 +75,7 @@ describe("mergeRequirements", () => {
     expect(result).toEqual([req1, req2]);
   });
 
-  test("ネストした配列をフラット化", () => {
+  test("Flatten nested arrays", () => {
     const req1: TranslationRequirement = {
       keys: ["submit"],
       namespace: "common",
@@ -92,14 +92,14 @@ describe("mergeRequirements", () => {
     expect(result).toEqual([req1, req2, req3]);
   });
 
-  test("空配列", () => {
+  test("Empty array", () => {
     const result = mergeRequirements();
     expect(result).toEqual([]);
   });
 });
 
 describe("pickMessages", () => {
-  test("単一の翻訳要求", () => {
+  test("Single translation requirement", () => {
     const requirements: TranslationRequirement[] = [
       {
         keys: ["submit", "cancel"],
@@ -113,7 +113,7 @@ describe("pickMessages", () => {
     });
   });
 
-  test("複数の翻訳要求", () => {
+  test("Multiple translation requirements", () => {
     const requirements: TranslationRequirement[] = [
       {
         keys: ["submit"],
@@ -131,7 +131,7 @@ describe("pickMessages", () => {
     });
   });
 
-  test("ネストしたキー", () => {
+  test("Nested keys", () => {
     const requirements: TranslationRequirement[] = [
       {
         keys: ["profile.name", "profile.email"],
@@ -145,7 +145,7 @@ describe("pickMessages", () => {
     });
   });
 
-  test("複数形キーの自動抽出", () => {
+  test("Automatic extraction of plural keys", () => {
     const requirements: TranslationRequirement[] = [
       {
         keys: ["itemCount"],
@@ -160,7 +160,7 @@ describe("pickMessages", () => {
     });
   });
 
-  test("ネストした複数形キーの自動抽出", () => {
+  test("Automatic extraction of nested plural keys", () => {
     const requirements: TranslationRequirement[] = [
       {
         keys: ["cart.item"],
@@ -175,7 +175,7 @@ describe("pickMessages", () => {
     });
   });
 
-  test("存在しないキー", () => {
+  test("Non-existent key", () => {
     const requirements: TranslationRequirement[] = [
       {
         keys: ["nonexistent"],
@@ -186,7 +186,7 @@ describe("pickMessages", () => {
     expect(result).toEqual({});
   });
 
-  test("存在しない名前空間", () => {
+  test("Non-existent namespace", () => {
     const requirements: TranslationRequirement[] = [
       {
         keys: ["submit"],
@@ -199,7 +199,7 @@ describe("pickMessages", () => {
 });
 
 describe("createTranslator", () => {
-  test("基本的な翻訳", () => {
+  test("Basic translation", () => {
     const messages: Messages = {
       "common.submit": "送信",
       "common.cancel": "キャンセル",
@@ -209,7 +209,7 @@ describe("createTranslator", () => {
     expect(t("cancel")).toBe("キャンセル");
   });
 
-  test("プレースホルダー置換（単一）", () => {
+  test("Placeholder replacement (single)", () => {
     const messages: Messages = {
       "results.itemsFound": "{count}件取得しました",
     };
@@ -217,7 +217,7 @@ describe("createTranslator", () => {
     expect(t("itemsFound", { count: 5 })).toBe("5件取得しました");
   });
 
-  test("プレースホルダー置換（複数）", () => {
+  test("Placeholder replacement (multiple)", () => {
     const messages: Messages = {
       "results.greeting": "こんにちは、{name}さん",
     };
@@ -225,7 +225,7 @@ describe("createTranslator", () => {
     expect(t("greeting", { name: "田中" })).toBe("こんにちは、田中さん");
   });
 
-  test("複数形処理（count = 0）", () => {
+  test("Plural handling (count = 0)", () => {
     const messages: Messages = {
       "common.itemCount_zero": "アイテムがありません",
       "common.itemCount_one": "1件のアイテム",
@@ -235,7 +235,7 @@ describe("createTranslator", () => {
     expect(t("itemCount", { count: 0 })).toBe("アイテムがありません");
   });
 
-  test("複数形処理（count = 1）", () => {
+  test("Plural handling (count = 1)", () => {
     const messages: Messages = {
       "common.itemCount_zero": "アイテムがありません",
       "common.itemCount_one": "1件のアイテム",
@@ -245,7 +245,7 @@ describe("createTranslator", () => {
     expect(t("itemCount", { count: 1 })).toBe("1件のアイテム");
   });
 
-  test("複数形処理（count = 2+）", () => {
+  test("Plural handling (count = 2+)", () => {
     const messages: Messages = {
       "common.itemCount_zero": "アイテムがありません",
       "common.itemCount_one": "1件のアイテム",
@@ -256,7 +256,7 @@ describe("createTranslator", () => {
     expect(t("itemCount", { count: 100 })).toBe("100件のアイテム");
   });
 
-  test("複数形 + プレースホルダーの組み合わせ", () => {
+  test("Combination of plurals + placeholders", () => {
     const messages: Messages = {
       "shop.cartSummary_zero": "{user}さんのカートは空です",
       "shop.cartSummary_one": "{user}さんのカートに1個の商品があります",
@@ -274,19 +274,19 @@ describe("createTranslator", () => {
     );
   });
 
-  test("部分的な複数形キー（_otherのみ）", () => {
+  test("Partial plural keys (_other only)", () => {
     const messages: Messages = {
       "common.itemCount_other": "{count}件のアイテム",
     };
     const t = createTranslator(messages, "common");
-    // count === 0 の場合、_zero がなければ _other にフォールバック
+    // If count === 0 and _zero is not available, fallback to _other
     expect(t("itemCount", { count: 0 })).toBe("0件のアイテム");
-    // count === 1 の場合、_one が必須なので見つからない（react-i18next互換）
+    // If count === 1, _one is required so not found (react-i18next compatible)
     expect(t("itemCount", { count: 1 })).toBe("itemCount");
     expect(t("itemCount", { count: 5 })).toBe("5件のアイテム");
   });
 
-  test("部分的な複数形キー（_oneと_otherのみ）", () => {
+  test("Partial plural keys (_one and _other only)", () => {
     const messages: Messages = {
       "common.itemCount_one": "1件のアイテム",
       "common.itemCount_other": "{count}件のアイテム",
@@ -297,7 +297,7 @@ describe("createTranslator", () => {
     expect(t("itemCount", { count: 5 })).toBe("5件のアイテム");
   });
 
-  test("存在しないキー", () => {
+  test("Non-existent key", () => {
     const messages: Messages = {
       "common.submit": "送信",
     };
@@ -305,7 +305,7 @@ describe("createTranslator", () => {
     expect(t("nonexistent")).toBe("nonexistent");
   });
 
-  test("同一プレースホルダーの複数使用", () => {
+  test("Multiple uses of same placeholder", () => {
     const messages: Messages = {
       "test.repeated": "{name}さん、こんにちは。{name}さんの注文を確認します。",
     };
@@ -315,7 +315,7 @@ describe("createTranslator", () => {
     );
   });
 
-  test("数値の文字列変換", () => {
+  test("Number to string conversion", () => {
     const messages: Messages = {
       "test.number": "価格: {price}円",
     };
@@ -324,8 +324,8 @@ describe("createTranslator", () => {
   });
 });
 
-describe("エッジケース", () => {
-  test("負の数での複数形", () => {
+describe("Edge cases", () => {
+  test("Plural with negative number", () => {
     const messages: Messages = {
       "common.itemCount_zero": "アイテムがありません",
       "common.itemCount_one": "1件のアイテム",
@@ -335,7 +335,7 @@ describe("エッジケース", () => {
     expect(t("itemCount", { count: -1 })).toBe("-1件のアイテム");
   });
 
-  test("小数での複数形", () => {
+  test("Plural with decimal number", () => {
     const messages: Messages = {
       "common.itemCount_zero": "アイテムがありません",
       "common.itemCount_one": "1件のアイテム",

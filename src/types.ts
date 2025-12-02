@@ -1,43 +1,43 @@
 /**
- * 翻訳キーを表す文字列型
- * ネスト構造をドット記法で表現（例: "user.profile.name"）
- * 複数形のサフィックス（_zero, _one, _other）を含む場合もある
+ * String type representing translation keys
+ * Nested structure expressed in dot notation (e.g., "user.profile.name")
+ * May include plural suffixes (_zero, _one, _other)
  */
 export type TranslationKey = string;
 
 /**
- * コンポーネントが必要とする翻訳キーの要求
+ * Translation key requirements for a component
  */
 export interface TranslationRequirement {
-  /** コンポーネントが必要とする翻訳キーの配列（読み取り専用） */
+  /** Array of translation keys required by the component (readonly) */
   keys: readonly TranslationKey[];
-  /** 翻訳の名前空間（例: "common", "user", "shop"） */
+  /** Translation namespace (e.g., "common", "user", "shop") */
   namespace: string;
 }
 
 /**
- * 解決済み翻訳メッセージを格納するオブジェクト
- * キー形式: "namespace.key" （例: "common.submit"）
+ * Object storing resolved translation messages
+ * Key format: "namespace.key" (e.g., "common.submit")
  */
 export type Messages = Record<string, string>;
 
 /**
- * プレースホルダーに渡す値のオブジェクト
+ * Object with values to pass to placeholders
  */
 export type PlaceholderValues = Record<string, string | number>;
 
 /**
- * 複数形処理に使用するオプション
+ * Options used for plural handling
  */
 export interface PluralOptions {
-  /** 複数形判定に使用する数値 */
+  /** Numeric value used for plural determination */
   count: number;
 }
 
 /**
- * 翻訳ファイルの型
- * トップレベル: 名前空間のマップ
- * 名前空間内: キーと翻訳文字列のマップ（1階層のネストまで許可）
+ * Translation file type
+ * Top level: Map of namespaces
+ * Within namespace: Map of keys and translation strings (allows up to 1 level of nesting)
  */
 export type TranslationFile = Record<string, NamespaceTranslations>;
 
@@ -46,7 +46,7 @@ export type NamespaceTranslations = Record<string, string | NestedTranslations>;
 export type NestedTranslations = Record<string, string>;
 
 /**
- * 翻訳関数の型
+ * Translator function type
  */
 export type TranslatorFunction = (
   key: string,
@@ -54,7 +54,7 @@ export type TranslatorFunction = (
 ) => string;
 
 /**
- * 検証エラーの種類
+ * Validation error types
  */
 export type ValidationErrorType =
   | "missing-plural-one"
@@ -64,28 +64,28 @@ export type ValidationErrorType =
   | "invalid-placeholder";
 
 /**
- * 検証エラー
+ * Validation error
  */
 export interface ValidationError {
-  /** エラーの種類 */
+  /** Error type */
   type: ValidationErrorType;
-  /** 名前空間 */
+  /** Namespace */
   namespace: string;
-  /** キーのパス */
+  /** Key path */
   key: string;
-  /** エラーメッセージ */
+  /** Error message */
   message: string;
 }
 
 /**
- * 検証結果
+ * Validation result
  */
 export interface ValidationResult {
-  /** エラーがあるかどうか */
+  /** Whether there are errors */
   valid: boolean;
-  /** エラーのリスト */
+  /** List of errors */
   errors: ValidationError[];
-  /** 警告のリスト */
+  /** List of warnings */
   warnings: ValidationError[];
 }
 
@@ -94,7 +94,7 @@ export interface ValidationResult {
 // ============================================================================
 
 /**
- * ネストしたオブジェクトからドット記法のキーパスを生成する型ユーティリティ
+ * Type utility to generate dot notation key paths from nested objects
  */
 export type NestedKeyOf<T> = T extends object
   ? {
@@ -107,7 +107,7 @@ export type NestedKeyOf<T> = T extends object
   : never;
 
 /**
- * 型安全な翻訳要求
+ * Type-safe translation requirement
  */
 export interface TypedTranslationRequirement<
   N extends string,
@@ -118,7 +118,7 @@ export interface TypedTranslationRequirement<
 }
 
 /**
- * 名前空間から利用可能なキーを抽出する型ユーティリティ
+ * Type utility to extract available keys from namespace
  */
 export type ExtractKeys<N extends string, AllKeys extends string> = Extract<
   AllKeys,
@@ -128,7 +128,7 @@ export type ExtractKeys<N extends string, AllKeys extends string> = Extract<
   : never;
 
 /**
- * 型安全な翻訳関数
+ * Type-safe translator function
  */
 export type TypedTranslator<
   N extends string,
