@@ -18,6 +18,38 @@ export interface TranslationRequirement<K extends string = string> {
 }
 
 /**
+ * Type utility to add namespace prefix and plural suffixes to keys
+ * Converts "key" to "namespace.key" | "namespace.key_zero" | "namespace.key_one" | "namespace.key_other"
+ */
+type NamespacedKeys<N extends string, K extends string> =
+  | `${N}.${K}`
+  | `${N}.${K}_zero`
+  | `${N}.${K}_one`
+  | `${N}.${K}_other`;
+
+/**
+ * Type utility to convert a single TranslationRequirement to namespaced message keys
+ */
+export type RequirementToMessages<R> = R extends TranslationRequirement<infer K>
+  ? R extends { namespace: infer N extends string }
+    ? NamespacedKeys<N, K>
+    : never
+  : never;
+
+/**
+ * Type utility to convert an array of TranslationRequirements to a union of namespaced message keys
+ */
+export type RequirementsToMessages<
+  T extends readonly TranslationRequirement<any>[]
+> = T extends readonly [infer First, ...infer Rest]
+  ? First extends TranslationRequirement<any>
+    ? Rest extends readonly TranslationRequirement<any>[]
+      ? RequirementToMessages<First> | RequirementsToMessages<Rest>
+      : RequirementToMessages<First>
+    : never
+  : never;
+
+/**
  * Object storing resolved translation messages
  * Key format: "namespace.key" (e.g., "common.submit")
  * @template K - Translation keys type
