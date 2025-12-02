@@ -4,26 +4,10 @@
 
 // Types
 export type {
-  TranslationKey,
   TranslationRequirement,
   Messages,
-  PlaceholderValues,
-  PluralOptions,
   TranslationFile,
-  NamespaceTranslations,
-  NestedTranslations,
-  TranslatorFunction,
-  ValidationError,
-  ValidationErrorType,
-  ValidationResult,
-  NestedKeyOf,
-  TypedTranslationRequirement,
-  ExtractKeys,
-  TypedTranslator,
-  RequirementKeys,
   ConstrainedTranslatorFunction,
-  RequirementToMessages,
-  RequirementsToMessages,
 } from "./types";
 
 // Validation
@@ -53,7 +37,6 @@ import type {
   Messages,
   PlaceholderValues,
   ConstrainedTranslatorFunction,
-  RequirementsToMessages,
 } from "./types";
 
 /**
@@ -80,7 +63,7 @@ export function mergeRequirements(
 export function pickMessages<R extends readonly TranslationRequirement<any>[]>(
   allMessages: TranslationFile,
   requirements: R
-): Messages<RequirementsToMessages<R>> {
+): Messages {
   const messages: Record<string, string> = {};
   const isDev = process.env.NODE_ENV === "development";
 
@@ -122,7 +105,7 @@ export function pickMessages<R extends readonly TranslationRequirement<any>[]>(
     }
   }
 
-  return messages as Messages<RequirementsToMessages<R>>;
+  return messages;
 }
 
 /**
@@ -149,7 +132,7 @@ export function pickMessages<R extends readonly TranslationRequirement<any>[]>(
  * ```
  */
 export function createTranslator<R extends TranslationRequirement<string>>(
-  messages: Messages<string>,
+  messages: Messages,
   requirement: R
 ): ConstrainedTranslatorFunction<R> {
   const isDev = process.env.NODE_ENV === "development";
