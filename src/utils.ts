@@ -1,4 +1,21 @@
-import type { PlaceholderValues } from "./types";
+import type { PlaceholderValues, TranslationRequirement } from "./types";
+
+/**
+ * Helper function to create a TranslationRequirement with type inference
+ * @template K - Array type of translation keys
+ * @param namespace - Translation namespace (e.g., "common", "user", "shop")
+ * @param keys - Array of translation keys
+ * @returns TranslationRequirement with inferred key types
+ * @example
+ * const req = defineRequirement("common", ["submit", "cancel"]);
+ * // req.keys is inferred as readonly ["submit", "cancel"]
+ */
+export function defineRequirement<const K extends readonly string[]>(
+  namespace: string,
+  keys: K
+): TranslationRequirement<K[number]> {
+  return { keys, namespace };
+}
 
 /**
  * Get nested object value from dot notation path
@@ -7,15 +24,20 @@ import type { PlaceholderValues } from "./types";
  * @returns Found string, or undefined
  */
 export function getNestedValue(
-  obj: Record<string, any>,
+  obj: Record<string, unknown>,
   path: string
 ): string | undefined {
   const keys = path.split(".");
-  let current: any = obj;
+  let current: unknown = obj;
 
   for (const key of keys) {
-    if (current && typeof current === "object" && key in current) {
-      current = current[key];
+    if (
+      current &&
+      typeof current === "object" &&
+      current !== null &&
+      key in current
+    ) {
+      current = (current as Record<string, unknown>)[key];
     } else {
       return undefined;
     }

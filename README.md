@@ -84,24 +84,16 @@ This automatically generates TypeScript type definitions from your translation f
 
 ```typescript
 // components/UserProfile.tsx
-import {
-  createTranslator,
-  type TranslationRequirement,
-  type Messages,
-} from "colocale";
-import type { TranslationKey } from "@/types/messages";
+import { createTranslator, defineRequirement, type Messages } from "colocale";
 
-// Define the translation keys this component needs (type-safe)
-export const userProfileTranslations: TranslationRequirement<
-  "user",
-  TranslationKey<"user">
-> = {
-  keys: ["profile.name", "profile.email"] as const,
-  namespace: "user",
-};
+// Define the translation keys this component needs (type-safe with inference)
+export const userProfileTranslations = defineRequirement("user", [
+  "profile.name",
+  "profile.email",
+]);
 
 export default function UserProfile({ messages }: { messages: Messages }) {
-  const t = createTranslator<"user", TranslationKey<"user">>(messages, "user");
+  const t = createTranslator(messages, userProfileTranslations);
 
   return (
     <div>
@@ -119,25 +111,20 @@ export default function UserProfile({ messages }: { messages: Messages }) {
 import {
   mergeRequirements,
   createTranslator,
-  type TranslationRequirement,
+  defineRequirement,
   type Messages,
 } from "colocale";
-import type { TranslationKey } from "@/types/messages";
 import UserProfile, { userProfileTranslations } from "./UserProfile";
 
+const commonTranslations = defineRequirement("common", ["submit", "cancel"]);
+
 export const userPageTranslations = mergeRequirements(
-  {
-    keys: ["submit", "cancel"],
-    namespace: "common",
-  } satisfies TranslationRequirement<"common", TranslationKey<"common">>,
+  commonTranslations,
   userProfileTranslations
 );
 
 export default function UserPage({ messages }: { messages: Messages }) {
-  const t = createTranslator<"common", TranslationKey<"common">>(
-    messages,
-    "common"
-  );
+  const t = createTranslator(messages, commonTranslations);
 
   return (
     <div>
@@ -188,14 +175,16 @@ function pickMessages(
 
 ### createTranslator
 
-Creates a translation function bound to a specific namespace.
+Creates a translation function bound to a specific namespace from a TranslationRequirement.
 
 ```typescript
-function createTranslator(
+function createTranslator<R extends TranslationRequirement<string>>(
   messages: Messages,
-  namespace: string
-): (key: string, values?: PlaceholderValues) => string;
+  requirement: R
+): ConstrainedTranslatorFunction<R>;
 ```
+
+**Key constraint**: The returned translator function is constrained to only accept keys defined in the `TranslationRequirement`.
 
 ### mergeRequirements
 
@@ -203,8 +192,27 @@ Merges multiple translation requirements into a single array.
 
 ```typescript
 function mergeRequirements(
-  ...requirements: (TranslationRequirement | TranslationRequirement[])[]
-): TranslationRequirement[];
+  ...requirements: TranslationRequirement<string>[]
+): TranslationRequirement<string>[];
+```
+
+### defineRequirement
+
+Helper function to create a TranslationRequirement with automatic type inference.
+
+```typescript
+function defineRequirement<const K extends readonly string[]>(
+  namespace: string,
+  keys: K
+): TranslationRequirement<K[number]>;
+```
+
+**Example:**
+
+```typescript
+const req = defineRequirement("common", ["submit", "cancel"]);
+// req.keys is inferred as readonly ["submit", "cancel"]
+// Type: TranslationRequirement<"submit" | "cancel">
 ```
 
 ## Usage Examples
@@ -212,7 +220,10 @@ function mergeRequirements(
 ### Placeholders
 
 ```typescript
-const t = createTranslator(messages, "results");
+import { defineRequirement, createTranslator } from "colocale";
+
+const resultsReq = defineRequirement("results", ["itemsFound", "greeting"]);
+const t = createTranslator(messages, resultsReq);
 
 t("itemsFound", { count: 5 }); // "Found 5 items"
 t("greeting", { name: "John" }); // "Hello, John"
@@ -235,13 +246,14 @@ t("greeting", { name: "John" }); // "Hello, John"
 **Component:**
 
 ```typescript
-// Specify only the base key in translation requirements
-export const translations: TranslationRequirement = {
-  keys: ["itemCount"], // _zero, _one, _other are automatically extracted
-  namespace: "common",
-};
+import { defineRequirement, createTranslator } from "colocale";
 
-const t = createTranslator(messages, "common");
+// Specify only the base key in translation requirements
+export const translations = defineRequirement("common", [
+  "itemCount", // _zero, _one, _other are automatically extracted
+]);
+
+const t = createTranslator(messages, translations);
 
 t("itemCount", { count: 0 }); // "No items"
 t("itemCount", { count: 1 }); // "1 item"
@@ -269,7 +281,10 @@ t("itemCount", { count: 5 }); // "5 items"
 ```
 
 ```typescript
-const t = createTranslator(messages, "shop");
+import { defineRequirement, createTranslator } from "colocale";
+
+const shopReq = defineRequirement("shop", ["cartSummary"]);
+const t = createTranslator(messages, shopReq);
 
 t("cartSummary", { count: 0, user: "John" });
 // "John's cart is empty"
@@ -292,7 +307,10 @@ t("cartSummary", { count: 5, user: "John" });
 ```
 
 ```typescript
-const t = createTranslator(messages, "user");
+import { defineRequirement, createTranslator } from "colocale";
+
+const userReq = defineRequirement("user", ["profile.name", "profile.email"]);
+const t = createTranslator(messages, userReq);
 
 t("profile.name"); // "Name"
 t("profile.email"); // "Email"
@@ -510,11 +528,7 @@ export type TranslationKey<N extends keyof TranslationStructure> =
 
 ```typescript
 import type { TranslationStructure, TranslationKey } from "./types/messages";
-import {
-  createTranslator,
-  type Messages,
-  type TranslationRequirement,
-} from "colocale";
+import { createTranslator, defineRequirement, type Messages } from "colocale";
 
 // Apply types to allMessages
 const allMessages: TranslationStructure = {
@@ -522,20 +536,32 @@ const allMessages: TranslationStructure = {
   user: (await import(`@/messages/${locale}/user.json`)).default,
 };
 
-// Apply types to translation requirements
-export const userProfileTranslations: TranslationRequirement<
-  "user",
-  TranslationKey<"user">
-> = {
-  keys: ["profile.name", "profile.email"] as const,
-  namespace: "user",
-};
+// defineRequirement provides automatic type inference
+export const userProfileTranslations = defineRequirement("user", [
+  "profile.name",
+  "profile.email",
+]);
 
-// createTranslator is also type-safe
-const t = createTranslator<"user", TranslationKey<"user">>(messages, "user");
+// createTranslator is type-safe and constrained to the requirement keys
+const t = createTranslator(messages, userProfileTranslations);
 
 t("profile.name"); // ✅ Type checks pass
-t("profile.invalid"); // ❌ Compile error
+t("profile.email"); // ✅ Type checks pass
+t("profile.invalid"); // ❌ Compile error - not in requirement keys
+```
+
+**Advanced: Explicit type annotations (optional)**
+
+If you need explicit type annotations, you can still use them:
+
+```typescript
+import type { TranslationRequirement } from "colocale";
+import type { TranslationKey } from "./types/messages";
+
+const req: TranslationRequirement<TranslationKey<"user">> = defineRequirement(
+  "user",
+  ["profile.name", "profile.email"]
+);
 ```
 
 ### Development Workflow

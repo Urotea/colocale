@@ -3,13 +3,14 @@ import type {
   ValidationResult,
   TranslationFile,
   NamespaceTranslations,
+  NestedTranslations,
 } from "./types";
 import type { LocaleTranslations } from "./cli/loader";
 
 /**
  * Collect all keys from a translation object (including nested keys)
  */
-function collectAllKeys(obj: any, prefix = ""): Set<string> {
+function collectAllKeys(obj: NamespaceTranslations, prefix = ""): Set<string> {
   const keys = new Set<string>();
 
   for (const key in obj) {
@@ -85,7 +86,11 @@ function validateNesting(
 ): ValidationError[] {
   const errors: ValidationError[] = [];
 
-  function checkDepth(obj: any, path: string, depth: number) {
+  function checkDepth(
+    obj: NamespaceTranslations | NestedTranslations,
+    path: string,
+    depth: number
+  ) {
     if (depth > 1) {
       errors.push({
         type: "invalid-nesting",
@@ -119,7 +124,10 @@ function validateKeyNames(
   const errors: ValidationError[] = [];
   const validKeyPattern = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
 
-  function checkKeys(obj: any, path: string) {
+  function checkKeys(
+    obj: NamespaceTranslations | NestedTranslations,
+    path: string
+  ) {
     for (const key in obj) {
       if (!validKeyPattern.test(key)) {
         errors.push({
@@ -152,7 +160,10 @@ function validatePlaceholders(
   const errors: ValidationError[] = [];
   const placeholderPattern = /\{([^}]+)\}/g;
 
-  function checkPlaceholders(obj: any, path: string) {
+  function checkPlaceholders(
+    obj: NamespaceTranslations | NestedTranslations,
+    path: string
+  ) {
     for (const key in obj) {
       const currentPath = path ? `${path}.${key}` : key;
 

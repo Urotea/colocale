@@ -4,26 +4,17 @@
 
 // Types
 export type {
-  TranslationKey,
   TranslationRequirement,
   Messages,
-  PlaceholderValues,
-  PluralOptions,
   TranslationFile,
-  NamespaceTranslations,
-  NestedTranslations,
-  TranslatorFunction,
-  ValidationError,
-  ValidationErrorType,
-  ValidationResult,
-  NestedKeyOf,
-  TypedTranslationRequirement,
-  ExtractKeys,
-  TypedTranslator,
+  ConstrainedTranslatorFunction,
 } from "./types";
 
 // Validation
 export { validateTranslations, validateCrossLocale } from "./validation";
+
+// Utilities
+export { defineRequirement } from "./utils";
 
 // Loader (for CLI and programmatic use)
 export type { LocaleTranslations } from "./cli/loader";
@@ -45,19 +36,18 @@ import type {
   TranslationFile,
   Messages,
   PlaceholderValues,
-  TranslatorFunction,
+  ConstrainedTranslatorFunction,
 } from "./types";
 
 /**
  * Merge multiple translation requirements into a single array
- * @template K - Translation keys type
- * @param requirements - Translation requirement(s) or array of requirements (variadic)
- * @returns Flattened array of translation requirements
+ * @param requirements - Translation requirements (variadic)
+ * @returns Array of translation requirements
  */
-export function mergeRequirements<K extends string = string>(
-  ...requirements: (TranslationRequirement<K> | TranslationRequirement<K>[])[]
-): TranslationRequirement<K>[] {
-  return requirements.flat(Infinity) as TranslationRequirement<K>[];
+export function mergeRequirements(
+  ...requirements: TranslationRequirement[]
+): TranslationRequirement[] {
+  return requirements;
 }
 
 /**
@@ -65,15 +55,15 @@ export function mergeRequirements<K extends string = string>(
  *
  * When base keys are specified, keys with _zero, _one, _other suffixes are automatically extracted
  *
- * @template K - Translation keys type
+ * @template R - Array of TranslationRequirements
  * @param allMessages - Object containing all translation data
  * @param requirements - List of required translation keys
  * @returns Messages object (key format: "namespace.key")
  */
-export function pickMessages<K extends string = string>(
+export function pickMessages<R extends readonly TranslationRequirement[]>(
   allMessages: TranslationFile,
-  requirements: TranslationRequirement<K>[]
-): Messages<K> {
+  requirements: R
+): Messages {
   const messages: Record<string, string> = {};
   const isDev = process.env.NODE_ENV === "development";
 
@@ -91,7 +81,7 @@ export function pickMessages<K extends string = string>(
     for (const key of keys) {
       // Check direct key
       if (typeof namespaceData[key] === "string") {
-        messages[`${namespace}.${key}`] = namespaceData[key] as string;
+        messages[`${namespace}.${key}`] = namespaceData[key];
       } else {
         // Check nested key
         const value = getNestedValue(namespaceData, key);
@@ -115,43 +105,52 @@ export function pickMessages<K extends string = string>(
     }
   }
 
-  return messages as Messages<K>;
+  return messages;
 }
 
 /**
- * Generate a translation function bound to a specific namespace
+ * Generate a translation function bound to a specific namespace with keys constrained by TranslationRequirement
  *
  * When values contain a count property, automatic plural handling is performed
  *
- * @template K - Translation keys type
+ * @template R - TranslationRequirement type that defines allowed keys
  * @param messages - Messages object
- * @param namespace - Translation namespace
- * @returns Translation function
+ * @param requirement - TranslationRequirement that defines the namespace and allowed keys
+ * @returns Translation function constrained to keys in the requirement
+ *
+ * @example
+ * ```typescript
+ * import { createTranslator, defineRequirement } from "colocale";
+ *
+ * const userProfileTranslations = defineRequirement("user", [
+ *   "profile.name",
+ *   "profile.email",
+ * ]);
+ *
+ * const t = createTranslator(messages, userProfileTranslations);
+ * t("profile.name"); // ✓ OK
+ * t("profile.invalid"); // ✗ Type error
+ * ```
  */
-export function createTranslator<K extends string = string>(
-  messages: Messages<K>,
-  namespace: string
-): TranslatorFunction<K> {
+export function createTranslator<R extends TranslationRequirement>(
+  messages: Messages,
+  requirement: R
+): ConstrainedTranslatorFunction<R> {
   const isDev = process.env.NODE_ENV === "development";
-  const messagesRecord = messages as Record<string, string>;
+  const namespace = requirement.namespace;
 
-  return (key: K, values?: PlaceholderValues): string => {
+  return (key: string, values?: PlaceholderValues): string => {
     let message: string | undefined;
 
     // If count is provided, attempt plural handling
     if (values && "count" in values && typeof values.count === "number") {
-      message = resolvePluralMessage(
-        messagesRecord,
-        namespace,
-        key,
-        values.count
-      );
+      message = resolvePluralMessage(messages, namespace, key, values.count);
     }
 
     // If not plural or plural resolution failed, try regular key
     if (message === undefined) {
       const fullKey = `${namespace}.${key}`;
-      message = messagesRecord[fullKey];
+      message = messages[fullKey];
     }
 
     // If message not found, return key as-is

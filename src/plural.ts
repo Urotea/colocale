@@ -64,12 +64,12 @@ export function resolvePluralMessage(
  * @returns Array of existing plural keys
  */
 export function extractPluralKeys(
-  allMessages: Record<string, any>,
+  allMessages: Record<string, unknown>,
   namespace: string,
   baseKey: string
 ): string[] {
   const namespaceData = allMessages[namespace];
-  if (!namespaceData) {
+  if (!namespaceData || typeof namespaceData !== "object") {
     return [];
   }
 
@@ -83,7 +83,10 @@ export function extractPluralKeys(
       pluralKeys.push(keyWithSuffix);
     } else {
       // Check nested key
-      const value = getNestedValue(namespaceData, keyWithSuffix);
+      const value = getNestedValue(
+        namespaceData as Record<string, unknown>,
+        keyWithSuffix
+      );
       if (value !== undefined) {
         pluralKeys.push(keyWithSuffix);
       }

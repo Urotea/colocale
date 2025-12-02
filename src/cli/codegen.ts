@@ -32,19 +32,16 @@ export function generateTypescriptInterface(
       if (typeof value === "string") {
         // Direct string value
         lines.push(`  "${key}": string;`);
-      } else {
+      } else if (typeof value === "object" && value !== null) {
         // Nested object
         const nestedInterfaceName = `${interfaceNamespace}${capitalizeFirst(
           key
-        )}`;
+        )}Messages`;
         lines.push(`  "${key}": ${nestedInterfaceName};`);
 
         // Store nested interface for later generation
         namespaceInterfaces.push(
-          generateNestedInterface(
-            nestedInterfaceName,
-            value as NestedTranslations
-          )
+          generateNestedInterface(nestedInterfaceName, value)
         );
       }
     }
