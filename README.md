@@ -1,19 +1,19 @@
 # colocale
 
-Next.js App Router で使える、サーバー・クライアントコンポーネント両対応の軽量 i18n ライブラリです。
+A lightweight i18n library that supports both server and client components.
 
-GraphQL の fragment collocation パターンを応用し、各コンポーネントが必要な翻訳キーを宣言的に定義できます。
+Inspired by GraphQL's fragment collocation pattern, each component can declaratively define the translation keys it needs. While it works great with Next.js App Router, it's framework-agnostic and can be used in any React application.
 
-## 特徴
+## Features
 
-- 🎯 **Colocation**: 翻訳キーの定義をコンポーネントと同じ場所に配置
-- 🔒 **型安全**: TypeScript による完全な型サポート
-- 📦 **軽量**: 依存関係なし、シンプルな API
-- 🌐 **複数形対応**: react-i18next 互換の複数形処理
-- ⚡ **高速**: 必要な翻訳のみを抽出してクライアントに送信
-- 🔄 **両対応**: サーバー・クライアントコンポーネントの両方で動作
+- 🎯 **Colocation**: Define translation keys alongside your components
+- 🔒 **Type-safe**: Full TypeScript support with auto-generated types
+- 📦 **Lightweight**: Zero dependencies, simple API
+- 🌐 **Pluralization**: react-i18next compatible plural handling
+- ⚡ **Fast**: Extract and send only the translations needed by components
+- 🔄 **Universal**: Works in both server and client components
 
-## インストール
+## Installation
 
 ```bash
 npm install colocale
@@ -21,58 +21,58 @@ npm install colocale
 bun add colocale
 ```
 
-## CLI ツール
+## CLI Tools
 
-`colocale` は 2 つのサブコマンドを提供します：
+`colocale` provides 2 subcommands:
 
 ```bash
-# ヘルプを表示
+# Show help
 npx colocale --help
 
-# 翻訳ファイルの検証
-npx colocale check messages/ja          # 単一ロケール
-npx colocale check messages              # 全ロケール + 整合性チェック
+# Validate translation files
+npx colocale check messages/ja          # Single locale
+npx colocale check messages              # All locales + consistency check
 
-# 型定義の生成
+# Generate type definitions
 npx colocale codegen messages/en types/messages.d.ts
 ```
 
-## クイックスタート
+## Quick Start
 
-### 1. 翻訳ファイルを作成
+### 1. Create Translation Files
 
-名前空間ごとに JSON ファイルを作成します。
+Create JSON files for each namespace.
 
 ```json
-// messages/ja/common.json
+// messages/en/common.json
 {
-  "submit": "送信",
-  "cancel": "キャンセル",
-  "itemCount_zero": "アイテムがありません",
-  "itemCount_one": "1件のアイテム",
-  "itemCount_other": "{count}件のアイテム"
+  "submit": "Submit",
+  "cancel": "Cancel",
+  "itemCount_zero": "No items",
+  "itemCount_one": "1 item",
+  "itemCount_other": "{count} items"
 }
 ```
 
 ```json
-// messages/ja/user.json
+// messages/en/user.json
 {
   "profile": {
-    "name": "名前",
-    "email": "メールアドレス"
+    "name": "Name",
+    "email": "Email"
   }
 }
 ```
 
-### 2. 型定義を生成（推奨）
+### 2. Generate Type Definitions (Recommended)
 
 ```bash
 npx colocale codegen messages/en types/messages.d.ts
 ```
 
-これにより、翻訳ファイルから TypeScript の型定義が自動生成されます。
+This automatically generates TypeScript type definitions from your translation files.
 
-### 3. コンポーネントで翻訳を定義
+### 3. Define Translations in Components
 
 ```typescript
 // components/UserProfile.tsx
@@ -83,7 +83,7 @@ import {
 } from "colocale";
 import type { TranslationKey } from "@/types/messages";
 
-// このコンポーネントが必要な翻訳キーを定義（型安全）
+// Define the translation keys this component needs (type-safe)
 export const userProfileTranslations: TranslationRequirement<
   "user",
   TranslationKey<"user">
@@ -104,7 +104,7 @@ export default function UserProfile({ messages }: { messages: Messages }) {
 }
 ```
 
-### 4. 親コンポーネントで翻訳要求を集約
+### 4. Aggregate Translation Requirements in Parent Components
 
 ```typescript
 // components/UserPage.tsx
@@ -141,7 +141,7 @@ export default function UserPage({ messages }: { messages: Messages }) {
 }
 ```
 
-### 5. サーバーコンポーネントで翻訳を抽出
+### 5. Extract Translations in Server Components
 
 ```typescript
 // app/[locale]/users/page.tsx
@@ -150,24 +150,24 @@ import type { TranslationStructure } from "@/types/messages";
 import UserPage, { userPageTranslations } from "@/components/UserPage";
 
 export default async function Page({ params }: { params: { locale: string } }) {
-  // 動的インポートで必要なロケールの翻訳のみロード（型安全）
+  // Dynamically import only the needed locale's translations (type-safe)
   const allMessages: TranslationStructure = {
     common: (await import(`@/messages/${params.locale}/common.json`)).default,
     user: (await import(`@/messages/${params.locale}/user.json`)).default,
   };
 
-  // 必要な翻訳のみを抽出
+  // Extract only the needed translations
   const messages = pickMessages(allMessages, userPageTranslations);
 
   return <UserPage messages={messages} />;
 }
 ```
 
-## API リファレンス
+## API Reference
 
 ### pickMessages
 
-翻訳ファイルから必要な翻訳のみを抽出します。
+Extracts only the needed translations from translation files.
 
 ```typescript
 function pickMessages(
@@ -176,11 +176,11 @@ function pickMessages(
 ): Messages;
 ```
 
-**複数形の自動抽出**: 基本キー（例: `"itemCount"`）を指定すると、`_zero`, `_one`, `_other` サフィックス付きキーも自動的に抽出されます。
+**Automatic plural extraction**: When you specify a base key (e.g., `"itemCount"`), keys with `_zero`, `_one`, `_other` suffixes are automatically extracted.
 
 ### createTranslator
 
-特定の名前空間に紐づいた翻訳関数を生成します。
+Creates a translation function bound to a specific namespace.
 
 ```typescript
 function createTranslator(
@@ -191,7 +191,7 @@ function createTranslator(
 
 ### mergeRequirements
 
-複数の翻訳要求を 1 つの配列にマージします。
+Merges multiple translation requirements into a single array.
 
 ```typescript
 function mergeRequirements(
@@ -199,63 +199,63 @@ function mergeRequirements(
 ): TranslationRequirement[];
 ```
 
-## 使用例
+## Usage Examples
 
-### プレースホルダー
+### Placeholders
 
 ```typescript
 const t = createTranslator(messages, "results");
 
-t("itemsFound", { count: 5 }); // "5件取得しました"
-t("greeting", { name: "田中" }); // "こんにちは、田中さん"
+t("itemsFound", { count: 5 }); // "Found 5 items"
+t("greeting", { name: "John" }); // "Hello, John"
 ```
 
-### 複数形（Pluralization）
+### Pluralization
 
-**翻訳ファイル:**
+**Translation file:**
 
 ```json
 {
   "common": {
-    "itemCount_zero": "アイテムがありません",
-    "itemCount_one": "1件のアイテム",
-    "itemCount_other": "{count}件のアイテム"
+    "itemCount_zero": "No items",
+    "itemCount_one": "1 item",
+    "itemCount_other": "{count} items"
   }
 }
 ```
 
-**コンポーネント:**
+**Component:**
 
 ```typescript
-// 翻訳要求では基本キーのみを指定
+// Specify only the base key in translation requirements
 export const translations: TranslationRequirement = {
-  keys: ["itemCount"], // _zero, _one, _other は自動的に抽出される
+  keys: ["itemCount"], // _zero, _one, _other are automatically extracted
   namespace: "common",
 };
 
 const t = createTranslator(messages, "common");
 
-t("itemCount", { count: 0 }); // "アイテムがありません"
-t("itemCount", { count: 1 }); // "1件のアイテム"
-t("itemCount", { count: 5 }); // "5件のアイテム"
+t("itemCount", { count: 0 }); // "No items"
+t("itemCount", { count: 1 }); // "1 item"
+t("itemCount", { count: 5 }); // "5 items"
 ```
 
-**複数形のルール（react-i18next 互換）:**
+**Pluralization rules (react-i18next compatible):**
 
-- `count === 0` → `{key}_zero`（なければ `_other` を使用）
-- `count === 1` → `{key}_one`（必須）
-- その他 → `{key}_other`（必須）
+- `count === 0` → `{key}_zero` (falls back to `_other` if not present)
+- `count === 1` → `{key}_one` (required)
+- Otherwise → `{key}_other` (required)
 
-**注意:** `_one` と `_other` は必須です。これらが存在しない場合、基本キー（サフィックスなし）があればそれが使用されますが、複数形として正しく機能しません。`_zero` のみオプションで、省略すると `count === 0` の場合に `_other` が使用されます。
+**Note:** `_one` and `_other` are required. If they don't exist, the base key (without suffix) will be used if available, but it won't function correctly as a plural. Only `_zero` is optional; if omitted, `_other` is used when `count === 0`.
 
-### 複数形 + プレースホルダー
+### Pluralization + Placeholders
 
 ```json
 {
   "shop": {
-    "cartSummary_zero": "{user}さんのカートは空です",
-    "cartSummary_one": "{user}さんのカートに1個の商品があります",
-    "cartSummary_other": "{user}さんのカートに{count}個の商品があります"
+    "cartSummary_zero": "{user}'s cart is empty",
+    "cartSummary_one": "{user} has 1 item in cart",
+    "cartSummary_other": "{user} has {count} items in cart"
   }
 }
 ```
@@ -263,21 +263,21 @@ t("itemCount", { count: 5 }); // "5件のアイテム"
 ```typescript
 const t = createTranslator(messages, "shop");
 
-t("cartSummary", { count: 0, user: "田中" });
-// "田中さんのカートは空です"
+t("cartSummary", { count: 0, user: "John" });
+// "John's cart is empty"
 
-t("cartSummary", { count: 5, user: "田中" });
-// "田中さんのカートに5個の商品があります"
+t("cartSummary", { count: 5, user: "John" });
+// "John has 5 items in cart"
 ```
 
-### ネストしたキー
+### Nested Keys
 
 ```json
 {
   "user": {
     "profile": {
-      "name": "名前",
-      "email": "メールアドレス"
+      "name": "Name",
+      "email": "Email"
     }
   }
 }
@@ -286,41 +286,41 @@ t("cartSummary", { count: 5, user: "田中" });
 ```typescript
 const t = createTranslator(messages, "user");
 
-t("profile.name"); // "名前"
-t("profile.email"); // "メールアドレス"
+t("profile.name"); // "Name"
+t("profile.email"); // "Email"
 ```
 
-## 翻訳ファイルの検証
+## Translation File Validation
 
-翻訳ファイルが正しい形式になっているかをチェックするコマンドが用意されています。
+Commands are provided to check if translation files are in the correct format.
 
 ```bash
-# 翻訳ファイルのバリデーション
-npx colocale check messages/ja          # 単一ロケール
-npx colocale check messages              # 全ロケール + 整合性チェック
+# Validate translation files
+npx colocale check messages/ja          # Single locale
+npx colocale check messages              # All locales + consistency check
 
-# 型定義の生成
+# Generate type definitions
 npx colocale codegen messages/en types/messages.d.ts
 ```
 
-### コマンドラインから実行
+### Running from Command Line
 
 ```bash
-# 単一ロケールをチェック
+# Check a single locale
 npx colocale check messages/ja
 
-# 複数のロケールを個別にチェック
+# Check multiple locales individually
 npx colocale check messages/ja messages/en
 
-# 複数ロケールを一括チェック（locale間の整合性も検証）
+# Check multiple locales at once (validates cross-locale consistency)
 npx colocale check messages
 ```
 
-### locale 間の整合性チェック
+### Cross-Locale Consistency Check
 
-複数のロケールが存在する場合、各ロケールの同じ namespace が同じキーを持っているかをチェックします。
+When multiple locales exist, checks if each locale's same namespace has the same keys.
 
-**ディレクトリ構造:**
+**Directory structure:**
 
 ```
 messages/
@@ -332,13 +332,13 @@ messages/
     user.json
 ```
 
-**コマンド実行:**
+**Run command:**
 
 ```bash
 npx colocale check messages
 ```
 
-**出力例:**
+**Output example:**
 
 ```
 🔍 Checking translation files...
@@ -366,43 +366,43 @@ npx colocale check messages
 ❌ Validation failed: Errors found
 ```
 
-### プログラムから実行
+### Running from Code
 
 ```typescript
 import { validateTranslations, validateCrossLocale } from "colocale";
 import type { LocaleTranslations } from "colocale/cli/loader";
 
-// 単一ロケールの検証
+// Validate a single locale
 const translations = {
   common: {
-    itemCount_one: "1件のアイテム",
-    // itemCount_other が不足している場合、エラーになる
+    itemCount_one: "1 item",
+    // Missing itemCount_other will cause an error
   },
 };
 
 const result = validateTranslations(translations);
 
 if (!result.valid) {
-  console.error("翻訳ファイルにエラーがあります:");
+  console.error("Translation file has errors:");
   for (const error of result.errors) {
     console.error(`  [${error.namespace}] ${error.key}: ${error.message}`);
   }
 }
 
-// locale間の整合性検証
+// Cross-locale consistency validation
 const localeTranslations: LocaleTranslations = {
   en: {
     common: { submit: "Submit", cancel: "Cancel" },
   },
   ja: {
-    common: { submit: "送信" }, // "cancel" が不足
+    common: { submit: "送信" }, // Missing "cancel"
   },
 };
 
 const crossLocaleResult = validateCrossLocale(localeTranslations);
 
 if (!crossLocaleResult.valid) {
-  console.error("locale間で不整合があります:");
+  console.error("Cross-locale inconsistencies found:");
   for (const error of crossLocaleResult.errors) {
     console.error(
       `  [${error.namespace}] ${error.locale} ← ${error.referenceLocale}: ${error.key}`
@@ -412,22 +412,22 @@ if (!crossLocaleResult.valid) {
 }
 ```
 
-### 検証内容
+### Validation Contents
 
-#### 各ロケールの検証
+#### Per-Locale Validation
 
-- **複数形キーの整合性**: `_one` と `_other` が必須（`_zero` はオプション）
-- **ネストの深さ**: 1 階層まで許可
-- **キーの命名規則**: 英数字とアンダースコアのみ使用可能
-- **プレースホルダーの形式**: `{name}` 形式で、名前は英数字とアンダースコアのみ
+- **Plural key consistency**: `_one` and `_other` are required (`_zero` is optional)
+- **Nesting depth**: Up to 1 level allowed
+- **Key naming rules**: Only alphanumeric characters and underscores
+- **Placeholder format**: `{name}` format, with alphanumeric characters and underscores only
 
-#### locale 間の整合性検証
+#### Cross-Locale Consistency Validation
 
-- **キーの一致**: 同じ namespace を持つファイル間で、すべてのキーが一致しているか
-- **欠損キーの検出**: 参照ロケール（最初のロケール）に存在するキーが他のロケールに存在するか
-- **追加キーの検出**: 他のロケールにのみ存在し、参照ロケールに存在しないキー
+- **Key matching**: All keys must match between files with the same namespace
+- **Missing key detection**: Keys that exist in the reference locale (first locale) must exist in other locales
+- **Extra key detection**: Keys that exist only in other locales but not in the reference locale
 
-### CI/CD での使用例
+### CI/CD Usage Example
 
 ```yaml
 # .github/workflows/check-translations.yml
@@ -442,22 +442,22 @@ jobs:
       - uses: actions/checkout@v3
       - uses: oven-sh/setup-bun@v1
       - run: bun install
-      # locale間の整合性もチェック
+      # Also check cross-locale consistency
       - run: npx colocale check messages
 ```
 
-## 型安全性
+## Type Safety
 
-### 型定義の自動生成
+### Auto-Generate Type Definitions
 
-JSON ファイルから TypeScript の型定義を自動生成できます。これにより、`allMessages` や翻訳キーに完全な型安全性を提供できます。
+You can automatically generate TypeScript type definitions from JSON files. This provides complete type safety for `allMessages` and translation keys.
 
 ```bash
-# 型定義ファイルを生成
+# Generate type definition file
 npx colocale codegen messages/en types/messages.d.ts
 ```
 
-**生成される型定義の例:**
+**Example of generated type definitions:**
 
 ```typescript
 // types/messages.d.ts
@@ -483,7 +483,7 @@ export type TranslationKey<N extends keyof TranslationStructure> =
     : never;
 ```
 
-**型定義を使用する:**
+**Using the type definitions:**
 
 ```typescript
 import type { TranslationStructure, TranslationKey } from "./types/messages";
@@ -493,13 +493,13 @@ import {
   type TranslationRequirement,
 } from "colocale";
 
-// allMessages に型を適用
+// Apply types to allMessages
 const allMessages: TranslationStructure = {
   common: (await import(`@/messages/${locale}/common.json`)).default,
   user: (await import(`@/messages/${locale}/user.json`)).default,
 };
 
-// 翻訳要求に型を適用
+// Apply types to translation requirements
 export const userProfileTranslations: TranslationRequirement<
   "user",
   TranslationKey<"user">
@@ -508,20 +508,20 @@ export const userProfileTranslations: TranslationRequirement<
   namespace: "user",
 };
 
-// createTranslator も型安全に
+// createTranslator is also type-safe
 const t = createTranslator<"user", TranslationKey<"user">>(messages, "user");
 
-t("profile.name"); // ✅ 型チェックが通る
-t("profile.invalid"); // ❌ コンパイルエラー
+t("profile.name"); // ✅ Type checks pass
+t("profile.invalid"); // ❌ Compile error
 ```
 
-### 開発ワークフロー
+### Development Workflow
 
-1. **翻訳ファイルを更新**
-2. **型定義を再生成**: `npx colocale codegen messages/en types/messages.d.ts`
-3. **型安全性の恩恵を受ける**: コンパイル時に存在しないキーを検出
+1. **Update translation files**
+2. **Regenerate type definitions**: `npx colocale codegen messages/en types/messages.d.ts`
+3. **Enjoy type safety**: Detect non-existent keys at compile time
 
-### package.json スクリプトに追加
+### Add to package.json Scripts
 
 ```json
 {
@@ -533,6 +533,6 @@ t("profile.invalid"); // ❌ コンパイルエラー
 }
 ```
 
-## ライセンス
+## License
 
 MIT
