@@ -54,6 +54,11 @@
   "peerDependencies": {
     "typescript": "^5.0.0"
   },
+  "peerDependenciesMeta": {
+    "typescript": {
+      "optional": true
+    }
+  },
   "dependencies": {
     "commander": "^14.0.2"
   }

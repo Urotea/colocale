@@ -4,38 +4,41 @@ import type { TranslationFile } from "../types";
 
 /**
  * Load all JSON files from a directory and merge into one TranslationFile
+ * @throws {Error} When directory cannot be read or JSON parsing fails
  */
 export async function loadTranslationsFromDirectory(
   dir: string
 ): Promise<TranslationFile> {
   const translations: TranslationFile = {};
 
+  let files: string[];
   try {
-    const files = await readdir(dir);
+    files = await readdir(dir);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`Failed to read directory: ${dir} - ${message}`);
+  }
 
-    for (const file of files) {
-      if (file.endsWith(".json")) {
-        const namespace = file.replace(".json", "");
-        const filePath = join(dir, file);
-        const content = await readFile(filePath, "utf-8");
+  for (const file of files) {
+    if (file.endsWith(".json")) {
+      const namespace = file.replace(".json", "");
+      const filePath = join(dir, file);
 
-        try {
-          translations[namespace] = JSON.parse(content);
-        } catch (error) {
-          console.error(`❌ JSON parse error: ${filePath}`);
-          if (error instanceof Error) {
-            console.error(`   ${error.message}`);
-          }
-          process.exit(1);
-        }
+      let content: string;
+      try {
+        content = await readFile(filePath, "utf-8");
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        throw new Error(`Failed to read file: ${filePath} - ${message}`);
+      }
+
+      try {
+        translations[namespace] = JSON.parse(content);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        throw new Error(`JSON parse error in ${filePath}: ${message}`);
       }
     }
-  } catch (error) {
-    console.error(`❌ Failed to read directory: ${dir}`);
-    if (error instanceof Error) {
-      console.error(`   ${error.message}`);
-    }
-    process.exit(1);
   }
 
   return translations;
@@ -53,40 +56,46 @@ export type LocaleTranslations = Record<string, TranslationFile>;
  *
  * @param basePath - Base directory containing locale subdirectories
  * @returns Object with locale as key and TranslationFile as value
+ * @throws {Error} When base directory cannot be read
  */
 export async function loadAllLocaleTranslations(
   basePath: string
 ): Promise<LocaleTranslations> {
   const localeTranslations: LocaleTranslations = {};
 
+  let entries: string[];
   try {
-    const entries = await readdir(basePath);
+    entries = await readdir(basePath);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`Failed to read base directory: ${basePath} - ${message}`);
+  }
 
-    for (const entry of entries) {
-      const entryPath = join(basePath, entry);
-      const stats = await stat(entryPath);
+  for (const entry of entries) {
+    const entryPath = join(basePath, entry);
 
-      // Only process directories
-      if (stats.isDirectory()) {
-        const locale = entry;
-        try {
-          const translations = await loadTranslationsFromDirectory(entryPath);
-          // Only add if there are any translations
-          if (Object.keys(translations).length > 0) {
-            localeTranslations[locale] = translations;
-          }
-        } catch (error) {
-          // Skip directories that can't be read
-          continue;
+    let stats;
+    try {
+      stats = await stat(entryPath);
+    } catch (error) {
+      // Skip entries that can't be accessed
+      continue;
+    }
+
+    // Only process directories
+    if (stats.isDirectory()) {
+      const locale = entry;
+      try {
+        const translations = await loadTranslationsFromDirectory(entryPath);
+        // Only add if there are any translations
+        if (Object.keys(translations).length > 0) {
+          localeTranslations[locale] = translations;
         }
+      } catch (error) {
+        // Skip directories that can't be read as translation directories
+        continue;
       }
     }
-  } catch (error) {
-    console.error(`❌ Failed to read base directory: ${basePath}`);
-    if (error instanceof Error) {
-      console.error(`   ${error.message}`);
-    }
-    process.exit(1);
   }
 
   return localeTranslations;

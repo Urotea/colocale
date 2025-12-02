@@ -94,8 +94,10 @@ program
             hasErrors = true;
           }
         } catch (error) {
-          // Skip if directory doesn't exist
-          continue;
+          console.error(
+            `❌ ${error instanceof Error ? error.message : String(error)}`
+          );
+          process.exit(1);
         }
       }
     }
@@ -140,7 +142,7 @@ program
       // Generate TypeScript interface
       const interfaceCode = generateTypescriptInterface(
         translations,
-        "GeneratedMessages"
+        "TranslationStructure"
       );
 
       // Ensure output directory exists
@@ -152,7 +154,7 @@ program
       console.log("✅ Type definitions generated successfully!");
       console.log(`\nYou can now import and use the generated types:`);
       console.log(
-        `  import type { GeneratedMessages, TranslationKeys } from "${resolvedOutputPath.replace(
+        `  import type { TranslationStructure, TranslationKey } from "${resolvedOutputPath.replace(
           process.cwd() + "/",
           "./"
         )}";`

@@ -21,6 +21,14 @@ npm install colocale
 bun add colocale
 ```
 
+**Note:** If you want to use the `codegen` command to generate TypeScript types, you'll need TypeScript installed in your project:
+
+```bash
+npm install -D typescript
+# or
+bun add -d typescript
+```
+
 ## CLI Tools
 
 `colocale` provides 2 subcommands:
@@ -461,23 +469,38 @@ npx colocale codegen messages/en types/messages.d.ts
 
 ```typescript
 // types/messages.d.ts
-export interface TranslationStructure {
-  common: {
-    submit: string;
-    cancel: string;
-    itemCount: string;
-  };
-  user: {
-    profile: {
-      name: string;
-      email: string;
-    };
-  };
+/**
+ * Auto-generated translation types
+ * DO NOT EDIT MANUALLY
+ */
+
+export interface CommonMessages {
+  submit: string;
+  cancel: string;
+  itemCount_one: string;
+  itemCount_other: string;
 }
 
+export interface UserProfile {
+  name: string;
+  email: string;
+}
+
+export interface UserMessages {
+  profile: UserProfile;
+}
+
+export interface TranslationStructure {
+  common: CommonMessages;
+  user: UserMessages;
+}
+
+/**
+ * Union type of all translation keys
+ */
 export type TranslationKey<N extends keyof TranslationStructure> =
   N extends "common"
-    ? "submit" | "cancel" | "itemCount"
+    ? "submit" | "cancel" | "itemCount_one" | "itemCount_other"
     : N extends "user"
     ? "profile.name" | "profile.email"
     : never;

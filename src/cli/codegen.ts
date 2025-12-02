@@ -3,12 +3,12 @@ import type { TranslationFile, NestedTranslations } from "../types";
 /**
  * Generate TypeScript interface from translation file structure
  * @param translations - Translation file data
- * @param interfaceName - Name of the generated interface (default: "GeneratedMessages")
+ * @param interfaceName - Name of the generated interface (default: "TranslationStructure")
  * @returns TypeScript interface definition as a string
  */
 export function generateTypescriptInterface(
   translations: TranslationFile,
-  interfaceName: string = "GeneratedMessages"
+  interfaceName: string = "TranslationStructure"
 ): string {
   const lines: string[] = [];
 
@@ -148,7 +148,7 @@ function capitalizeFirst(str: string): string {
 export function generateImportStatement(
   generatedTypePath: string = "./messages.types"
 ): string {
-  return `import type { GeneratedMessages, TranslationKeys } from "${generatedTypePath}";`;
+  return `import type { TranslationStructure, TranslationKey } from "${generatedTypePath}";`;
 }
 
 /**
@@ -159,17 +159,17 @@ export function generateUsageExample(): string {
   return `
 // Example usage:
 import { pickMessages, createTranslator } from "colocale";
-import type { GeneratedMessages, TranslationKeys } from "./messages.types";
+import type { TranslationStructure, TranslationKey } from "./messages.types";
 
 // Type-safe messages
-const allMessages: GeneratedMessages = /* your loaded messages */;
+const allMessages: TranslationStructure = /* your loaded messages */;
 
 // Type-safe translation keys
-const key: TranslationKeys = "common.submit";
+const key: TranslationKey<"common"> = "submit";
 
 // Type-safe translator
-const t = createTranslator<TranslationKeys>(messages);
-t("common.submit"); // ✓ Type-safe
-t("invalid.key");   // ✗ Type error
+const t = createTranslator<"common", TranslationKey<"common">>(messages, "common");
+t("submit"); // ✓ Type-safe
+t("invalid"); // ✗ Type error
 `.trim();
 }
