@@ -1,5 +1,5 @@
 import { readdir, readFile, stat } from "node:fs/promises";
-import { join, basename } from "node:path";
+import { join } from "node:path";
 import type { TranslationFile } from "../types";
 
 /**
@@ -77,7 +77,7 @@ export async function loadAllLocaleTranslations(
     let stats;
     try {
       stats = await stat(entryPath);
-    } catch (error) {
+    } catch {
       // Skip entries that can't be accessed
       continue;
     }
@@ -91,7 +91,7 @@ export async function loadAllLocaleTranslations(
         if (Object.keys(translations).length > 0) {
           localeTranslations[locale] = translations;
         }
-      } catch (error) {
+      } catch {
         // Skip directories that can't be read as translation directories
         continue;
       }
