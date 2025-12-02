@@ -120,13 +120,14 @@ export function pickMessages<R extends readonly TranslationRequirement<any>[]>(
  *
  * @example
  * ```typescript
- * // Generics are optional - use 'satisfies' for type inference
- * const requirement = {
- *   keys: ["profile.name", "profile.email"] as const,
- *   namespace: "user",
- * } satisfies TranslationRequirement;
+ * import { createTranslator, defineRequirement } from "colocale";
  *
- * const t = createTranslator(messages, requirement);
+ * const userProfileTranslations = defineRequirement("user", [
+ *   "profile.name",
+ *   "profile.email",
+ * ]);
+ *
+ * const t = createTranslator(messages, userProfileTranslations);
  * t("profile.name"); // ✓ OK
  * t("profile.invalid"); // ✗ Type error
  * ```
