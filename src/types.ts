@@ -61,7 +61,9 @@ export type ValidationErrorType =
   | "missing-plural-other"
   | "invalid-nesting"
   | "invalid-key-name"
-  | "invalid-placeholder";
+  | "invalid-placeholder"
+  | "missing-key"
+  | "extra-key";
 
 /**
  * Validation error
@@ -75,6 +77,10 @@ export interface ValidationError {
   key: string;
   /** Error message */
   message: string;
+  /** Locale (optional, used for cross-locale validation) */
+  locale?: string;
+  /** Reference locale (optional, used for cross-locale validation) */
+  referenceLocale?: string;
 }
 
 /**

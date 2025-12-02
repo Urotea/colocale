@@ -261,21 +261,77 @@ t("profile.email"); // "メールアドレス"
 ### コマンドラインから実行
 
 ```bash
-# ローカルで開発時
+# 単一ロケールをチェック
 bun run check messages/ja
 
-# 複数のロケールをチェック
+# 複数のロケールを個別にチェック
 bun run check messages/ja messages/en
+
+# 複数ロケールを一括チェック（locale間の整合性も検証）
+bun run check messages
 
 # パッケージをインストールした後
 npx colocale-check messages/ja
+npx colocale-check messages  # locale間の整合性チェックも実行
+```
+
+### locale 間の整合性チェック
+
+複数のロケールが存在する場合、各ロケールの同じ namespace が同じキーを持っているかをチェックします。
+
+**ディレクトリ構造:**
+
+```
+messages/
+  en/
+    common.json
+    user.json
+  ja/
+    common.json
+    user.json
+```
+
+**コマンド実行:**
+
+```bash
+bun run check messages
+```
+
+**出力例:**
+
+```
+🔍 Checking translation files...
+
+📁 Found 2 locale(s)
+
+📁 en
+  ✅ No errors
+
+📁 ja
+  ✅ No errors
+
+==================================================
+🌐 Cross-locale consistency check
+
+📁 Cross-locale
+
+  ❌ Errors (2):
+     • [common] [ja ← en] cancel
+       Key "cancel" exists in "en" but missing in "ja"
+     • [user] [en ← ja] profile.email
+       Key "profile.email" exists in "ja" but not in "en"
+
+==================================================
+❌ Validation failed: Errors found
 ```
 
 ### プログラムから実行
 
 ```typescript
-import { validateTranslations } from "colocale";
+import { validateTranslations, validateCrossLocale } from "colocale";
+import type { LocaleTranslations } from "colocale/cli/loader";
 
+// 単一ロケールの検証
 const translations = {
   common: {
     itemCount_one: "1件のアイテム",
@@ -291,14 +347,44 @@ if (!result.valid) {
     console.error(`  [${error.namespace}] ${error.key}: ${error.message}`);
   }
 }
+
+// locale間の整合性検証
+const localeTranslations: LocaleTranslations = {
+  en: {
+    common: { submit: "Submit", cancel: "Cancel" },
+  },
+  ja: {
+    common: { submit: "送信" }, // "cancel" が不足
+  },
+};
+
+const crossLocaleResult = validateCrossLocale(localeTranslations);
+
+if (!crossLocaleResult.valid) {
+  console.error("locale間で不整合があります:");
+  for (const error of crossLocaleResult.errors) {
+    console.error(
+      `  [${error.namespace}] ${error.locale} ← ${error.referenceLocale}: ${error.key}`
+    );
+    console.error(`    ${error.message}`);
+  }
+}
 ```
 
 ### 検証内容
+
+#### 各ロケールの検証
 
 - **複数形キーの整合性**: `_one` と `_other` が必須（`_zero` はオプション）
 - **ネストの深さ**: 1 階層まで許可
 - **キーの命名規則**: 英数字とアンダースコアのみ使用可能
 - **プレースホルダーの形式**: `{name}` 形式で、名前は英数字とアンダースコアのみ
+
+#### locale 間の整合性検証
+
+- **キーの一致**: 同じ namespace を持つファイル間で、すべてのキーが一致しているか
+- **欠損キーの検出**: 参照ロケール（最初のロケール）に存在するキーが他のロケールに存在するか
+- **追加キーの検出**: 他のロケールにのみ存在し、参照ロケールに存在しないキー
 
 ### CI/CD での使用例
 
@@ -315,7 +401,8 @@ jobs:
       - uses: actions/checkout@v3
       - uses: oven-sh/setup-bun@v1
       - run: bun install
-      - run: bun run check messages/*
+      # locale間の整合性もチェック
+      - run: bun run check messages
 ```
 
 ## 型安全性

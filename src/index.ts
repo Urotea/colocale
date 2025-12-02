@@ -23,7 +23,14 @@ export type {
 } from "./types";
 
 // Validation
-export { validateTranslations } from "./validation";
+export { validateTranslations, validateCrossLocale } from "./validation";
+
+// Loader (for CLI and programmatic use)
+export type { LocaleTranslations } from "./cli/loader";
+export {
+  loadTranslationsFromDirectory,
+  loadAllLocaleTranslations,
+} from "./cli/loader";
 
 // Internal utilities (for internal use, but exported for testing)
 import { getNestedValue, replacePlaceholders } from "./utils";

@@ -18,7 +18,11 @@ export function printValidationResult(
   if (result.errors.length > 0) {
     console.log(`\n  ❌ Errors (${result.errors.length}):`);
     for (const error of result.errors) {
-      console.log(`     • [${error.namespace}] ${error.key}`);
+      const localeInfo =
+        error.locale && error.referenceLocale
+          ? ` [${error.locale} ← ${error.referenceLocale}]`
+          : "";
+      console.log(`     • [${error.namespace}]${localeInfo} ${error.key}`);
       console.log(`       ${error.message}`);
     }
   }

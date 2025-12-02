@@ -1,8 +1,11 @@
 #!/usr/bin/env node
 
 import { resolve } from "node:path";
-import { validateTranslations } from "./validation";
-import { loadTranslationsFromDirectory } from "./cli/loader";
+import { validateTranslations, validateCrossLocale } from "./validation";
+import {
+  loadTranslationsFromDirectory,
+  loadAllLocaleTranslations,
+} from "./cli/loader";
 import { printValidationResult } from "./cli/formatter";
 
 /**
@@ -15,6 +18,7 @@ async function main() {
     console.error("Usage: colocale-check <translation-directory-path>");
     console.error("Example: colocale-check messages/ja");
     console.error("         colocale-check messages/*");
+    console.error("         colocale-check messages  # checks all locales");
     process.exit(1);
   }
 
@@ -23,26 +27,67 @@ async function main() {
   let hasErrors = false;
   const checkedLocales: string[] = [];
 
-  for (const arg of args) {
-    const path = resolve(arg);
+  // Check if the first argument is a base directory containing locale subdirectories
+  const firstArg = resolve(args[0]);
+  let localeTranslations;
 
-    // Arguments may be expanded by glob patterns
-    try {
-      const translations = await loadTranslationsFromDirectory(path);
-      const result = validateTranslations(translations);
+  try {
+    localeTranslations = await loadAllLocaleTranslations(firstArg);
 
-      // Extract locale name (last part of the path)
-      const locale = path.split("/").pop() || path;
-      checkedLocales.push(locale);
+    if (Object.keys(localeTranslations).length > 0) {
+      // Multi-locale mode: validate each locale and cross-locale consistency
+      console.log(
+        `📁 Found ${Object.keys(localeTranslations).length} locale(s)\n`
+      );
 
-      printValidationResult(locale, result);
+      // Validate each locale individually
+      for (const [locale, translations] of Object.entries(localeTranslations)) {
+        const result = validateTranslations(translations);
+        checkedLocales.push(locale);
+        printValidationResult(locale, result);
 
-      if (!result.valid) {
-        hasErrors = true;
+        if (!result.valid) {
+          hasErrors = true;
+        }
       }
-    } catch (error) {
-      // Skip if directory doesn't exist
-      continue;
+
+      // Perform cross-locale validation
+      if (Object.keys(localeTranslations).length > 1) {
+        console.log("\n" + "=".repeat(50));
+        console.log("🌐 Cross-locale consistency check\n");
+
+        const crossLocaleResult = validateCrossLocale(localeTranslations);
+        printValidationResult("Cross-locale", crossLocaleResult);
+
+        if (!crossLocaleResult.valid) {
+          hasErrors = true;
+        }
+      }
+    } else {
+      throw new Error("No locales found");
+    }
+  } catch (error) {
+    // Fallback to single-locale mode (original behavior)
+    for (const arg of args) {
+      const path = resolve(arg);
+
+      try {
+        const translations = await loadTranslationsFromDirectory(path);
+        const result = validateTranslations(translations);
+
+        // Extract locale name (last part of the path)
+        const locale = path.split("/").pop() || path;
+        checkedLocales.push(locale);
+
+        printValidationResult(locale, result);
+
+        if (!result.valid) {
+          hasErrors = true;
+        }
+      } catch (error) {
+        // Skip if directory doesn't exist
+        continue;
+      }
     }
   }
 

@@ -4,6 +4,26 @@ import type {
   TranslationFile,
   NamespaceTranslations,
 } from "./types";
+import type { LocaleTranslations } from "./cli/loader";
+
+/**
+ * Collect all keys from a translation object (including nested keys)
+ */
+function collectAllKeys(obj: any, prefix = ""): Set<string> {
+  const keys = new Set<string>();
+
+  for (const key in obj) {
+    const fullKey = prefix ? `${prefix}.${key}` : key;
+    if (typeof obj[key] === "string") {
+      keys.add(fullKey);
+    } else if (typeof obj[key] === "object" && obj[key] !== null) {
+      const nestedKeys = collectAllKeys(obj[key], fullKey);
+      nestedKeys.forEach((k) => keys.add(k));
+    }
+  }
+
+  return keys;
+}
 
 /**
  * Check plural key consistency
@@ -16,19 +36,9 @@ function validatePluralKeys(
   const keys = new Set<string>();
   const pluralKeys = new Map<string, Set<string>>();
 
-  // Collect all keys (including nested keys)
-  function collectKeys(obj: any, prefix = "") {
-    for (const key in obj) {
-      const fullKey = prefix ? `${prefix}.${key}` : key;
-      if (typeof obj[key] === "string") {
-        keys.add(fullKey);
-      } else if (typeof obj[key] === "object") {
-        collectKeys(obj[key], fullKey);
-      }
-    }
-  }
-
-  collectKeys(translations);
+  // Collect all keys (including nested keys) using the helper function
+  const allKeys = collectAllKeys(translations);
+  allKeys.forEach((key) => keys.add(key));
 
   // Classify plural keys
   for (const key of keys) {
@@ -190,6 +200,95 @@ export function validateTranslations(
     errors.push(...validateNesting(namespace, namespaceTranslations));
     errors.push(...validateKeyNames(namespace, namespaceTranslations));
     errors.push(...validatePlaceholders(namespace, namespaceTranslations));
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors,
+    warnings,
+  };
+}
+
+/**
+ * Validate cross-locale key consistency
+ *
+ * @param localeTranslations - Translations for all locales
+ * @returns Validation result with cross-locale errors
+ */
+export function validateCrossLocale(
+  localeTranslations: LocaleTranslations
+): ValidationResult {
+  const errors: ValidationError[] = [];
+  const warnings: ValidationError[] = [];
+
+  const locales = Object.keys(localeTranslations);
+  if (locales.length < 2) {
+    // No cross-locale validation needed for single locale
+    return {
+      valid: true,
+      errors: [],
+      warnings: [],
+    };
+  }
+
+  // Collect all namespaces across all locales
+  const allNamespaces = new Set<string>();
+  for (const locale of locales) {
+    const namespaces = Object.keys(localeTranslations[locale]);
+    namespaces.forEach((ns) => allNamespaces.add(ns));
+  }
+
+  // For each namespace, compare keys across locales
+  for (const namespace of allNamespaces) {
+    // Collect keys for each locale in this namespace
+    const localeKeys = new Map<string, Set<string>>();
+
+    for (const locale of locales) {
+      const translations = localeTranslations[locale]?.[namespace];
+      if (translations) {
+        localeKeys.set(locale, collectAllKeys(translations));
+      } else {
+        localeKeys.set(locale, new Set());
+      }
+    }
+
+    // Use first locale as reference
+    const referenceLocale = locales[0];
+    const referenceKeys = localeKeys.get(referenceLocale) || new Set();
+
+    // Check each other locale against reference
+    for (let i = 1; i < locales.length; i++) {
+      const targetLocale = locales[i];
+      const targetKeys = localeKeys.get(targetLocale) || new Set();
+
+      // Check for missing keys in target locale
+      for (const key of referenceKeys) {
+        if (!targetKeys.has(key)) {
+          errors.push({
+            type: "missing-key",
+            namespace,
+            key,
+            locale: targetLocale,
+            referenceLocale,
+            message: `Key "${key}" exists in "${referenceLocale}" but missing in "${targetLocale}"`,
+          });
+        }
+      }
+
+      // Check for extra keys in target locale
+      for (const key of targetKeys) {
+        if (!referenceKeys.has(key)) {
+          errors.push({
+            type: "extra-key",
+            namespace,
+            key,
+            locale: targetLocale,
+            referenceLocale,
+            message: `Key "${key}" exists in "${targetLocale}" but not in "${referenceLocale}"`,
+          });
+        }
+      }
+    }
   }
 
   return {
