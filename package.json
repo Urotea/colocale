@@ -17,6 +17,16 @@
   "files": [
     "dist"
   ],
+  "author": "Urotea",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Urotea/colocale.git"
+  },
+  "homepage": "https://github.com/Urotea/colocale#readme",
+  "bugs": {
+    "url": "https://github.com/Urotea/colocale/issues"
+  },
   "keywords": [
     "i18n",
     "internationalization",
