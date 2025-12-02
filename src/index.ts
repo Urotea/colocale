@@ -45,8 +45,8 @@ import type {
  * @returns Array of translation requirements
  */
 export function mergeRequirements(
-  ...requirements: TranslationRequirement<string>[]
-): TranslationRequirement<string>[] {
+  ...requirements: TranslationRequirement[]
+): TranslationRequirement[] {
   return requirements;
 }
 
@@ -132,7 +132,7 @@ export function pickMessages<R extends readonly TranslationRequirement[]>(
  * t("profile.invalid"); // ✗ Type error
  * ```
  */
-export function createTranslator<R extends TranslationRequirement<string>>(
+export function createTranslator<R extends TranslationRequirement>(
   messages: Messages,
   requirement: R
 ): ConstrainedTranslatorFunction<R> {
