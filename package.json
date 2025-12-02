@@ -12,7 +12,7 @@
     }
   },
   "bin": {
-    "colocale-check": "./dist/cli.js"
+    "colocale": "./dist/cli/main.js"
   },
   "files": [
     "dist"
@@ -29,9 +29,10 @@
   ],
   "scripts": {
     "dev": "bun run --watch src/index.ts",
-    "build": "bun build src/index.ts --outdir ./dist --target node && bun build src/cli.ts --outdir ./dist --target node && tsc --emitDeclarationOnly --declaration --outDir ./dist",
+    "build": "bun build src/index.ts --outdir ./dist --target node && bun build src/cli/main.ts --outdir ./dist/cli --target node && tsc --emitDeclarationOnly --declaration --outDir ./dist",
     "start": "bun run src/index.ts",
-    "check": "bun run src/cli.ts",
+    "check": "bun run src/cli/main.ts check",
+    "codegen": "bun run src/cli/main.ts codegen",
     "test": "bun test",
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "bun run build && bun run test"
@@ -42,5 +43,8 @@
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "commander": "^14.0.2"
   }
 }

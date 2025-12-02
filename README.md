@@ -21,6 +21,22 @@ npm install colocale
 bun add colocale
 ```
 
+## CLI ツール
+
+`colocale` は 2 つのサブコマンドを提供します：
+
+```bash
+# ヘルプを表示
+npx colocale --help
+
+# 翻訳ファイルの検証
+npx colocale check messages/ja          # 単一ロケール
+npx colocale check messages              # 全ロケール + 整合性チェック
+
+# 型定義の生成
+npx colocale codegen messages/en types/messages.d.ts
+```
+
 ## クイックスタート
 
 ### 1. 翻訳ファイルを作成
@@ -48,7 +64,15 @@ bun add colocale
 }
 ```
 
-### 2. コンポーネントで翻訳を定義
+### 2. 型定義を生成（推奨）
+
+```bash
+npx colocale codegen messages/en types/messages.d.ts
+```
+
+これにより、翻訳ファイルから TypeScript の型定義が自動生成されます。
+
+### 3. コンポーネントで翻訳を定義
 
 ```typescript
 // components/UserProfile.tsx
@@ -57,15 +81,19 @@ import {
   type TranslationRequirement,
   type Messages,
 } from "colocale";
+import type { TranslationKey } from "@/types/messages";
 
-// このコンポーネントが必要な翻訳キーを定義
-export const userProfileTranslations: TranslationRequirement = {
+// このコンポーネントが必要な翻訳キーを定義（型安全）
+export const userProfileTranslations: TranslationRequirement<
+  "user",
+  TranslationKey<"user">
+> = {
   keys: ["profile.name", "profile.email"] as const,
   namespace: "user",
 };
 
 export default function UserProfile({ messages }: { messages: Messages }) {
-  const t = createTranslator(messages, "user");
+  const t = createTranslator<"user", TranslationKey<"user">>(messages, "user");
 
   return (
     <div>
@@ -76,7 +104,7 @@ export default function UserProfile({ messages }: { messages: Messages }) {
 }
 ```
 
-### 3. 親コンポーネントで翻訳要求を集約
+### 4. 親コンポーネントで翻訳要求を集約
 
 ```typescript
 // components/UserPage.tsx
@@ -86,15 +114,22 @@ import {
   type TranslationRequirement,
   type Messages,
 } from "colocale";
+import type { TranslationKey } from "@/types/messages";
 import UserProfile, { userProfileTranslations } from "./UserProfile";
 
 export const userPageTranslations = mergeRequirements(
-  { keys: ["submit", "cancel"], namespace: "common" },
+  {
+    keys: ["submit", "cancel"],
+    namespace: "common",
+  } satisfies TranslationRequirement<"common", TranslationKey<"common">>,
   userProfileTranslations
 );
 
 export default function UserPage({ messages }: { messages: Messages }) {
-  const t = createTranslator(messages, "common");
+  const t = createTranslator<"common", TranslationKey<"common">>(
+    messages,
+    "common"
+  );
 
   return (
     <div>
@@ -106,16 +141,17 @@ export default function UserPage({ messages }: { messages: Messages }) {
 }
 ```
 
-### 4. サーバーコンポーネントで翻訳を抽出
+### 5. サーバーコンポーネントで翻訳を抽出
 
 ```typescript
 // app/[locale]/users/page.tsx
 import { pickMessages } from "colocale";
+import type { TranslationStructure } from "@/types/messages";
 import UserPage, { userPageTranslations } from "@/components/UserPage";
 
 export default async function Page({ params }: { params: { locale: string } }) {
-  // 動的インポートで必要なロケールの翻訳のみロード
-  const allMessages = {
+  // 動的インポートで必要なロケールの翻訳のみロード（型安全）
+  const allMessages: TranslationStructure = {
     common: (await import(`@/messages/${params.locale}/common.json`)).default,
     user: (await import(`@/messages/${params.locale}/user.json`)).default,
   };
@@ -258,21 +294,26 @@ t("profile.email"); // "メールアドレス"
 
 翻訳ファイルが正しい形式になっているかをチェックするコマンドが用意されています。
 
+```bash
+# 翻訳ファイルのバリデーション
+npx colocale check messages/ja          # 単一ロケール
+npx colocale check messages              # 全ロケール + 整合性チェック
+
+# 型定義の生成
+npx colocale codegen messages/en types/messages.d.ts
+```
+
 ### コマンドラインから実行
 
 ```bash
 # 単一ロケールをチェック
-bun run check messages/ja
+npx colocale check messages/ja
 
 # 複数のロケールを個別にチェック
-bun run check messages/ja messages/en
+npx colocale check messages/ja messages/en
 
 # 複数ロケールを一括チェック（locale間の整合性も検証）
-bun run check messages
-
-# パッケージをインストールした後
-npx colocale-check messages/ja
-npx colocale-check messages  # locale間の整合性チェックも実行
+npx colocale check messages
 ```
 
 ### locale 間の整合性チェック
@@ -294,7 +335,7 @@ messages/
 **コマンド実行:**
 
 ```bash
-bun run check messages
+npx colocale check messages
 ```
 
 **出力例:**
@@ -402,57 +443,96 @@ jobs:
       - uses: oven-sh/setup-bun@v1
       - run: bun install
       # locale間の整合性もチェック
-      - run: bun run check messages
+      - run: npx colocale check messages
 ```
 
 ## 型安全性
 
-TypeScript の型システムを活用して、翻訳キーの型安全性を確保できます。
+### 型定義の自動生成
 
-```typescript
-import type { NestedKeyOf } from "colocale";
-
-// 翻訳ファイルから型を生成
-type TranslationKeys = NestedKeyOf<typeof import("./messages/ja.json")>;
-
-// 型安全な翻訳要求
-const translations: TypedTranslationRequirement<"common", TranslationKeys> = {
-  keys: ["submit", "cancel"] as const,
-  namespace: "common",
-};
-```
-
-## Development
+JSON ファイルから TypeScript の型定義を自動生成できます。これにより、`allMessages` や翻訳キーに完全な型安全性を提供できます。
 
 ```bash
-# Install dependencies
-bun install
-
-# Run in development mode (with watch)
-bun dev
-
-# Run once
-bun start
-
-# Build
-bun build
-
-# Type check
-bun typecheck
-
-# Test
-bun test
+# 型定義ファイルを生成
+npx colocale codegen messages/en types/messages.d.ts
 ```
 
-## Requirements
+**生成される型定義の例:**
 
-- Bun (latest)
-- TypeScript 5.7+
+```typescript
+// types/messages.d.ts
+export interface TranslationStructure {
+  common: {
+    submit: string;
+    cancel: string;
+    itemCount: string;
+  };
+  user: {
+    profile: {
+      name: string;
+      email: string;
+    };
+  };
+}
+
+export type TranslationKey<N extends keyof TranslationStructure> =
+  N extends "common"
+    ? "submit" | "cancel" | "itemCount"
+    : N extends "user"
+    ? "profile.name" | "profile.email"
+    : never;
+```
+
+**型定義を使用する:**
+
+```typescript
+import type { TranslationStructure, TranslationKey } from "./types/messages";
+import {
+  createTranslator,
+  type Messages,
+  type TranslationRequirement,
+} from "colocale";
+
+// allMessages に型を適用
+const allMessages: TranslationStructure = {
+  common: (await import(`@/messages/${locale}/common.json`)).default,
+  user: (await import(`@/messages/${locale}/user.json`)).default,
+};
+
+// 翻訳要求に型を適用
+export const userProfileTranslations: TranslationRequirement<
+  "user",
+  TranslationKey<"user">
+> = {
+  keys: ["profile.name", "profile.email"] as const,
+  namespace: "user",
+};
+
+// createTranslator も型安全に
+const t = createTranslator<"user", TranslationKey<"user">>(messages, "user");
+
+t("profile.name"); // ✅ 型チェックが通る
+t("profile.invalid"); // ❌ コンパイルエラー
+```
+
+### 開発ワークフロー
+
+1. **翻訳ファイルを更新**
+2. **型定義を再生成**: `npx colocale codegen messages/en types/messages.d.ts`
+3. **型安全性の恩恵を受ける**: コンパイル時に存在しないキーを検出
+
+### package.json スクリプトに追加
+
+```json
+{
+  "scripts": {
+    "check": "colocale check messages",
+    "codegen": "colocale codegen messages/en types/messages.d.ts",
+    "codegen:watch": "nodemon --watch messages --ext json --exec 'npm run codegen'"
+  }
+}
+```
 
 ## ライセンス
 
 MIT
-
-## 関連リンク
-
-- [仕様書 (spec.md)](./spec.md)

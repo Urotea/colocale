@@ -2,15 +2,17 @@
  * String type representing translation keys
  * Nested structure expressed in dot notation (e.g., "user.profile.name")
  * May include plural suffixes (_zero, _one, _other)
+ * @template T - Generated translation keys type (union of all translation keys)
  */
-export type TranslationKey = string;
+export type TranslationKey<T extends string = string> = T;
 
 /**
  * Translation key requirements for a component
+ * @template K - Translation keys type
  */
-export interface TranslationRequirement {
+export interface TranslationRequirement<K extends string = string> {
   /** Array of translation keys required by the component (readonly) */
-  keys: readonly TranslationKey[];
+  keys: readonly TranslationKey<K>[];
   /** Translation namespace (e.g., "common", "user", "shop") */
   namespace: string;
 }
@@ -18,8 +20,9 @@ export interface TranslationRequirement {
 /**
  * Object storing resolved translation messages
  * Key format: "namespace.key" (e.g., "common.submit")
+ * @template K - Translation keys type
  */
-export type Messages = Record<string, string>;
+export type Messages<K extends string = string> = Record<K, string>;
 
 /**
  * Object with values to pass to placeholders
@@ -47,9 +50,10 @@ export type NestedTranslations = Record<string, string>;
 
 /**
  * Translator function type
+ * @template K - Translation keys type
  */
-export type TranslatorFunction = (
-  key: string,
+export type TranslatorFunction<K extends string = string> = (
+  key: K,
   values?: PlaceholderValues
 ) => string;
 

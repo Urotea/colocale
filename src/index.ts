@@ -50,13 +50,14 @@ import type {
 
 /**
  * Merge multiple translation requirements into a single array
+ * @template K - Translation keys type
  * @param requirements - Translation requirement(s) or array of requirements (variadic)
  * @returns Flattened array of translation requirements
  */
-export function mergeRequirements(
-  ...requirements: (TranslationRequirement | TranslationRequirement[])[]
-): TranslationRequirement[] {
-  return requirements.flat(Infinity) as TranslationRequirement[];
+export function mergeRequirements<K extends string = string>(
+  ...requirements: (TranslationRequirement<K> | TranslationRequirement<K>[])[]
+): TranslationRequirement<K>[] {
+  return requirements.flat(Infinity) as TranslationRequirement<K>[];
 }
 
 /**
@@ -64,15 +65,16 @@ export function mergeRequirements(
  *
  * When base keys are specified, keys with _zero, _one, _other suffixes are automatically extracted
  *
+ * @template K - Translation keys type
  * @param allMessages - Object containing all translation data
  * @param requirements - List of required translation keys
  * @returns Messages object (key format: "namespace.key")
  */
-export function pickMessages(
+export function pickMessages<K extends string = string>(
   allMessages: TranslationFile,
-  requirements: TranslationRequirement[]
-): Messages {
-  const messages: Messages = {};
+  requirements: TranslationRequirement<K>[]
+): Messages<K> {
+  const messages: Record<string, string> = {};
   const isDev = process.env.NODE_ENV === "development";
 
   for (const requirement of requirements) {
@@ -113,7 +115,7 @@ export function pickMessages(
     }
   }
 
-  return messages;
+  return messages as Messages<K>;
 }
 
 /**
@@ -121,28 +123,35 @@ export function pickMessages(
  *
  * When values contain a count property, automatic plural handling is performed
  *
+ * @template K - Translation keys type
  * @param messages - Messages object
  * @param namespace - Translation namespace
  * @returns Translation function
  */
-export function createTranslator(
-  messages: Messages,
+export function createTranslator<K extends string = string>(
+  messages: Messages<K>,
   namespace: string
-): TranslatorFunction {
+): TranslatorFunction<K> {
   const isDev = process.env.NODE_ENV === "development";
+  const messagesRecord = messages as Record<string, string>;
 
-  return (key: string, values?: PlaceholderValues): string => {
+  return (key: K, values?: PlaceholderValues): string => {
     let message: string | undefined;
 
     // If count is provided, attempt plural handling
     if (values && "count" in values && typeof values.count === "number") {
-      message = resolvePluralMessage(messages, namespace, key, values.count);
+      message = resolvePluralMessage(
+        messagesRecord,
+        namespace,
+        key,
+        values.count
+      );
     }
 
     // If not plural or plural resolution failed, try regular key
     if (message === undefined) {
       const fullKey = `${namespace}.${key}`;
-      message = messages[fullKey];
+      message = messagesRecord[fullKey];
     }
 
     // If message not found, return key as-is
