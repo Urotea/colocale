@@ -16,13 +16,6 @@ export { validateTranslations, validateCrossLocale } from "./validation";
 // Utilities
 export { defineRequirement } from "./utils";
 
-// Loader (for CLI and programmatic use)
-export type { LocaleTranslations } from "./cli/loader";
-export {
-  loadTranslationsFromDirectory,
-  loadAllLocaleTranslations,
-} from "./cli/loader";
-
 import { extractPluralKeys, resolvePluralMessage } from "./plural";
 // Internal utilities (for internal use, but exported for testing)
 import { getNestedValue, replacePlaceholders } from "./utils";
@@ -65,16 +58,12 @@ export function pickMessages<R extends readonly TranslationRequirement[]>(
   requirements: R
 ): Messages {
   const messages: Record<string, string> = {};
-  const isDev = process.env.NODE_ENV === "development";
 
   for (const requirement of requirements) {
     const { namespace, keys } = requirement;
     const namespaceData = allMessages[namespace];
 
     if (!namespaceData) {
-      if (isDev) {
-        console.warn(`[colocale] Namespace "${namespace}" not found`);
-      }
       continue;
     }
 
@@ -87,10 +76,6 @@ export function pickMessages<R extends readonly TranslationRequirement[]>(
         const value = getNestedValue(namespaceData, key);
         if (value !== undefined) {
           messages[`${namespace}.${key}`] = value;
-        } else if (isDev) {
-          console.warn(
-            `[colocale] Translation key "${key}" not found in namespace "${namespace}"`
-          );
         }
       }
 
@@ -136,7 +121,6 @@ export function createTranslator<R extends TranslationRequirement>(
   messages: Messages,
   requirement: R
 ): ConstrainedTranslatorFunction<R> {
-  const isDev = process.env.NODE_ENV === "development";
   const namespace = requirement.namespace;
 
   return (key: string, values?: PlaceholderValues): string => {
@@ -155,9 +139,6 @@ export function createTranslator<R extends TranslationRequirement>(
 
     // If message not found, return key as-is
     if (message === undefined) {
-      if (isDev) {
-        console.warn(`[colocale] Translation not found: "${namespace}.${key}"`);
-      }
       return key;
     }
 
