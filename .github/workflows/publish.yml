@@ -1,0 +1,54 @@
+name: Publish to npm
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+  id-token: write # for OIDC
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    # Only run if the release tag follows semantic versioning (v1.0.0, v1.2.3, etc.)
+    if: startsWith(github.event.release.tag_name, 'v') && contains(github.event.release.tag_name, '.')
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup Node.js for npm publish
+        uses: actions/setup-node@v5
+        with:
+          node-version: "24.x"
+          registry-url: "https://registry.npmjs.org"
+
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Validate semantic version format
+        run: |
+          TAG="${{ github.event.release.tag_name }}"
+          # Remove 'v' prefix and validate semantic versioning format
+          VERSION="${TAG#v}"
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?(\+[a-zA-Z0-9.-]+)?$ ]]; then
+            echo "Error: Tag '$TAG' does not follow semantic versioning format (vX.Y.Z)"
+            exit 1
+          fi
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "Valid semantic version: $VERSION"
+
+      - name: Update package.json version
+        run: |
+          # Update the version in package.json to match the release tag
+          npm version "${{ env.VERSION }}" --no-git-tag-version --allow-same-version
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Build
+        run: bun run build
+
+      - name: Run tests
+        run: bun test
+
+      - name: Publish to npm
+        run: npm publish
