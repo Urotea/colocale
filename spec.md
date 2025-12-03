@@ -158,13 +158,13 @@ messages/
 ```json
 {
   "results": {
-    "itemsFound": "{count}件取得しました",
-    "greeting": "こんにちは、{name}さん"
+    "itemsFound": "{{count}}件取得しました",
+    "greeting": "こんにちは、{{name}}さん"
   }
 }
 ```
 
-- プレースホルダー: `{placeholderName}` 形式
+- プレースホルダー: `{{placeholderName}}` 形式
 - 大文字小文字を区別
 - 同一プレースホルダーの複数使用可能
 
@@ -177,7 +177,7 @@ messages/
   "common": {
     "itemCount_zero": "アイテムがありません",
     "itemCount_one": "1件のアイテム",
-    "itemCount_other": "{count}件のアイテム"
+    "itemCount_other": "{{count}}件のアイテム"
   }
 }
 ```
@@ -196,7 +196,7 @@ messages/
     "cart": {
       "item_zero": "カートは空です",
       "item_one": "1個の商品",
-      "item_other": "{count}個の商品"
+      "item_other": "{{count}}個の商品"
     }
   }
 }
@@ -209,7 +209,7 @@ messages/
   "common": {
     "itemCount_zero": "No items",
     "itemCount_one": "1 item",
-    "itemCount_other": "{count} items"
+    "itemCount_other": "{{count}} items"
   }
 }
 ```
@@ -304,7 +304,7 @@ requirements = [{
 {
   'common.itemCount_zero': 'アイテムがありません',
   'common.itemCount_one': '1件のアイテム',
-  'common.itemCount_other': '{count}件のアイテム'
+  'common.itemCount_other': '{{count}}件のアイテム'
 }
 ```
 
@@ -416,13 +416,13 @@ function replacePlaceholders(
 **動作:**
 
 1. `values` の各エントリを処理
-2. `{placeholderName}` を対応する値で置換
+2. `{{placeholderName}}` を対応する値で置換
 3. 値は文字列に変換（`String(value)`）
 4. 同一プレースホルダーが複数ある場合、すべて置換（グローバル置換）
 
 **仕様:**
 
-- プレースホルダー形式: `{name}` （波括弧で囲む）
+- プレースホルダー形式: `{{name}}` （二重波括弧で囲む）
 - 大文字小文字を区別
 - 存在しないプレースホルダーはそのまま残す
 
@@ -568,7 +568,7 @@ type NestedKeyOf<T> = T extends object
     "submit": "送信",
     "itemCount_zero": "アイテムがありません",
     "itemCount_one": "1件のアイテム",
-    "itemCount_other": "{count}件のアイテム"
+    "itemCount_other": "{{count}}件のアイテム"
   }
 }
 
@@ -738,7 +738,7 @@ t("greeting", { name: "John", time: "morning" }); // "おはよう、Johnさん"
   "common": {
     "itemCount_zero": "アイテムがありません",
     "itemCount_one": "1件のアイテム",
-    "itemCount_other": "{count}件のアイテム"
+    "itemCount_other": "{{count}}件のアイテム"
   }
 }
 ```
@@ -760,9 +760,9 @@ t("itemCount", { count: 5 }); // "5件のアイテム"
 ```json
 {
   "shop": {
-    "cartSummary_zero": "{user}さんのカートは空です",
-    "cartSummary_one": "{user}さんのカートに1個の商品があります",
-    "cartSummary_other": "{user}さんのカートに{count}個の商品があります"
+    "cartSummary_zero": "{{user}}さんのカートは空です",
+    "cartSummary_one": "{{user}}さんのカートに1個の商品があります",
+    "cartSummary_other": "{{user}}さんのカートに{{count}}個の商品があります"
   }
 }
 ```

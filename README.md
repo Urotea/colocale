@@ -58,7 +58,7 @@ Create JSON files for each namespace.
   "cancel": "Cancel",
   "itemCount_zero": "No items",
   "itemCount_one": "1 item",
-  "itemCount_other": "{count} items"
+  "itemCount_other": "{{count}} items"
 }
 ```
 
@@ -238,7 +238,7 @@ t("greeting", { name: "John" }); // "Hello, John"
   "common": {
     "itemCount_zero": "No items",
     "itemCount_one": "1 item",
-    "itemCount_other": "{count} items"
+    "itemCount_other": "{{count}} items"
   }
 }
 ```
@@ -273,9 +273,9 @@ t("itemCount", { count: 5 }); // "5 items"
 ```json
 {
   "shop": {
-    "cartSummary_zero": "{user}'s cart is empty",
-    "cartSummary_one": "{user} has 1 item in cart",
-    "cartSummary_other": "{user} has {count} items in cart"
+    "cartSummary_zero": "{{user}}'s cart is empty",
+    "cartSummary_one": "{{user}} has 1 item in cart",
+    "cartSummary_other": "{{user}} has {{count}} items in cart"
   }
 }
 ```
@@ -445,7 +445,7 @@ if (!crossLocaleResult.valid) {
 - **Plural key consistency**: `_one` and `_other` are required (`_zero` is optional)
 - **Nesting depth**: Up to 1 level allowed
 - **Key naming rules**: Only alphanumeric characters and underscores
-- **Placeholder format**: `{name}` format, with alphanumeric characters and underscores only
+- **Placeholder format**: `{{name}}` format, with alphanumeric characters and underscores only
 
 #### Cross-Locale Consistency Validation
 
