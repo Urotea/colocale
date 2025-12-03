@@ -18,6 +18,9 @@ jobs:
       - name: Install dependencies
         run: bun install
 
+      - name: run typecheck
+        run: bun run typecheck
+
       - name: Run Biome
         run: bun run lint
 
