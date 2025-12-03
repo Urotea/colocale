@@ -1,15 +1,15 @@
 #!/usr/bin/env node
 
+import { mkdir, writeFile } from "node:fs/promises";
+import { dirname, resolve } from "node:path";
 import { Command } from "commander";
-import { resolve, dirname } from "node:path";
-import { writeFile, mkdir } from "node:fs/promises";
-import { validateTranslations, validateCrossLocale } from "../validation";
-import {
-  loadTranslationsFromDirectory,
-  loadAllLocaleTranslations,
-} from "./loader";
-import { printValidationResult } from "./formatter";
+import { validateCrossLocale, validateTranslations } from "../validation";
 import { generateTypescriptInterface } from "./codegen";
+import { printValidationResult } from "./formatter";
+import {
+  loadAllLocaleTranslations,
+  loadTranslationsFromDirectory,
+} from "./loader";
 
 const program = new Command();
 

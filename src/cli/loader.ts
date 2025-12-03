@@ -1,5 +1,5 @@
-import { readdir, readFile, stat } from "node:fs/promises";
-import { join, basename } from "node:path";
+import { readFile, readdir, stat } from "node:fs/promises";
+import { basename, join } from "node:path";
 import type { TranslationFile } from "../types";
 
 /**

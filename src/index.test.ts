@@ -1,11 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import {
-  mergeRequirements,
-  pickMessages,
+  type Messages,
+  type TranslationFile,
   createTranslator,
   defineRequirement,
-  type TranslationFile,
-  type Messages,
+  mergeRequirements,
+  pickMessages,
 } from "./index";
 
 // Test translation files
