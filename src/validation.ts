@@ -158,7 +158,7 @@ function validatePlaceholders(
   translations: NamespaceTranslations
 ): ValidationError[] {
   const errors: ValidationError[] = [];
-  const placeholderPattern = /\{\{([^}]+)\}\}/g;
+  const placeholderPattern = /\{\{([^{}]+)\}\}/g;
 
   function checkPlaceholders(
     obj: NamespaceTranslations | NestedTranslations,
