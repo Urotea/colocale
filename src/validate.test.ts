@@ -8,7 +8,7 @@ describe("validateTranslations", () => {
         submit: "送信",
         cancel: "キャンセル",
         itemCount_one: "1件のアイテム",
-        itemCount_other: "{count}件のアイテム",
+        itemCount_other: "{{count}}件のアイテム",
       },
     };
 
@@ -20,7 +20,7 @@ describe("validateTranslations", () => {
   test("Plural keys: missing _one", () => {
     const translations: TranslationFile = {
       common: {
-        itemCount_other: "{count}件のアイテム",
+        itemCount_other: "{{count}}件のアイテム",
       },
     };
 
@@ -63,7 +63,7 @@ describe("validateTranslations", () => {
     const translations: TranslationFile = {
       common: {
         itemCount_one: "1件のアイテム",
-        itemCount_other: "{count}件のアイテム",
+        itemCount_other: "{{count}}件のアイテム",
       },
     };
 
@@ -77,7 +77,7 @@ describe("validateTranslations", () => {
       shop: {
         cart: {
           item_one: "1個の商品",
-          item_other: "{count}個の商品",
+          item_other: "{{count}}個の商品",
         },
       },
     };
@@ -162,8 +162,8 @@ describe("validateTranslations", () => {
   test("Placeholders: valid format", () => {
     const translations: TranslationFile = {
       results: {
-        greeting: "こんにちは、{name}さん",
-        message: "{user_name}さんに{count}件のメッセージ",
+        greeting: "こんにちは、{{name}}さん",
+        message: "{{user_name}}さんに{{count}}件のメッセージ",
       },
     };
 
@@ -175,7 +175,7 @@ describe("validateTranslations", () => {
   test("Placeholders: invalid format (hyphen)", () => {
     const translations: TranslationFile = {
       results: {
-        greeting: "こんにちは、{user-name}さん",
+        greeting: "こんにちは、{{user-name}}さん",
       },
     };
 
@@ -188,7 +188,7 @@ describe("validateTranslations", () => {
   test("Placeholders: invalid format (space)", () => {
     const translations: TranslationFile = {
       results: {
-        greeting: "こんにちは、{user name}さん",
+        greeting: "こんにちは、{{user name}}さん",
       },
     };
 

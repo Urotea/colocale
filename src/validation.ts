@@ -158,7 +158,7 @@ function validatePlaceholders(
   translations: NamespaceTranslations
 ): ValidationError[] {
   const errors: ValidationError[] = [];
-  const placeholderPattern = /\{([^}]+)\}/g;
+  const placeholderPattern = /\{\{([^}]+)\}\}/g;
 
   function checkPlaceholders(
     obj: NamespaceTranslations | NestedTranslations,
@@ -176,7 +176,7 @@ function validatePlaceholders(
               type: "invalid-placeholder",
               namespace,
               key: currentPath,
-              message: `Invalid placeholder: "{${placeholderName}}" (only alphanumeric and underscore allowed)`,
+              message: `Invalid placeholder: "{{${placeholderName}}}" (only alphanumeric and underscore allowed)`,
             });
           }
         }
