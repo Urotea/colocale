@@ -13,7 +13,7 @@ import type { PlaceholderValues, TranslationRequirement } from "./types";
 export function defineRequirement<const K extends readonly string[]>(
   namespace: string,
   keys: K
-): TranslationRequirement<K[number]> {
+): TranslationRequirement {
   return { keys, namespace };
 }
 
