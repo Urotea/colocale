@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { mkdir, writeFile } from "node:fs/promises";
-import { dirname, resolve } from "node:path";
+import { basename, dirname, resolve } from "node:path";
 import { Command } from "commander";
 import { validateCrossLocale, validateTranslations } from "../validation";
 import { generateTypescriptInterface } from "./codegen";
@@ -143,7 +143,7 @@ program
       if (localeDir) {
         // Found locale subdirectories, use the first one
         actualPath = localeDir;
-        const localeName = localeDir.split("/").pop() || "";
+        const localeName = basename(localeDir);
         console.log(`📁 Detected locale subdirectories, using locale: ${localeName}`);
         translations = await loadTranslationsFromDirectory(localeDir);
       } else {
