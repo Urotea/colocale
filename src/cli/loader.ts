@@ -100,3 +100,47 @@ export async function loadAllLocaleTranslations(
 
   return localeTranslations;
 }
+
+/**
+ * Get the first locale directory from a base directory
+ * 
+ * @param basePath - Base directory that may contain locale subdirectories
+ * @returns Path to the first locale directory found, or null if none found
+ */
+export async function getFirstLocaleDirectory(
+  basePath: string
+): Promise<string | null> {
+  let entries: string[];
+  try {
+    entries = await readdir(basePath);
+  } catch (error) {
+    return null;
+  }
+
+  for (const entry of entries) {
+    const entryPath = join(basePath, entry);
+
+    let stats;
+    try {
+      stats = await stat(entryPath);
+    } catch (error) {
+      continue;
+    }
+
+    // Only process directories
+    if (stats.isDirectory()) {
+      try {
+        const translations = await loadTranslationsFromDirectory(entryPath);
+        // If we can load translations from this directory, it's a valid locale directory
+        if (Object.keys(translations).length > 0) {
+          return entryPath;
+        }
+      } catch (error) {
+        // Skip directories that can't be read as translation directories
+        continue;
+      }
+    }
+  }
+
+  return null;
+}
