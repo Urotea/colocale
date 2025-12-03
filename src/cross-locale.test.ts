@@ -1,6 +1,6 @@
-import { describe, test, expect } from "bun:test";
-import { validateCrossLocale } from "./validation";
+import { describe, expect, test } from "bun:test";
 import type { LocaleTranslations } from "./cli/loader";
+import { validateCrossLocale } from "./validation";
 
 describe("validateCrossLocale", () => {
   test("should pass when all locales have matching keys", () => {

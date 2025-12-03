@@ -23,20 +23,20 @@ export {
   loadAllLocaleTranslations,
 } from "./cli/loader";
 
+import { extractPluralKeys, resolvePluralMessage } from "./plural";
 // Internal utilities (for internal use, but exported for testing)
 import { getNestedValue, replacePlaceholders } from "./utils";
-import { extractPluralKeys, resolvePluralMessage } from "./plural";
 
 // ============================================================================
 // Core API Functions
 // ============================================================================
 
 import type {
-  TranslationRequirement,
-  TranslationFile,
+  ConstrainedTranslatorFunction,
   Messages,
   PlaceholderValues,
-  ConstrainedTranslatorFunction,
+  TranslationFile,
+  TranslationRequirement,
 } from "./types";
 
 /**

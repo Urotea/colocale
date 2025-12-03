@@ -14,9 +14,7 @@
   "bin": {
     "colocale": "./dist/cli/main.js"
   },
-  "files": [
-    "dist"
-  ],
+  "files": ["dist"],
   "author": "Urotea",
   "license": "MIT",
   "repository": {
@@ -38,16 +36,16 @@
     "pluralization"
   ],
   "scripts": {
-    "dev": "bun run --watch src/index.ts",
     "build": "bun build src/index.ts --outdir ./dist --target node && bun build src/cli/main.ts --outdir ./dist/cli --target node && tsc --emitDeclarationOnly --declaration --outDir ./dist",
-    "start": "bun run src/index.ts",
     "check": "bun run src/cli/main.ts check",
     "codegen": "bun run src/cli/main.ts codegen",
     "test": "bun test",
     "typecheck": "tsc --noEmit",
-    "prepublishOnly": "bun run build && bun run test"
+    "lint": "biome lint .",
+    "format": "biome check --write ."
   },
   "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
     "@types/bun": "latest",
     "typescript": "^5.7.2"
   },

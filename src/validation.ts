@@ -1,11 +1,11 @@
+import type { LocaleTranslations } from "./cli/loader";
 import type {
-  ValidationError,
-  ValidationResult,
-  TranslationFile,
   NamespaceTranslations,
   NestedTranslations,
+  TranslationFile,
+  ValidationError,
+  ValidationResult,
 } from "./types";
-import type { LocaleTranslations } from "./cli/loader";
 
 /**
  * Collect all keys from a translation object (including nested keys)

@@ -1,4 +1,4 @@
-import type { TranslationFile, NestedTranslations } from "../types";
+import type { NestedTranslations, TranslationFile } from "../types";
 
 /**
  * Generate TypeScript interface from translation file structure

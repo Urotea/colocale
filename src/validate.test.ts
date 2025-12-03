@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { validateTranslations, type TranslationFile } from "./index";
+import { type TranslationFile, validateTranslations } from "./index";
 
 describe("validateTranslations", () => {
   test("Valid translation file", () => {
