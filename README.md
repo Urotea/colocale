@@ -396,7 +396,7 @@ npx colocale check messages
 
 ```typescript
 import { validateTranslations, validateCrossLocale } from "colocale";
-import type { LocaleTranslations } from "colocale/cli/loader";
+import type { LocaleTranslations } from "colocale";
 
 // Validate a single locale
 const translations = {

@@ -1,10 +1,10 @@
-import type { LocaleTranslations } from "./cli/loader";
 import type {
   NamespaceTranslations,
   NestedTranslations,
   TranslationFile,
   ValidationError,
   ValidationResult,
+  LocaleTranslations,
 } from "./types";
 
 /**

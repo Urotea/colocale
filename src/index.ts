@@ -8,6 +8,7 @@ export type {
   Messages,
   TranslationFile,
   ConstrainedTranslatorFunction,
+  LocaleTranslations,
 } from "./types";
 
 // Validation

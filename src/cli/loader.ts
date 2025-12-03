@@ -1,6 +1,6 @@
 import { readFile, readdir, stat } from "node:fs/promises";
 import { basename, join } from "node:path";
-import type { TranslationFile } from "../types";
+import type { TranslationFile, LocaleTranslations } from "../types";
 
 /**
  * Load all JSON files from a directory and merge into one TranslationFile
@@ -43,12 +43,6 @@ export async function loadTranslationsFromDirectory(
 
   return translations;
 }
-
-/**
- * Type for locale-indexed translation files
- * Structure: { locale: { namespace: translations } }
- */
-export type LocaleTranslations = Record<string, TranslationFile>;
 
 /**
  * Load translations from multiple locale directories
