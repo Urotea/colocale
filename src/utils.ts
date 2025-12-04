@@ -1,19 +1,33 @@
-import type { PlaceholderValues, TranslationRequirement } from "./types";
+import type {
+  KeysForNamespace,
+  Namespace,
+  PlaceholderValues,
+  TranslationRequirement,
+} from "./types";
 
 /**
  * Helper function to create a TranslationRequirement with type inference
- * @template K - Array type of translation keys
+ *
+ * Requires explicit type parameters for full type safety. The translation structure type
+ * must be provided to ensure namespace and keys are valid at compile time.
+ *
+ * @template T - The translation structure type (e.g., TranslationStructure)
+ * @template N - The namespace type (inferred from namespace parameter)
+ * @template K - Array type of translation keys (inferred from keys parameter)
  * @param namespace - Translation namespace (e.g., "common", "user", "shop")
  * @param keys - Array of translation keys
  * @returns TranslationRequirement with inferred key types
+ *
  * @example
- * const req = defineRequirement("common", ["submit", "cancel"]);
- * // req.keys is inferred as readonly ["submit", "cancel"]
+ * import type { TranslationStructure } from "./messages.types";
+ * const req = defineRequirement<TranslationStructure, "common", ["submit", "cancel"]>("common", ["submit", "cancel"]);
+ * // Type error if namespace or keys are invalid
  */
-export function defineRequirement<const K extends readonly string[]>(
-  namespace: string,
-  keys: K
-): TranslationRequirement<K> {
+export function defineRequirement<
+  T,
+  N extends Namespace<T>,
+  const K extends readonly KeysForNamespace<T, N>[]
+>(namespace: N, keys: K): TranslationRequirement<K> {
   return { keys, namespace };
 }
 
@@ -22,6 +36,7 @@ export function defineRequirement<const K extends readonly string[]>(
  * @param obj - Object to search
  * @param path - Dot notation path (e.g., "profile.name")
  * @returns Found string, or undefined
+ * @internal
  */
 export function getNestedValue(
   obj: Record<string, unknown>,
@@ -52,6 +67,7 @@ export function getNestedValue(
  * @param message - String containing placeholders
  * @param values - Object with replacement values
  * @returns String after replacement
+ * @internal
  */
 export function replacePlaceholders(
   message: string,

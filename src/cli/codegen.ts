@@ -108,6 +108,72 @@ export function generateTypescriptInterface(
   lines.push(";");
   lines.push("");
 
+  // Generate helper types for type-safe defineRequirement
+  lines.push("/**");
+  lines.push(
+    " * Helper types for type-safe defineRequirement usage"
+  );
+  lines.push(" * @example");
+  lines.push(" * import { defineRequirement } from 'colocale';");
+  lines.push(
+    " * import type { TranslationStructure, Namespace, KeysForNamespace } from './messages.types';"
+  );
+  lines.push(" *");
+  lines.push(
+    " * const req = defineRequirement<TranslationStructure, 'common', ['submit']>('common', ['submit']);"
+  );
+  lines.push(" */");
+  lines.push("");
+  lines.push("/**");
+  lines.push(" * Union type of all valid namespace names");
+  lines.push(" */");
+  lines.push(
+    `export type Namespace = ${Object.keys(translations)
+      .map((ns) => `"${ns}"`)
+      .join(" | ")};`
+  );
+  lines.push("");
+
+  // Generate KeysForNamespace type for each namespace
+  for (const [namespace, namespaceData] of Object.entries(translations)) {
+    const keys: string[] = [];
+    for (const key of Object.keys(namespaceData)) {
+      keys.push(`"${key}"`);
+
+      // Check for nested keys (only 1 level supported by design)
+      const value = namespaceData[key];
+      if (typeof value === "object" && value !== null) {
+        for (const nestedKey of Object.keys(value)) {
+          keys.push(`"${key}.${nestedKey}"`);
+        }
+      }
+    }
+
+    const capitalizedNs = capitalizeFirst(namespace);
+    lines.push("/**");
+    lines.push(` * Valid keys for the '${namespace}' namespace`);
+    lines.push(" */");
+    lines.push(
+      `export type ${capitalizedNs}Keys = ${keys.join(" | ")};`
+    );
+    lines.push("");
+  }
+
+  lines.push("/**");
+  lines.push(" * Get valid keys for a specific namespace");
+  lines.push(" * @template N - The namespace name");
+  lines.push(" */");
+  lines.push("export type KeysForNamespace<N extends Namespace> =");
+  const namespaceKeyMap = Object.keys(translations)
+    .map((ns) => {
+      const capitalizedNs = capitalizeFirst(ns);
+      return `  N extends "${ns}" ? ${capitalizedNs}Keys :`;
+    })
+    .join("\n");
+  lines.push(namespaceKeyMap);
+  lines.push("  never;");
+  lines.push("");
+
   return lines.join("\n");
 }
 

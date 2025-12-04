@@ -9,6 +9,8 @@ export type {
   TranslationFile,
   ConstrainedTranslatorFunction,
   LocaleTranslations,
+  Namespace,
+  KeysForNamespace,
 } from "./types";
 
 // Validation
@@ -18,7 +20,6 @@ export { validateTranslations, validateCrossLocale } from "./validation";
 export { defineRequirement } from "./utils";
 
 import { extractPluralKeys, resolvePluralMessage } from "./plural";
-// Internal utilities (for internal use, but exported for testing)
 import { getNestedValue, replacePlaceholders } from "./utils";
 
 // ============================================================================
@@ -58,7 +59,7 @@ export function mergeRequirements(
  * @returns Messages object (key format: "namespace.key")
  */
 export function pickMessages<
-  R extends readonly TranslationRequirement<readonly string[]>[],
+  R extends readonly TranslationRequirement<readonly string[]>[]
 >(allMessages: TranslationFile, requirements: R): Messages {
   const messages: Record<string, string> = {};
 
@@ -121,7 +122,7 @@ export function pickMessages<
  * ```
  */
 export function createTranslator<
-  R extends TranslationRequirement<readonly string[]>,
+  R extends TranslationRequirement<readonly string[]>
 >(messages: Messages, requirement: R): ConstrainedTranslatorFunction<R> {
   const namespace = requirement.namespace;
 
