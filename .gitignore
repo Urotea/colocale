@@ -3,3 +3,5 @@ dist
 *.log
 .DS_Store
 bun.lockb
+# This project uses bun. Not npm.
+package-lock.json
