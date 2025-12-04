@@ -119,21 +119,23 @@ program
   });
 
 /**
- * Codegen command - generates TypeScript type definitions
+ * Codegen command - generates type-safe defineRequirement function
  */
 program
   .command("codegen")
-  .description("Generate TypeScript type definitions from translation files")
+  .description(
+    "Generate type-safe defineRequirement function from translation files"
+  )
   .argument(
     "<path>",
     "Path to translation directory (parent directory containing locale subdirectories)"
   )
-  .argument("[output]", "Output file path", "messages.types.ts")
+  .argument("[output]", "Output file path", "defineRequirement.ts")
   .action(async (translationPath: string, outputPath: string) => {
     const resolvedTranslationPath = resolve(translationPath);
     const resolvedOutputPath = resolve(outputPath);
 
-    console.log("🔧 Generating TypeScript types from translations...\n");
+    console.log("🔧 Generating type-safe defineRequirement function...\n");
     console.log(`📁 Input:  ${resolvedTranslationPath}`);
 
     try {
@@ -173,16 +175,9 @@ program
       // Write to file
       await writeFile(resolvedOutputPath, interfaceCode, "utf-8");
 
-      console.log("✅ Type definitions generated successfully!");
-      console.log(`\nYou can now import and use the generated types:`);
-      console.log(
-        `  import type { TranslationStructure, TranslationKey } from "${resolvedOutputPath.replace(
-          process.cwd() + "/",
-          "./"
-        )}";`
-      );
+      console.log("✅ Generated successfully!");
     } catch (error) {
-      console.error("❌ Error generating types:", error);
+      console.error("❌ Error generating code:", error);
       process.exit(1);
     }
   });

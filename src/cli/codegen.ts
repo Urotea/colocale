@@ -1,6 +1,41 @@
 import type { NestedTranslations, TranslationFile } from "../types";
 
 /**
+ * Plural suffixes used in translation keys
+ */
+const PLURAL_SUFFIXES = [
+  "_zero",
+  "_one",
+  "_two",
+  "_few",
+  "_many",
+  "_other",
+] as const;
+
+/**
+ * Remove plural suffix from a key if it exists
+ * @param key - Translation key that may have a plural suffix
+ * @returns Key without plural suffix
+ */
+function removePluralSuffix(key: string): string {
+  for (const suffix of PLURAL_SUFFIXES) {
+    if (key.endsWith(suffix)) {
+      return key.slice(0, -suffix.length);
+    }
+  }
+  return key;
+}
+
+/**
+ * Check if a key has a plural suffix
+ * @param key - Translation key to check
+ * @returns True if the key has a plural suffix
+ */
+function hasPluralSuffix(key: string): boolean {
+  return PLURAL_SUFFIXES.some((suffix) => key.endsWith(suffix));
+}
+
+/**
  * Generate TypeScript interface from translation file structure
  * @param translations - Translation file data
  * @param interfaceName - Name of the generated interface (default: "TranslationStructure")
@@ -19,6 +54,10 @@ export function generateTypescriptInterface(
   lines.push(" */");
   lines.push("");
 
+  // Add import statement for createDefineRequirement
+  lines.push("import { createDefineRequirement } from 'colocale';");
+  lines.push("");
+
   // Generate namespace interfaces
   const namespaceInterfaces: string[] = [];
 
@@ -26,18 +65,29 @@ export function generateTypescriptInterface(
     const interfaceNamespace = capitalizeFirst(namespace);
     const namespaceInterfaceName = `${interfaceNamespace}Messages`;
 
-    lines.push(`export interface ${namespaceInterfaceName} {`);
+    lines.push(`interface ${namespaceInterfaceName} {`);
+
+    const processedKeys = new Set<string>();
 
     for (const [key, value] of Object.entries(namespaceData)) {
+      // Remove plural suffix for the key
+      const baseKey = removePluralSuffix(key);
+
+      // Skip if we've already processed this base key
+      if (processedKeys.has(baseKey)) {
+        continue;
+      }
+      processedKeys.add(baseKey);
+
       if (typeof value === "string") {
         // Direct string value
-        lines.push(`  "${key}": string;`);
+        lines.push(`  "${baseKey}": string;`);
       } else if (typeof value === "object" && value !== null) {
         // Nested object
         const nestedInterfaceName = `${interfaceNamespace}${capitalizeFirst(
-          key
+          baseKey
         )}Messages`;
-        lines.push(`  "${key}": ${nestedInterfaceName};`);
+        lines.push(`  "${baseKey}": ${nestedInterfaceName};`);
 
         // Store nested interface for later generation
         namespaceInterfaces.push(
@@ -57,7 +107,7 @@ export function generateTypescriptInterface(
   }
 
   // Generate main interface that combines all namespaces
-  lines.push(`export interface ${interfaceName} {`);
+  lines.push(`interface ${interfaceName} {`);
   for (const namespace of Object.keys(translations)) {
     const interfaceNamespace = capitalizeFirst(namespace);
     lines.push(`  "${namespace}": ${interfaceNamespace}Messages;`);
@@ -69,35 +119,31 @@ export function generateTypescriptInterface(
   lines.push("/**");
   lines.push(" * Union type of all translation keys");
   lines.push(" */");
-  lines.push("export type TranslationKeys =");
+  lines.push("type TranslationKeys =");
 
   const allKeys: string[] = [];
   for (const [namespace, namespaceData] of Object.entries(translations)) {
+    const processedKeys = new Set<string>();
+
     for (const key of Object.keys(namespaceData)) {
+      // Remove plural suffix for the key
+      const baseKey = removePluralSuffix(key);
+
+      // Skip if we've already processed this base key
+      if (processedKeys.has(baseKey)) {
+        continue;
+      }
+      processedKeys.add(baseKey);
+
       // Add base key
-      allKeys.push(`"${namespace}.${key}"`);
+      allKeys.push(`"${namespace}.${baseKey}"`);
 
       // Check for nested keys
       const value = namespaceData[key];
       if (typeof value === "object" && value !== null) {
         for (const nestedKey of Object.keys(value)) {
-          allKeys.push(`"${namespace}.${key}.${nestedKey}"`);
-        }
-      }
-
-      // Check for plural keys (_one, _other, etc.)
-      const pluralSuffixes = [
-        "_zero",
-        "_one",
-        "_two",
-        "_few",
-        "_many",
-        "_other",
-      ];
-      for (const suffix of pluralSuffixes) {
-        const pluralKey = `${key}${suffix}`;
-        if (namespaceData[pluralKey]) {
-          allKeys.push(`"${namespace}.${pluralKey}"`);
+          const baseNestedKey = removePluralSuffix(nestedKey);
+          allKeys.push(`"${namespace}.${baseKey}.${baseNestedKey}"`);
         }
       }
     }
@@ -110,25 +156,14 @@ export function generateTypescriptInterface(
 
   // Generate helper types for type-safe defineRequirement
   lines.push("/**");
-  lines.push(
-    " * Helper types for type-safe defineRequirement usage"
-  );
-  lines.push(" * @example");
-  lines.push(" * import { defineRequirement } from 'colocale';");
-  lines.push(
-    " * import type { TranslationStructure, Namespace, KeysForNamespace } from './messages.types';"
-  );
-  lines.push(" *");
-  lines.push(
-    " * const req = defineRequirement<TranslationStructure, 'common', ['submit']>('common', ['submit']);"
-  );
+  lines.push(" * Internal helper types for translation structure");
   lines.push(" */");
   lines.push("");
   lines.push("/**");
   lines.push(" * Union type of all valid namespace names");
   lines.push(" */");
   lines.push(
-    `export type Namespace = ${Object.keys(translations)
+    `type Namespace = ${Object.keys(translations)
       .map((ns) => `"${ns}"`)
       .join(" | ")};`
   );
@@ -137,14 +172,30 @@ export function generateTypescriptInterface(
   // Generate KeysForNamespace type for each namespace
   for (const [namespace, namespaceData] of Object.entries(translations)) {
     const keys: string[] = [];
+    const processedKeys = new Set<string>();
+
     for (const key of Object.keys(namespaceData)) {
-      keys.push(`"${key}"`);
+      // Remove plural suffix for the key
+      const baseKey = removePluralSuffix(key);
+
+      // Skip if we've already processed this base key
+      if (processedKeys.has(baseKey)) {
+        continue;
+      }
+      processedKeys.add(baseKey);
+
+      keys.push(`"${baseKey}"`);
 
       // Check for nested keys (only 1 level supported by design)
       const value = namespaceData[key];
       if (typeof value === "object" && value !== null) {
+        const nestedProcessedKeys = new Set<string>();
         for (const nestedKey of Object.keys(value)) {
-          keys.push(`"${key}.${nestedKey}"`);
+          const baseNestedKey = removePluralSuffix(nestedKey);
+          if (!nestedProcessedKeys.has(baseNestedKey)) {
+            nestedProcessedKeys.add(baseNestedKey);
+            keys.push(`"${baseKey}.${baseNestedKey}"`);
+          }
         }
       }
     }
@@ -153,9 +204,7 @@ export function generateTypescriptInterface(
     lines.push("/**");
     lines.push(` * Valid keys for the '${namespace}' namespace`);
     lines.push(" */");
-    lines.push(
-      `export type ${capitalizedNs}Keys = ${keys.join(" | ")};`
-    );
+    lines.push(`type ${capitalizedNs}Keys = ${keys.join(" | ")};`);
     lines.push("");
   }
 
@@ -163,7 +212,7 @@ export function generateTypescriptInterface(
   lines.push(" * Get valid keys for a specific namespace");
   lines.push(" * @template N - The namespace name");
   lines.push(" */");
-  lines.push("export type KeysForNamespace<N extends Namespace> =");
+  lines.push("type KeysForNamespace<N extends Namespace> =");
   const namespaceKeyMap = Object.keys(translations)
     .map((ns) => {
       const capitalizedNs = capitalizeFirst(ns);
@@ -172,6 +221,29 @@ export function generateTypescriptInterface(
     .join("\n");
   lines.push(namespaceKeyMap);
   lines.push("  never;");
+  lines.push("");
+
+  // Add the exported defineRequirement function
+  lines.push("/**");
+  lines.push(
+    " * Type-safe defineRequirement function for this translation structure"
+  );
+  lines.push(" * ");
+  lines.push(" * @example");
+  lines.push(" * ```typescript");
+  lines.push(" * import defineRequirement from './defineRequirement';");
+  lines.push(" * ");
+  lines.push(" * // Full type inference and validation");
+  lines.push(
+    ' * const req = defineRequirement("common", ["submit", "cancel"]);'
+  );
+  lines.push(" * ```");
+  lines.push(" */");
+  lines.push(
+    `const defineRequirement = createDefineRequirement<${interfaceName}>();`
+  );
+  lines.push("");
+  lines.push("export default defineRequirement;");
   lines.push("");
 
   return lines.join("\n");
@@ -185,10 +257,21 @@ function generateNestedInterface(
   nested: NestedTranslations
 ): string {
   const lines: string[] = [];
-  lines.push(`export interface ${interfaceName} {`);
+  lines.push(`interface ${interfaceName} {`);
+
+  const processedKeys = new Set<string>();
 
   for (const key of Object.keys(nested)) {
-    lines.push(`  "${key}": string;`);
+    // Remove plural suffix for the key
+    const baseKey = removePluralSuffix(key);
+
+    // Skip if we've already processed this base key
+    if (processedKeys.has(baseKey)) {
+      continue;
+    }
+    processedKeys.add(baseKey);
+
+    lines.push(`  "${baseKey}": string;`);
   }
 
   lines.push("}");
