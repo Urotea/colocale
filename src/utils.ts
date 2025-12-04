@@ -25,7 +25,7 @@ import type {
  * @example
  * // With type parameter (type-safe)
  * import type { TranslationStructure } from "./messages.types";
- * const req = defineRequirement<TranslationStructure>("common", ["submit", "cancel"]);
+ * const req = defineRequirement<TranslationStructure, "common", ["submit", "cancel"]>("common", ["submit", "cancel"]);
  * // Type error if namespace or keys are invalid
  */
 export function defineRequirement<

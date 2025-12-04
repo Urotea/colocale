@@ -118,6 +118,11 @@ export type ConstrainedTranslatorFunction<
 /**
  * Extract nested keys from a namespace as dot-notation strings
  * Handles objects that have nested Record<string, string> values
+ * 
+ * Note: The translation file format only supports up to 1 level of nesting,
+ * as defined by the NamespaceTranslations and NestedTranslations types.
+ * This is a design constraint of the library.
+ * 
  * @template T - The namespace translations object
  */
 type ExtractNestedKeys<T> = T extends object

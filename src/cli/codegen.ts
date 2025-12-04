@@ -140,7 +140,7 @@ export function generateTypescriptInterface(
     for (const key of Object.keys(namespaceData)) {
       keys.push(`"${key}"`);
 
-      // Check for nested keys
+      // Check for nested keys (only 1 level supported by design)
       const value = namespaceData[key];
       if (typeof value === "object" && value !== null) {
         for (const nestedKey of Object.keys(value)) {
