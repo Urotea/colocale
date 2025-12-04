@@ -1,6 +1,6 @@
 import { readFile, readdir, stat } from "node:fs/promises";
 import { basename, join } from "node:path";
-import type { TranslationFile, LocaleTranslations } from "../types";
+import type { LocaleTranslations, TranslationFile } from "../types";
 
 /**
  * Load all JSON files from a directory and merge into one TranslationFile
@@ -99,7 +99,7 @@ export async function loadAllLocaleTranslations(
  * Get the first locale directory from a base directory
  * A locale directory is one that contains JSON translation files.
  * Returns the first valid locale directory found (order depends on filesystem).
- * 
+ *
  * @param basePath - Base directory that may contain locale subdirectories
  * @returns Path to the first locale directory found, or null if none found
  */
@@ -128,7 +128,7 @@ export async function getFirstLocaleDirectory(
       // Check if directory contains JSON files (translation files)
       try {
         const files = await readdir(entryPath);
-        const hasJsonFiles = files.some(file => file.endsWith('.json'));
+        const hasJsonFiles = files.some((file) => file.endsWith(".json"));
         if (hasJsonFiles) {
           return entryPath;
         }

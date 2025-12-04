@@ -11,7 +11,7 @@ type TranslationKey<T extends string = string> = T;
  * @template K - Array type of translation keys
  */
 export interface TranslationRequirement<
-  K extends readonly string[] = readonly string[]
+  K extends readonly string[] = readonly string[],
 > {
   /** Array of translation keys required by the component (readonly) */
   keys: K;
@@ -108,5 +108,5 @@ export type RequirementKeys<R> = R extends TranslationRequirement<infer K>
  * @template R - TranslationRequirement type that defines allowed keys
  */
 export type ConstrainedTranslatorFunction<
-  R extends TranslationRequirement<readonly string[]>
+  R extends TranslationRequirement<readonly string[]>,
 > = (key: RequirementKeys<R>, values?: PlaceholderValues) => string;

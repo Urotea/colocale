@@ -94,11 +94,11 @@ describe("mergeRequirements", () => {
     const req2 = defineRequirement("user", ["name"]);
     const req3 = defineRequirement("shop", ["item"]);
     const req4 = defineRequirement("results", ["itemsFound"]);
-    
+
     const merged1 = mergeRequirements(req1, req2);
     const merged2 = mergeRequirements(req3, req4);
     const allMerged = mergeRequirements(merged1, merged2);
-    
+
     expect(allMerged).toEqual([req1, req2, req3, req4]);
   });
 
@@ -107,7 +107,7 @@ describe("mergeRequirements", () => {
     const req2 = defineRequirement("user", ["name"]);
     const req3 = defineRequirement("shop", ["item"]);
     const req4 = defineRequirement("results", ["itemsFound"]);
-    
+
     const result = mergeRequirements(req1, [req2, req3], req4);
     expect(result).toEqual([req1, req2, req3, req4]);
   });
@@ -260,7 +260,8 @@ describe("createTranslator with TranslationRequirement", () => {
     const messages: Messages = {
       "shop.cartSummary_zero": "{{user}}さんのカートは空です",
       "shop.cartSummary_one": "{{user}}さんのカートに1個の商品があります",
-      "shop.cartSummary_other": "{{user}}さんのカートに{{count}}個の商品があります",
+      "shop.cartSummary_other":
+        "{{user}}さんのカートに{{count}}個の商品があります",
     };
     const requirement = defineRequirement("shop", ["cartSummary"]);
     const t = createTranslator(messages, requirement);
@@ -311,7 +312,8 @@ describe("createTranslator with TranslationRequirement", () => {
 
   test("Multiple uses of same placeholder", () => {
     const messages: Messages = {
-      "test.repeated": "{{name}}さん、こんにちは。{{name}}さんの注文を確認します。",
+      "test.repeated":
+        "{{name}}さん、こんにちは。{{name}}さんの注文を確認します。",
     };
     const requirement = defineRequirement("test", ["repeated"]);
     const t = createTranslator(messages, requirement);
