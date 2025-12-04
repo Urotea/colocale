@@ -58,7 +58,7 @@ export function mergeRequirements(
  * @returns Messages object (key format: "namespace.key")
  */
 export function pickMessages<
-  R extends readonly TranslationRequirement<readonly string[]>[]
+  R extends readonly TranslationRequirement<readonly string[]>[],
 >(allMessages: TranslationFile, requirements: R): Messages {
   const messages: Record<string, string> = {};
 
@@ -121,7 +121,7 @@ export function pickMessages<
  * ```
  */
 export function createTranslator<
-  R extends TranslationRequirement<readonly string[]>
+  R extends TranslationRequirement<readonly string[]>,
 >(messages: Messages, requirement: R): ConstrainedTranslatorFunction<R> {
   const namespace = requirement.namespace;
 

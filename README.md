@@ -80,21 +80,44 @@ npx colocale codegen messages types/messages.d.ts
 
 This automatically generates TypeScript type definitions from your translation files.
 
-### 3. Define Translations in Components
+### 3. Separate Translation Requirements from Components (Best Practice)
+
+When using colocale with Next.js App Router, separate translation requirements from component files to avoid bundler issues with the Server/Client Component boundary.
+
+**Create a separate `translations.ts` file** (without `'use client'`):
 
 ```typescript
-// components/UserProfile.tsx
-import { createTranslator, defineRequirement, type Messages } from "colocale";
+// app/users/translations.ts
+import { defineRequirement, mergeRequirements } from "colocale";
 
-// Define the translation keys this component needs (type-safe with inference)
+// Component-specific translation requirements
 export const userProfileTranslations = defineRequirement("user", [
   "profile.name",
   "profile.email",
 ]);
 
+export const commonTranslations = defineRequirement("common", [
+  "submit",
+  "cancel",
+]);
+
+// Page-level merged requirements
+export const userPageTranslations = mergeRequirements(
+  commonTranslations,
+  userProfileTranslations
+);
+```
+
+**Use in Client Component:**
+
+```typescript
+// components/UserProfile.tsx
+"use client";
+import { createTranslator, type Messages } from "colocale";
+import { userProfileTranslations } from "../app/users/translations";
+
 export default function UserProfile({ messages }: { messages: Messages }) {
   const t = createTranslator(messages, userProfileTranslations);
-
   return (
     <div>
       <label>{t("profile.name")}</label>
@@ -104,24 +127,15 @@ export default function UserProfile({ messages }: { messages: Messages }) {
 }
 ```
 
-### 4. Aggregate Translation Requirements in Parent Components
+**⚠️ Why separate files?** If you export translation requirements from a Client Component (with `'use client'`), Next.js's bundler creates proxy functions instead of the actual values, breaking `mergeRequirements` and type safety. See [Best Practices](#best-practices-for-nextjs-app-router) for details.
+
+### 4. Aggregate Translation Requirements
 
 ```typescript
-// components/UserPage.tsx
-import {
-  mergeRequirements,
-  createTranslator,
-  defineRequirement,
-  type Messages,
-} from "colocale";
-import UserProfile, { userProfileTranslations } from "./UserProfile";
-
-const commonTranslations = defineRequirement("common", ["submit", "cancel"]);
-
-export const userPageTranslations = mergeRequirements(
-  commonTranslations,
-  userProfileTranslations
-);
+// app/users/UserPage.tsx (can be Server or Client Component)
+import { createTranslator, type Messages } from "colocale";
+import { commonTranslations, userPageTranslations } from "./translations";
+import UserProfile from "@/components/UserProfile";
 
 export default function UserPage({ messages }: { messages: Messages }) {
   const t = createTranslator(messages, commonTranslations);
@@ -142,7 +156,8 @@ export default function UserPage({ messages }: { messages: Messages }) {
 // app/[locale]/users/page.tsx
 import { pickMessages } from "colocale";
 import type { TranslationStructure } from "@/types/messages";
-import UserPage, { userPageTranslations } from "@/components/UserPage";
+import { userPageTranslations } from "./translations";
+import UserPage from "./UserPage";
 
 export default async function Page({ params }: { params: { locale: string } }) {
   // Dynamically import only the needed locale's translations (type-safe)
@@ -157,6 +172,22 @@ export default async function Page({ params }: { params: { locale: string } }) {
   return <UserPage messages={messages} />;
 }
 ```
+
+### Benefits of This Pattern
+
+1. **Avoids Next.js bundler issues**: Translation requirements remain as plain objects, not proxy functions
+2. **Better collocation**: All translation requirements for a feature/page are in one place
+3. **Type safety maintained**: TypeScript inference works correctly across Server/Client boundaries
+4. **Cleaner imports**: Single source of truth for translation requirements
+5. **Clear separation of concerns**: Translation requirements are separate from component logic
+
+### Key Takeaways
+
+- ✅ **DO** create a separate `translations.ts` file (without `'use client'`) for translation requirements
+- ✅ **DO** import translation requirements from this shared file in both Server and Client Components
+- ✅ **DO** colocate `translations.ts` with the components that use them (e.g., per page or feature folder)
+- ❌ **DON'T** export translation requirements from files with `'use client'` directive
+- ❌ **DON'T** define translation requirements inside Client Components if they need to be used in Server Components
 
 ## API Reference
 

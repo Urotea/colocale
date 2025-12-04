@@ -1,10 +1,10 @@
 import type {
+  LocaleTranslations,
   NamespaceTranslations,
   NestedTranslations,
   TranslationFile,
   ValidationError,
   ValidationResult,
-  LocaleTranslations,
 } from "./types";
 
 /**

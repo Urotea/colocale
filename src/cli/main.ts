@@ -7,9 +7,9 @@ import { validateCrossLocale, validateTranslations } from "../validation";
 import { generateTypescriptInterface } from "./codegen";
 import { printValidationResult } from "./formatter";
 import {
+  getFirstLocaleDirectory,
   loadAllLocaleTranslations,
   loadTranslationsFromDirectory,
-  getFirstLocaleDirectory,
 } from "./loader";
 
 const program = new Command();
@@ -124,7 +124,10 @@ program
 program
   .command("codegen")
   .description("Generate TypeScript type definitions from translation files")
-  .argument("<path>", "Path to translation directory (parent directory containing locale subdirectories)")
+  .argument(
+    "<path>",
+    "Path to translation directory (parent directory containing locale subdirectories)"
+  )
   .argument("[output]", "Output file path", "messages.types.ts")
   .action(async (translationPath: string, outputPath: string) => {
     const resolvedTranslationPath = resolve(translationPath);
@@ -136,20 +139,24 @@ program
     try {
       // Try to find a locale subdirectory first
       const localeDir = await getFirstLocaleDirectory(resolvedTranslationPath);
-      
+
       let translations;
       let actualPath: string;
-      
+
       if (localeDir) {
         // Found locale subdirectories, use the first one
         actualPath = localeDir;
         const localeName = basename(localeDir);
-        console.log(`📁 Detected locale subdirectories, using locale: ${localeName}`);
+        console.log(
+          `📁 Detected locale subdirectories, using locale: ${localeName}`
+        );
         translations = await loadTranslationsFromDirectory(localeDir);
       } else {
         // No locale subdirectories found, try to load directly
         actualPath = resolvedTranslationPath;
-        translations = await loadTranslationsFromDirectory(resolvedTranslationPath);
+        translations = await loadTranslationsFromDirectory(
+          resolvedTranslationPath
+        );
       }
 
       console.log(`📄 Output: ${resolvedOutputPath}\n`);
