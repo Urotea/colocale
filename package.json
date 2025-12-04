@@ -3,18 +3,22 @@
   "version": "0.1.1",
   "description": "A lightweight i18n library for Next.js App Router with fragment collocation pattern",
   "type": "module",
-  "main": "./dist/index.js",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "require": "./dist/index.cjs"
     }
   },
   "bin": {
     "colocale": "./dist/cli/main.js"
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "author": "Urotea",
   "license": "MIT",
   "repository": {
@@ -36,7 +40,7 @@
     "pluralization"
   ],
   "scripts": {
-    "build": "bun build src/index.ts --outdir ./dist --target node && bun build src/cli/main.ts --outdir ./dist/cli --target node && tsc --emitDeclarationOnly --declaration --outDir ./dist",
+    "build": "tsup",
     "check": "bun run src/cli/main.ts check",
     "codegen": "bun run src/cli/main.ts codegen",
     "test": "bun test",
@@ -47,6 +51,7 @@
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
     "@types/bun": "latest",
+    "tsup": "^8.5.1",
     "typescript": "^5.7.2"
   },
   "peerDependencies": {
