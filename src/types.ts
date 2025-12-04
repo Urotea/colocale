@@ -1,17 +1,9 @@
 /**
- * String type representing translation keys
- * Nested structure expressed in dot notation (e.g., "user.profile.name")
- * May include plural suffixes (_zero, _one, _other)
- * @template T - Generated translation keys type (union of all translation keys)
- */
-type TranslationKey<T extends string = string> = T;
-
-/**
  * Translation key requirements for a component
  * @template K - Array type of translation keys
  */
 export interface TranslationRequirement<
-  K extends readonly string[] = readonly string[],
+  K extends readonly string[] = readonly string[]
 > {
   /** Array of translation keys required by the component (readonly) */
   keys: K;
@@ -52,7 +44,7 @@ export type LocaleTranslations = Record<string, TranslationFile>;
 /**
  * Validation error types
  */
-export type ValidationErrorType =
+type ValidationErrorType =
   | "missing-plural-one"
   | "missing-plural-other"
   | "invalid-nesting"
@@ -99,7 +91,7 @@ export interface ValidationResult {
  * Type utility to extract keys from a TranslationRequirement
  * @template R - TranslationRequirement type
  */
-export type RequirementKeys<R> = R extends TranslationRequirement<infer K>
+type RequirementKeys<R> = R extends TranslationRequirement<infer K>
   ? K[number]
   : never;
 
@@ -108,7 +100,7 @@ export type RequirementKeys<R> = R extends TranslationRequirement<infer K>
  * @template R - TranslationRequirement type that defines allowed keys
  */
 export type ConstrainedTranslatorFunction<
-  R extends TranslationRequirement<readonly string[]>,
+  R extends TranslationRequirement<readonly string[]>
 > = (key: RequirementKeys<R>, values?: PlaceholderValues) => string;
 
 // ============================================================================
@@ -118,11 +110,11 @@ export type ConstrainedTranslatorFunction<
 /**
  * Extract nested keys from a namespace as dot-notation strings
  * Handles nested object structures (interfaces or object types)
- * 
+ *
  * Note: The translation file format only supports up to 1 level of nesting,
  * as defined by the NamespaceTranslations and NestedTranslations types.
  * This is a design constraint of the library.
- * 
+ *
  * @template T - The namespace translations object
  */
 type ExtractNestedKeys<T> = T extends object
@@ -130,12 +122,12 @@ type ExtractNestedKeys<T> = T extends object
       [K in keyof T]: T[K] extends string
         ? never
         : T[K] extends object
-          ? K extends string
-            ? keyof T[K] extends string
-              ? `${K}.${keyof T[K] & string}`
-              : never
+        ? K extends string
+          ? keyof T[K] extends string
+            ? `${K}.${keyof T[K] & string}`
             : never
-          : never;
+          : never
+        : never;
     }[keyof T]
   : never;
 
@@ -158,7 +150,6 @@ export type Namespace<T = Record<string, unknown>> = Extract<keyof T, string>;
  * @template T - The translation structure type
  * @template N - The namespace name
  */
-export type KeysForNamespace<
-  T,
-  N extends Namespace<T>,
-> = N extends keyof T ? ExtractAllKeys<T[N]> : never;
+export type KeysForNamespace<T, N extends Namespace<T>> = N extends keyof T
+  ? ExtractAllKeys<T[N]>
+  : never;

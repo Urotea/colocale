@@ -89,17 +89,20 @@ When using colocale with Next.js App Router, separate translation requirements f
 ```typescript
 // app/users/translations.ts
 import { defineRequirement, mergeRequirements } from "colocale";
+import type { TranslationStructure } from "@/types/messages";
 
-// Component-specific translation requirements
-export const userProfileTranslations = defineRequirement("user", [
-  "profile.name",
-  "profile.email",
-]);
+// Component-specific translation requirements with type safety
+export const userProfileTranslations = defineRequirement<
+  TranslationStructure,
+  "user",
+  ["profile.name", "profile.email"]
+>("user", ["profile.name", "profile.email"]);
 
-export const commonTranslations = defineRequirement("common", [
-  "submit",
-  "cancel",
-]);
+export const commonTranslations = defineRequirement<
+  TranslationStructure,
+  "common",
+  ["submit", "cancel"]
+>("common", ["submit", "cancel"]);
 
 // Page-level merged requirements
 export const userPageTranslations = mergeRequirements(
@@ -107,6 +110,8 @@ export const userPageTranslations = mergeRequirements(
   userProfileTranslations
 );
 ```
+
+**Note:** While type parameters can be inferred, explicitly providing them (as shown above) ensures compile-time validation that namespaces and keys exist in your translation files.
 
 **Use in Client Component:**
 
@@ -229,21 +234,75 @@ function mergeRequirements(
 
 ### defineRequirement
 
-Helper function to create a TranslationRequirement with automatic type inference.
+Helper function to create a TranslationRequirement with compile-time type validation.
 
 ```typescript
-function defineRequirement<const K extends readonly string[]>(
-  namespace: string,
-  keys: K
-): TranslationRequirement<K[number]>;
+function defineRequirement<
+  T,
+  N extends Namespace<T>,
+  const K extends readonly KeysForNamespace<T, N>[]
+>(namespace: N, keys: K): TranslationRequirement<K>;
 ```
 
-**Example:**
+**Type Safety:**
+
+When you provide the `TranslationStructure` type parameter, `defineRequirement` validates that:
+
+- The namespace exists in your translation structure
+- All keys are valid for that namespace
+- Nested keys use correct dot notation
+
+**Without type parameter (still works, but no compile-time validation):**
 
 ```typescript
+// Type parameters are inferred, but no validation against actual translation structure
 const req = defineRequirement("common", ["submit", "cancel"]);
-// req.keys is inferred as readonly ["submit", "cancel"]
-// Type: TranslationRequirement<"submit" | "cancel">
+```
+
+**With type parameter (recommended - full type safety):**
+
+```typescript
+import type { TranslationStructure } from "./types/messages";
+
+// ✅ Valid - both namespace and keys exist
+const req = defineRequirement<
+  TranslationStructure,
+  "common",
+  ["submit", "cancel"]
+>("common", ["submit", "cancel"]);
+
+// ❌ Compile error - namespace doesn't exist
+const req = defineRequirement<TranslationStructure, "invalid", ["key"]>(
+  "invalid",
+  ["key"]
+);
+
+// ❌ Compile error - key doesn't exist in namespace
+const req = defineRequirement<TranslationStructure, "common", ["invalid"]>(
+  "common",
+  ["invalid"]
+);
+```
+
+**Best Practice:**
+
+To maximize type safety while keeping the code clean, generate types with `codegen` and use them consistently:
+
+```typescript
+import type { TranslationStructure } from "@/types/messages";
+
+// Explicit type parameters ensure compile-time validation
+export const commonTranslations = defineRequirement<
+  TranslationStructure,
+  "common",
+  ["submit", "cancel"]
+>("common", ["submit", "cancel"]);
+
+export const userProfileTranslations = defineRequirement<
+  TranslationStructure,
+  "user",
+  ["profile.name", "profile.email"]
+>("user", ["profile.name", "profile.email"]);
 ```
 
 ## Usage Examples
@@ -252,8 +311,13 @@ const req = defineRequirement("common", ["submit", "cancel"]);
 
 ```typescript
 import { defineRequirement, createTranslator } from "colocale";
+import type { TranslationStructure } from "@/types/messages";
 
-const resultsReq = defineRequirement("results", ["itemsFound", "greeting"]);
+const resultsReq = defineRequirement<
+  TranslationStructure,
+  "results",
+  ["itemsFound", "greeting"]
+>("results", ["itemsFound", "greeting"]);
 const t = createTranslator(messages, resultsReq);
 
 t("itemsFound", { count: 5 }); // "Found 5 items"
@@ -278,9 +342,14 @@ t("greeting", { name: "John" }); // "Hello, John"
 
 ```typescript
 import { defineRequirement, createTranslator } from "colocale";
+import type { TranslationStructure } from "@/types/messages";
 
 // Specify only the base key in translation requirements
-export const translations = defineRequirement("common", [
+export const translations = defineRequirement<
+  TranslationStructure,
+  "common",
+  ["itemCount"]
+>("common", [
   "itemCount", // _zero, _one, _other are automatically extracted
 ]);
 
@@ -313,8 +382,13 @@ t("itemCount", { count: 5 }); // "5 items"
 
 ```typescript
 import { defineRequirement, createTranslator } from "colocale";
+import type { TranslationStructure } from "@/types/messages";
 
-const shopReq = defineRequirement("shop", ["cartSummary"]);
+const shopReq = defineRequirement<
+  TranslationStructure,
+  "shop",
+  ["cartSummary"]
+>("shop", ["cartSummary"]);
 const t = createTranslator(messages, shopReq);
 
 t("cartSummary", { count: 0, user: "John" });
@@ -339,8 +413,13 @@ t("cartSummary", { count: 5, user: "John" });
 
 ```typescript
 import { defineRequirement, createTranslator } from "colocale";
+import type { TranslationStructure } from "@/types/messages";
 
-const userReq = defineRequirement("user", ["profile.name", "profile.email"]);
+const userReq = defineRequirement<
+  TranslationStructure,
+  "user",
+  ["profile.name", "profile.email"]
+>("user", ["profile.name", "profile.email"]);
 const t = createTranslator(messages, userReq);
 
 t("profile.name"); // "Name"
@@ -567,11 +646,12 @@ const allMessages: TranslationStructure = {
   user: (await import(`@/messages/${locale}/user.json`)).default,
 };
 
-// defineRequirement provides automatic type inference
-export const userProfileTranslations = defineRequirement("user", [
-  "profile.name",
-  "profile.email",
-]);
+// defineRequirement with type safety - validates namespace and keys at compile time
+export const userProfileTranslations = defineRequirement<
+  TranslationStructure,
+  "user",
+  ["profile.name", "profile.email"]
+>("user", ["profile.name", "profile.email"]);
 
 // createTranslator is type-safe and constrained to the requirement keys
 const t = createTranslator(messages, userProfileTranslations);
@@ -581,18 +661,29 @@ t("profile.email"); // ✅ Type checks pass
 t("profile.invalid"); // ❌ Compile error - not in requirement keys
 ```
 
-**Advanced: Explicit type annotations (optional)**
-
-If you need explicit type annotations, you can still use them:
+**Type parameter benefits:**
 
 ```typescript
-import type { TranslationRequirement } from "colocale";
-import type { TranslationKey } from "./types/messages";
+// ✅ Valid - namespace and keys exist
+const validReq = defineRequirement<
+  TranslationStructure,
+  "common",
+  ["submit", "cancel"]
+>("common", ["submit", "cancel"]);
 
-const req: TranslationRequirement<TranslationKey<"user">> = defineRequirement(
-  "user",
-  ["profile.name", "profile.email"]
-);
+// ❌ Compile error - namespace doesn't exist
+const invalidNamespace = defineRequirement<
+  TranslationStructure,
+  "nonexistent",
+  ["key"]
+>("nonexistent", ["key"]);
+
+// ❌ Compile error - key doesn't exist in namespace
+const invalidKey = defineRequirement<
+  TranslationStructure,
+  "common",
+  ["nonexistent"]
+>("common", ["nonexistent"]);
 ```
 
 ### Development Workflow

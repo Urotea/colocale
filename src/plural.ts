@@ -7,7 +7,7 @@ import { getNestedValue } from "./utils";
  * @param count - Numeric value to determine suffix
  * @returns Key with suffix (e.g., "itemCount_zero", "itemCount_one", "itemCount_other")
  */
-export function selectPluralKey(baseKey: string, count: number): string {
+function selectPluralKey(baseKey: string, count: number): string {
   if (count === 0) {
     return `${baseKey}_zero`;
   } else if (count === 1) {
