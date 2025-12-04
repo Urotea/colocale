@@ -136,7 +136,8 @@ const invalidNs = defineRequirement<
   "invalid_namespace",
   ["key"]
 >("invalid_namespace", ["key"]);
-// Error: Type '"invalid_namespace"' does not satisfy the constraint 'Namespace<TranslationStructure>'
+// Error: Type '"invalid_namespace"' does not satisfy the constraint 'Namespace<TranslationStructure>'.
+//        Argument of type '"invalid_namespace"' is not assignable to parameter of type '"common" | "user"'.
 
 // ❌ Invalid key for namespace
 const invalidKey = defineRequirement<
@@ -144,7 +145,8 @@ const invalidKey = defineRequirement<
   "common",
   ["nonexistent.key"]
 >("common", ["nonexistent.key"]);
-// Error: Type '"nonexistent.key"' is not assignable to type 'KeysForNamespace<TranslationStructure, "common">'
+// Error: Type '"nonexistent.key"' is not assignable to type 'KeysForNamespace<TranslationStructure, "common">'.
+//        Type '"nonexistent.key"' is not assignable to type '"submit" | "cancel" | "itemCount_one" | "itemCount_other"'.
 
 // ❌ Key from wrong namespace
 const wrongNs = defineRequirement<
@@ -152,7 +154,8 @@ const wrongNs = defineRequirement<
   "common",
   ["profile.name"]
 >("common", ["profile.name"]);
-// Error: Type '"profile.name"' is not assignable to type 'KeysForNamespace<TranslationStructure, "common">'
+// Error: Type '"profile.name"' is not assignable to type 'KeysForNamespace<TranslationStructure, "common">'.
+//        Type '"profile.name"' is not assignable to type '"submit" | "cancel" | "itemCount_one" | "itemCount_other"'.
 ```
 
 ## Migration Guide

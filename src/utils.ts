@@ -27,6 +27,11 @@ import type {
  * import type { TranslationStructure } from "./messages.types";
  * const req = defineRequirement<TranslationStructure, "common", ["submit", "cancel"]>("common", ["submit", "cancel"]);
  * // Type error if namespace or keys are invalid
+ * 
+ * @remarks
+ * Overload resolution: The type-safe overload is listed first but requires explicit
+ * type parameters. When called without type parameters, TypeScript automatically
+ * falls back to the backward-compatible overload that accepts any string.
  */
 export function defineRequirement<
   T,
