@@ -80,21 +80,44 @@ npx colocale codegen messages types/messages.d.ts
 
 This automatically generates TypeScript type definitions from your translation files.
 
-### 3. Define Translations in Components
+### 3. Separate Translation Requirements from Components (Best Practice)
+
+When using colocale with Next.js App Router, separate translation requirements from component files to avoid bundler issues with the Server/Client Component boundary.
+
+**Create a separate `translations.ts` file** (without `'use client'`):
 
 ```typescript
-// components/UserProfile.tsx
-import { createTranslator, defineRequirement, type Messages } from "colocale";
+// app/users/translations.ts
+import { defineRequirement, mergeRequirements } from "colocale";
 
-// Define the translation keys this component needs (type-safe with inference)
+// Component-specific translation requirements
 export const userProfileTranslations = defineRequirement("user", [
   "profile.name",
   "profile.email",
 ]);
 
+export const commonTranslations = defineRequirement("common", [
+  "submit",
+  "cancel",
+]);
+
+// Page-level merged requirements
+export const userPageTranslations = mergeRequirements(
+  commonTranslations,
+  userProfileTranslations
+);
+```
+
+**Use in Client Component:**
+
+```typescript
+// components/UserProfile.tsx
+"use client";
+import { createTranslator, type Messages } from "colocale";
+import { userProfileTranslations } from "../app/users/translations";
+
 export default function UserProfile({ messages }: { messages: Messages }) {
   const t = createTranslator(messages, userProfileTranslations);
-
   return (
     <div>
       <label>{t("profile.name")}</label>
@@ -104,24 +127,15 @@ export default function UserProfile({ messages }: { messages: Messages }) {
 }
 ```
 
-### 4. Aggregate Translation Requirements in Parent Components
+**⚠️ Why separate files?** If you export translation requirements from a Client Component (with `'use client'`), Next.js's bundler creates proxy functions instead of the actual values, breaking `mergeRequirements` and type safety. See [Best Practices](#best-practices-for-nextjs-app-router) for details.
+
+### 4. Aggregate Translation Requirements
 
 ```typescript
-// components/UserPage.tsx
-import {
-  mergeRequirements,
-  createTranslator,
-  defineRequirement,
-  type Messages,
-} from "colocale";
-import UserProfile, { userProfileTranslations } from "./UserProfile";
-
-const commonTranslations = defineRequirement("common", ["submit", "cancel"]);
-
-export const userPageTranslations = mergeRequirements(
-  commonTranslations,
-  userProfileTranslations
-);
+// app/users/UserPage.tsx (can be Server or Client Component)
+import { createTranslator, type Messages } from "colocale";
+import { commonTranslations, userPageTranslations } from "./translations";
+import UserProfile from "@/components/UserProfile";
 
 export default function UserPage({ messages }: { messages: Messages }) {
   const t = createTranslator(messages, commonTranslations);
@@ -142,7 +156,8 @@ export default function UserPage({ messages }: { messages: Messages }) {
 // app/[locale]/users/page.tsx
 import { pickMessages } from "colocale";
 import type { TranslationStructure } from "@/types/messages";
-import UserPage, { userPageTranslations } from "@/components/UserPage";
+import { userPageTranslations } from "./translations";
+import UserPage from "./UserPage";
 
 export default async function Page({ params }: { params: { locale: string } }) {
   // Dynamically import only the needed locale's translations (type-safe)
@@ -156,135 +171,6 @@ export default async function Page({ params }: { params: { locale: string } }) {
 
   return <UserPage messages={messages} />;
 }
-```
-
-## Best Practices for Next.js App Router
-
-When using colocale with Next.js App Router, it's important to understand how the Server/Client Component boundary affects translation requirements.
-
-### The Problem with Client Component Exports
-
-If you export translation requirements directly from a Client Component (one with `'use client'` directive):
-
-```typescript
-// ❌ components/UserProfile.tsx
-'use client';
-import { defineRequirement, createTranslator, type Messages } from 'colocale';
-
-// Exported from a Client Component
-export const userProfileTranslations = defineRequirement("user", [
-  "profile.name",
-  "profile.email",
-]);
-
-export default function UserProfile({ messages }: { messages: Messages }) {
-  const t = createTranslator(messages, userProfileTranslations);
-  return (
-    <div>
-      <label>{t("profile.name")}</label>
-      <label>{t("profile.email")}</label>
-    </div>
-  );
-}
-```
-
-When a Server Component tries to import `userProfileTranslations`, Next.js's bundler creates a proxy function instead of providing the actual value. This causes `mergeRequirements` to receive functions instead of translation requirement objects, breaking the type system and runtime behavior.
-
-### Recommended Solution: Separate Translation Requirements File
-
-Create a separate `translations.ts` file **without** the `'use client'` directive to define and export all translation requirements:
-
-```typescript
-// ✅ app/users/translations.ts
-import { defineRequirement, mergeRequirements } from 'colocale';
-
-// Component-specific translation requirements
-export const userProfileTranslations = defineRequirement("user", [
-  "profile.name",
-  "profile.email",
-]);
-
-export const commonTranslations = defineRequirement("common", [
-  "submit",
-  "cancel"
-]);
-
-// Page-level merged requirements
-export const userPageTranslations = mergeRequirements(
-  commonTranslations,
-  userProfileTranslations
-);
-```
-
-Then import from this file in both Server and Client Components:
-
-**Server Component (page.tsx):**
-
-```typescript
-// ✅ app/users/page.tsx
-import { pickMessages } from 'colocale';
-import { userPageTranslations } from './translations';
-import UserPage from './UserPage';
-
-export default async function Page({ params }: { params: { locale: string } }) {
-  const allMessages = {
-    common: (await import(`@/messages/${params.locale}/common.json`)).default,
-    user: (await import(`@/messages/${params.locale}/user.json`)).default,
-  };
-  
-  const messages = pickMessages(allMessages, userPageTranslations);
-  return <UserPage messages={messages} />;
-}
-```
-
-**Client Component:**
-
-```typescript
-// ✅ components/UserProfile.tsx
-'use client';
-import { createTranslator, type Messages } from 'colocale';
-import { userProfileTranslations } from '../app/users/translations';
-
-export default function UserProfile({ messages }: { messages: Messages }) {
-  const t = createTranslator(messages, userProfileTranslations);
-  return (
-    <div>
-      <label>{t("profile.name")}</label>
-      <label>{t("profile.email")}</label>
-    </div>
-  );
-}
-```
-
-### Recommended Directory Structure
-
-Organize your translation requirements by feature or page:
-
-```
-app/
-├── users/
-│   ├── translations.ts          # Translation requirements for users feature
-│   ├── page.tsx                 # Server Component
-│   └── UserPage.tsx             # Client Component
-├── products/
-│   ├── translations.ts          # Translation requirements for products feature
-│   ├── page.tsx
-│   └── ProductList.tsx
-└── ...
-
-components/
-├── UserProfile.tsx              # Shared Client Component
-└── ...
-
-messages/
-├── en/
-│   ├── common.json
-│   ├── user.json
-│   └── product.json
-└── ja/
-    ├── common.json
-    ├── user.json
-    └── product.json
 ```
 
 ### Benefits of This Pattern
