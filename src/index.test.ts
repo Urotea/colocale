@@ -72,6 +72,58 @@ describe("mergeRequirements", () => {
     const result = mergeRequirements();
     expect(result).toEqual([]);
   });
+
+  test("Flatten array of requirements", () => {
+    const req1 = defineRequirement("common", ["submit"]);
+    const req2 = defineRequirement("user", ["name"]);
+    const req3 = defineRequirement("shop", ["item"]);
+    const result = mergeRequirements([req1, req2], req3);
+    expect(result).toEqual([req1, req2, req3]);
+  });
+
+  test("Flatten multiple arrays of requirements", () => {
+    const req1 = defineRequirement("common", ["submit"]);
+    const req2 = defineRequirement("user", ["name"]);
+    const req3 = defineRequirement("shop", ["item"]);
+    const result = mergeRequirements([req1, req2], [req3]);
+    expect(result).toEqual([req1, req2, req3]);
+  });
+
+  test("Merge nested mergeRequirements results", () => {
+    const req1 = defineRequirement("common", ["submit"]);
+    const req2 = defineRequirement("user", ["name"]);
+    const req3 = defineRequirement("shop", ["item"]);
+    const req4 = defineRequirement("results", ["itemsFound"]);
+    
+    const merged1 = mergeRequirements(req1, req2);
+    const merged2 = mergeRequirements(req3, req4);
+    const allMerged = mergeRequirements(merged1, merged2);
+    
+    expect(allMerged).toEqual([req1, req2, req3, req4]);
+  });
+
+  test("Mix single requirements and arrays", () => {
+    const req1 = defineRequirement("common", ["submit"]);
+    const req2 = defineRequirement("user", ["name"]);
+    const req3 = defineRequirement("shop", ["item"]);
+    const req4 = defineRequirement("results", ["itemsFound"]);
+    
+    const result = mergeRequirements(req1, [req2, req3], req4);
+    expect(result).toEqual([req1, req2, req3, req4]);
+  });
+
+  test("Flatten single-element array", () => {
+    const req = defineRequirement("common", ["submit"]);
+    const result = mergeRequirements([req]);
+    expect(result).toEqual([req]);
+  });
+
+  test("Flatten empty array within arguments", () => {
+    const req1 = defineRequirement("common", ["submit"]);
+    const req2 = defineRequirement("user", ["name"]);
+    const result = mergeRequirements(req1, [], req2);
+    expect(result).toEqual([req1, req2]);
+  });
 });
 
 describe("pickMessages", () => {

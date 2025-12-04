@@ -35,13 +35,16 @@ import type {
 
 /**
  * Merge multiple translation requirements into a single array
- * @param requirements - Translation requirements (variadic)
- * @returns Array of translation requirements
+ * @param requirements - Translation requirements or arrays of translation requirements (variadic)
+ * @returns Flattened array of translation requirements
  */
 export function mergeRequirements(
-  ...requirements: TranslationRequirement<readonly string[]>[]
+  ...requirements: (
+    | TranslationRequirement<readonly string[]>
+    | TranslationRequirement<readonly string[]>[]
+  )[]
 ): TranslationRequirement<readonly string[]>[] {
-  return requirements;
+  return requirements.flat();
 }
 
 /**
@@ -119,10 +122,7 @@ export function pickMessages<
  */
 export function createTranslator<
   R extends TranslationRequirement<readonly string[]>
->(
-  messages: Messages,
-  requirement: R
-): ConstrainedTranslatorFunction<R> {
+>(messages: Messages, requirement: R): ConstrainedTranslatorFunction<R> {
   const namespace = requirement.namespace;
 
   return (key: string, values?: PlaceholderValues): string => {
