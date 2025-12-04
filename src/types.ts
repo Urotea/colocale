@@ -8,10 +8,13 @@ type TranslationKey<T extends string = string> = T;
 
 /**
  * Translation key requirements for a component
+ * @template K - Array type of translation keys
  */
-export interface TranslationRequirement {
+export interface TranslationRequirement<
+  K extends readonly string[] = readonly string[]
+> {
   /** Array of translation keys required by the component (readonly) */
-  keys: readonly TranslationKey<string>[];
+  keys: K;
   /** Translation namespace (e.g., "common", "user", "shop") */
   namespace: string;
 }
@@ -96,15 +99,14 @@ export interface ValidationResult {
  * Type utility to extract keys from a TranslationRequirement
  * @template R - TranslationRequirement type
  */
-export type RequirementKeys<R> = R extends TranslationRequirement
-  ? R["keys"][number]
+export type RequirementKeys<R> = R extends TranslationRequirement<infer K>
+  ? K[number]
   : never;
 
 /**
  * Translator function type constrained to specific keys from a TranslationRequirement
  * @template R - TranslationRequirement type that defines allowed keys
  */
-export type ConstrainedTranslatorFunction<R> = (
-  key: RequirementKeys<R>,
-  values?: PlaceholderValues
-) => string;
+export type ConstrainedTranslatorFunction<
+  R extends TranslationRequirement<readonly string[]>
+> = (key: RequirementKeys<R>, values?: PlaceholderValues) => string;
