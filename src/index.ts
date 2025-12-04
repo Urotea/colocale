@@ -9,6 +9,8 @@ export type {
   TranslationFile,
   ConstrainedTranslatorFunction,
   LocaleTranslations,
+  Namespace,
+  KeysForNamespace,
 } from "./types";
 
 // Validation

@@ -1,15 +1,42 @@
-import type { PlaceholderValues, TranslationRequirement } from "./types";
+import type {
+  KeysForNamespace,
+  Namespace,
+  PlaceholderValues,
+  TranslationRequirement,
+} from "./types";
 
 /**
  * Helper function to create a TranslationRequirement with type inference
- * @template K - Array type of translation keys
+ *
+ * When called without a type parameter, accepts any string for namespace and keys (backward compatible).
+ * When called with a TranslationStructure type parameter, constrains namespace and keys to valid values.
+ *
+ * @template T - (Optional) The translation structure type (e.g., TranslationStructure)
+ * @template N - The namespace type (inferred from namespace parameter)
+ * @template K - Array type of translation keys (inferred from keys parameter)
  * @param namespace - Translation namespace (e.g., "common", "user", "shop")
  * @param keys - Array of translation keys
  * @returns TranslationRequirement with inferred key types
+ *
  * @example
+ * // Without type parameter (backward compatible)
  * const req = defineRequirement("common", ["submit", "cancel"]);
- * // req.keys is inferred as readonly ["submit", "cancel"]
+ *
+ * @example
+ * // With type parameter (type-safe)
+ * import type { TranslationStructure } from "./messages.types";
+ * const req = defineRequirement<TranslationStructure>("common", ["submit", "cancel"]);
+ * // Type error if namespace or keys are invalid
  */
+export function defineRequirement<
+  T,
+  N extends Namespace<T>,
+  const K extends readonly KeysForNamespace<T, N>[],
+>(namespace: N, keys: K): TranslationRequirement<K>;
+export function defineRequirement<const K extends readonly string[]>(
+  namespace: string,
+  keys: K
+): TranslationRequirement<K>;
 export function defineRequirement<const K extends readonly string[]>(
   namespace: string,
   keys: K
