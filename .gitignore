@@ -5,3 +5,5 @@ dist
 bun.lockb
 # This project uses bun. Not npm.
 package-lock.json
+# Generated type definition file
+defineRequirement.ts
