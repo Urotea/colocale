@@ -135,16 +135,17 @@ export function generateTypescriptInterface(
       }
       processedKeys.add(baseKey);
 
-      // Add base key
-      allKeys.push(`"${namespace}.${baseKey}"`);
-
       // Check for nested keys
       const value = namespaceData[key];
       if (typeof value === "object" && value !== null) {
+        // Only add nested keys, not the parent object key
         for (const nestedKey of Object.keys(value)) {
           const baseNestedKey = removePluralSuffix(nestedKey);
           allKeys.push(`"${namespace}.${baseKey}.${baseNestedKey}"`);
         }
+      } else {
+        // Only add the key if its value is a string (not an object)
+        allKeys.push(`"${namespace}.${baseKey}"`);
       }
     }
   }
@@ -184,11 +185,10 @@ export function generateTypescriptInterface(
       }
       processedKeys.add(baseKey);
 
-      keys.push(`"${baseKey}"`);
-
       // Check for nested keys (only 1 level supported by design)
       const value = namespaceData[key];
       if (typeof value === "object" && value !== null) {
+        // Only add nested keys, not the parent object key
         const nestedProcessedKeys = new Set<string>();
         for (const nestedKey of Object.keys(value)) {
           const baseNestedKey = removePluralSuffix(nestedKey);
@@ -197,6 +197,9 @@ export function generateTypescriptInterface(
             keys.push(`"${baseKey}.${baseNestedKey}"`);
           }
         }
+      } else {
+        // Only add the key if its value is a string (not an object)
+        keys.push(`"${baseKey}"`);
       }
     }
 
