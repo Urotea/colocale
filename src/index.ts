@@ -17,7 +17,7 @@ export type {
 export { validateTranslations, validateCrossLocale } from "./validation";
 
 // Utilities
-export { defineRequirement, createDefineRequirement } from "./utils";
+export { createDefineRequirement } from "./utils";
 
 import { extractPluralKeys, resolvePluralMessage } from "./plural";
 import { getNestedValue, replacePlaceholders } from "./utils";

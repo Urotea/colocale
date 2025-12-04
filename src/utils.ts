@@ -23,7 +23,7 @@ import type {
  * const req = defineRequirement<TranslationStructure, "common", ["submit", "cancel"]>("common", ["submit", "cancel"]);
  * // Type error if namespace or keys are invalid
  */
-export function defineRequirement<
+function defineRequirement<
   T,
   N extends Namespace<T>,
   const K extends readonly KeysForNamespace<T, N>[]
@@ -59,7 +59,10 @@ export function createDefineRequirement<T>() {
   return <
     N extends Namespace<T>,
     const K extends readonly KeysForNamespace<T, N>[]
-  >(namespace: N, keys: K): TranslationRequirement<K> => defineRequirement<T, N, K>(namespace, keys);
+  >(
+    namespace: N,
+    keys: K
+  ): TranslationRequirement<K> => defineRequirement<T, N, K>(namespace, keys);
 }
 
 /**
