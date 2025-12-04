@@ -208,12 +208,14 @@ describe("pickMessages", () => {
   });
 
   test("Non-existent key", () => {
+    // biome-ignore lint/suspicious/noExplicitAny: Testing invalid key handling
     const requirements = [defineRequirement("common", ["nonexistent" as any])];
     const result = pickMessages(testMessages, requirements);
     expect(result).toEqual({});
   });
 
   test("Non-existent namespace", () => {
+    // biome-ignore lint/suspicious/noExplicitAny: Testing invalid namespace handling
     const requirements = [defineRequirement("nonexistent" as any, ["submit"])];
     const result = pickMessages(testMessages, requirements);
     expect(result).toEqual({});
@@ -335,9 +337,11 @@ describe("createTranslator with TranslationRequirement", () => {
     };
     const requirement = defineRequirement("common", [
       "submit",
+      // biome-ignore lint/suspicious/noExplicitAny: Testing invalid key handling
       "nonexistent" as any,
     ]);
     const t = createTranslator(messages, requirement);
+    // biome-ignore lint/suspicious/noExplicitAny: Testing invalid key handling
     expect(t("nonexistent" as any)).toBe("nonexistent");
   });
 
