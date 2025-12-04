@@ -39,8 +39,8 @@ import type {
  * @returns Array of translation requirements
  */
 export function mergeRequirements(
-  ...requirements: TranslationRequirement[]
-): TranslationRequirement[] {
+  ...requirements: TranslationRequirement<readonly string[]>[]
+): TranslationRequirement<readonly string[]>[] {
   return requirements;
 }
 
@@ -54,10 +54,9 @@ export function mergeRequirements(
  * @param requirements - List of required translation keys
  * @returns Messages object (key format: "namespace.key")
  */
-export function pickMessages<R extends readonly TranslationRequirement[]>(
-  allMessages: TranslationFile,
-  requirements: R
-): Messages {
+export function pickMessages<
+  R extends readonly TranslationRequirement<readonly string[]>[]
+>(allMessages: TranslationFile, requirements: R): Messages {
   const messages: Record<string, string> = {};
 
   for (const requirement of requirements) {
@@ -118,7 +117,9 @@ export function pickMessages<R extends readonly TranslationRequirement[]>(
  * t("profile.invalid"); // ✗ Type error
  * ```
  */
-export function createTranslator<R extends TranslationRequirement>(
+export function createTranslator<
+  R extends TranslationRequirement<readonly string[]>
+>(
   messages: Messages,
   requirement: R
 ): ConstrainedTranslatorFunction<R> {
