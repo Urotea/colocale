@@ -1,4 +1,4 @@
-import type { NestedTranslations, TranslationFile } from "../types";
+import type { TranslationFile } from "../types";
 
 /**
  * Plural suffixes used in translation keys
@@ -36,14 +36,19 @@ function hasPluralSuffix(key: string): boolean {
 }
 
 /**
+ * Capitalize first letter
+ */
+function capitalizeFirst(str: string): string {
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+/**
  * Generate TypeScript interface from translation file structure
  * @param translations - Translation file data
- * @param interfaceName - Name of the generated interface (default: "TranslationStructure")
  * @returns TypeScript interface definition as a string
  */
 export function generateTypescriptInterface(
-  translations: TranslationFile,
-  interfaceName: string = "TranslationStructure"
+  translations: TranslationFile
 ): string {
   const lines: string[] = [];
 
@@ -61,63 +66,6 @@ export function generateTypescriptInterface(
   lines.push("interface TranslationRequirement<K extends readonly string[]> {");
   lines.push("  namespace: string;");
   lines.push("  keys: K;");
-  lines.push("}");
-  lines.push("");
-
-  // Generate namespace interfaces
-  const namespaceInterfaces: string[] = [];
-
-  for (const [namespace, namespaceData] of Object.entries(translations)) {
-    const interfaceNamespace = capitalizeFirst(namespace);
-    const namespaceInterfaceName = `${interfaceNamespace}Messages`;
-
-    lines.push(`interface ${namespaceInterfaceName} {`);
-
-    const processedKeys = new Set<string>();
-
-    for (const [key, value] of Object.entries(namespaceData)) {
-      // Remove plural suffix for the key
-      const baseKey = removePluralSuffix(key);
-
-      // Skip if we've already processed this base key
-      if (processedKeys.has(baseKey)) {
-        continue;
-      }
-      processedKeys.add(baseKey);
-
-      if (typeof value === "string") {
-        // Direct string value
-        lines.push(`  "${baseKey}": string;`);
-      } else if (typeof value === "object" && value !== null) {
-        // Nested object
-        const nestedInterfaceName = `${interfaceNamespace}${capitalizeFirst(
-          baseKey
-        )}Messages`;
-        lines.push(`  "${baseKey}": ${nestedInterfaceName};`);
-
-        // Store nested interface for later generation
-        namespaceInterfaces.push(
-          generateNestedInterface(nestedInterfaceName, value)
-        );
-      }
-    }
-
-    lines.push("}");
-    lines.push("");
-  }
-
-  // Add nested interfaces
-  for (const nestedInterface of namespaceInterfaces) {
-    lines.push(nestedInterface);
-    lines.push("");
-  }
-
-  // Generate main interface that combines all namespaces
-  lines.push(`interface ${interfaceName} {`);
-  for (const namespace of Object.keys(translations)) {
-    const interfaceNamespace = capitalizeFirst(namespace);
-    lines.push(`  "${namespace}": ${interfaceNamespace}Messages;`);
-  }
   lines.push("}");
   lines.push("");
 
@@ -227,73 +175,4 @@ export function generateTypescriptInterface(
   return lines.join("\n");
 }
 
-/**
- * Generate nested interface
- */
-function generateNestedInterface(
-  interfaceName: string,
-  nested: NestedTranslations
-): string {
-  const lines: string[] = [];
-  lines.push(`interface ${interfaceName} {`);
 
-  const processedKeys = new Set<string>();
-
-  for (const key of Object.keys(nested)) {
-    // Remove plural suffix for the key
-    const baseKey = removePluralSuffix(key);
-
-    // Skip if we've already processed this base key
-    if (processedKeys.has(baseKey)) {
-      continue;
-    }
-    processedKeys.add(baseKey);
-
-    lines.push(`  "${baseKey}": string;`);
-  }
-
-  lines.push("}");
-
-  return lines.join("\n");
-}
-
-/**
- * Capitalize first letter
- */
-function capitalizeFirst(str: string): string {
-  return str.charAt(0).toUpperCase() + str.slice(1);
-}
-
-/**
- * Generate import statement for the generated types
- * @param generatedTypePath - Path to the generated types file (e.g., "./messages.types")
- * @returns Import statement string
- */
-export function generateImportStatement(
-  generatedTypePath: string = "./messages.types"
-): string {
-  return `import type { TranslationStructure, TranslationKey } from "${generatedTypePath}";`;
-}
-
-/**
- * Generate example usage code
- * @returns Example code as a string
- */
-export function generateUsageExample(): string {
-  return `
-// Example usage:
-import { pickMessages, createTranslator } from "colocale";
-import type { TranslationStructure, TranslationKey } from "./messages.types";
-
-// Type-safe messages
-const allMessages: TranslationStructure = /* your loaded messages */;
-
-// Type-safe translation keys
-const key: TranslationKey<"common"> = "submit";
-
-// Type-safe translator
-const t = createTranslator<"common", TranslationKey<"common">>(messages, "common");
-t("submit"); // ✓ Type-safe
-t("invalid"); // ✗ Type error
-`.trim();
-}

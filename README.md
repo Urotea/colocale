@@ -260,18 +260,19 @@ const req = defineRequirement("common", ["invalid"]);
 
 **Manual usage (without codegen):**
 
-You can also use `createDefineRequirement` from the library to create your own typed function:
+The recommended approach is to use the `codegen` command to generate the type-safe `defineRequirement` function. If you need to create translation requirements manually without type safety, you can create them directly:
 
 ```typescript
-import { createDefineRequirement } from "colocale";
-import type { TranslationStructure } from "./types/messages";
+import type { TranslationRequirement } from "colocale";
 
-// Create a type-safe defineRequirement function
-const defineRequirement = createDefineRequirement<TranslationStructure>();
-
-// Now use it with full type safety
-const req = defineRequirement("common", ["submit", "cancel"]);
+// Manually create a translation requirement (no compile-time type safety)
+const req: TranslationRequirement<readonly ["submit", "cancel"]> = {
+  namespace: "common",
+  keys: ["submit", "cancel"],
+};
 ```
+
+Note: Manual usage does not provide compile-time validation of namespaces and keys. Use the `codegen` command for full type safety.
 
 ## Usage Examples
 
@@ -556,33 +557,58 @@ npx colocale codegen messages  # Output: defineRequirement.ts (default)
  * DO NOT EDIT MANUALLY
  */
 
-import { createDefineRequirement } from "colocale";
-
-interface CommonMessages {
-  submit: string;
-  cancel: string;
-  itemCount: string; // Plural suffixes (_one, _other, etc.) are automatically removed
+/**
+ * Translation requirement type
+ */
+interface TranslationRequirement<K extends readonly string[]> {
+  namespace: string;
+  keys: K;
 }
 
-interface UserProfileMessages {
-  name: string;
-  email: string;
-}
+/**
+ * Internal helper types for translation structure
+ */
 
-interface UserMessages {
-  profile: UserProfileMessages;
-}
+/**
+ * Union type of all valid namespace names
+ */
+type Namespace = "common" | "user";
 
-interface TranslationStructure {
-  common: CommonMessages;
-  user: UserMessages;
-}
+/**
+ * Valid keys for the 'common' namespace
+ */
+type CommonKeys = "submit" | "cancel" | "itemCount";
+
+/**
+ * Valid keys for the 'user' namespace
+ */
+type UserKeys = "profile.name" | "profile.email";
+
+/**
+ * Get valid keys for a specific namespace
+ * @template N - The namespace name
+ */
+type KeysForNamespace<N extends Namespace> =
+  N extends "common" ? CommonKeys :
+  N extends "user" ? UserKeys :
+  never;
 
 /**
  * Type-safe defineRequirement function for this translation structure
  */
-const defineRequirement = createDefineRequirement<TranslationStructure>();
+function defineRequirement<
+  N extends Namespace,
+  const K extends readonly KeysForNamespace<N>[]
+>(
+  namespace: N,
+  keys: K
+): TranslationRequirement<K> {
+  return { keys, namespace };
+}
 
+/**
+ * @public
+ */
 export default defineRequirement;
 ```
 
