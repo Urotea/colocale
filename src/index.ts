@@ -35,13 +35,13 @@ import type {
 
 /**
  * Merge multiple translation requirements into a single array
- * @param requirements - Translation requirements (variadic)
- * @returns Array of translation requirements
+ * @param requirements - Translation requirements or arrays of translation requirements (variadic)
+ * @returns Flattened array of translation requirements
  */
 export function mergeRequirements(
-  ...requirements: TranslationRequirement[]
+  ...requirements: (TranslationRequirement | TranslationRequirement[])[]
 ): TranslationRequirement[] {
-  return requirements;
+  return requirements.flat();
 }
 
 /**
