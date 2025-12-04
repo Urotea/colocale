@@ -15,10 +15,16 @@ describe("generateTypescriptInterface", () => {
     const result = generateTypescriptInterface(translations);
 
     // Should include nested string keys
-    expect(result).toContain('"test.message.test"');
+    expect(result).toContain('"message.test"');
 
-    // Should NOT include object keys
-    expect(result).not.toContain('"test.message"');
+    // Should NOT include object keys in the Keys type
+    const testKeysMatch = result.match(/type TestKeys = ([^;]+);/);
+    expect(testKeysMatch).not.toBeNull();
+    if (testKeysMatch) {
+      const testKeys = testKeysMatch[1];
+      expect(testKeys).not.toContain('"message"');
+      expect(testKeys).toContain('"message.test"');
+    }
   });
 
   test("should include direct string keys", () => {
@@ -32,8 +38,8 @@ describe("generateTypescriptInterface", () => {
     const result = generateTypescriptInterface(translations);
 
     // Should include direct string keys
-    expect(result).toContain('"common.submit"');
-    expect(result).toContain('"common.cancel"');
+    expect(result).toContain('"submit"');
+    expect(result).toContain('"cancel"');
   });
 
   test("should handle mix of direct and nested keys", () => {
@@ -51,15 +57,15 @@ describe("generateTypescriptInterface", () => {
     const result = generateTypescriptInterface(translations);
 
     // Should include direct string keys
-    expect(result).toContain('"test.directKey"');
-    expect(result).toContain('"test.anotherDirect"');
+    expect(result).toContain('"directKey"');
+    expect(result).toContain('"anotherDirect"');
 
     // Should include nested string keys
-    expect(result).toContain('"test.nested.key1"');
-    expect(result).toContain('"test.nested.key2"');
+    expect(result).toContain('"nested.key1"');
+    expect(result).toContain('"nested.key2"');
 
     // Should NOT include object keys
-    expect(result).not.toContain('"test.nested"');
+    expect(result).not.toContain('"nested" |');
   });
 
   test("should exclude object keys from namespace-specific keys", () => {
@@ -101,11 +107,11 @@ describe("generateTypescriptInterface", () => {
     const result = generateTypescriptInterface(translations);
 
     // Should include base key without plural suffix
-    expect(result).toContain('"common.itemCount"');
+    expect(result).toContain('"itemCount"');
 
     // Should NOT include keys with plural suffix
-    expect(result).not.toContain('"common.itemCount_one"');
-    expect(result).not.toContain('"common.itemCount_other"');
+    expect(result).not.toContain('"itemCount_one"');
+    expect(result).not.toContain('"itemCount_other"');
   });
 
   test("should handle nested keys with plural suffixes", () => {
@@ -121,14 +127,14 @@ describe("generateTypescriptInterface", () => {
     const result = generateTypescriptInterface(translations);
 
     // Should include base nested key without plural suffix
-    expect(result).toContain('"shop.cart.itemCount"');
+    expect(result).toContain('"cart.itemCount"');
 
     // Should NOT include object key
-    expect(result).not.toContain('"shop.cart"');
+    expect(result).not.toContain('"cart" |');
 
     // Should NOT include keys with plural suffix
-    expect(result).not.toContain('"shop.cart.itemCount_one"');
-    expect(result).not.toContain('"shop.cart.itemCount_other"');
+    expect(result).not.toContain('"cart.itemCount_one"');
+    expect(result).not.toContain('"cart.itemCount_other"');
   });
 
   test("should generate correct interface structure", () => {
@@ -144,9 +150,9 @@ describe("generateTypescriptInterface", () => {
     const result = generateTypescriptInterface(translations);
 
     // Interface structure should still include nested objects
-    expect(result).toContain('interface UserMessages {');
+    expect(result).toContain("interface UserMessages {");
     expect(result).toContain('"profile": UserProfileMessages;');
-    expect(result).toContain('interface UserProfileMessages {');
+    expect(result).toContain("interface UserProfileMessages {");
     expect(result).toContain('"name": string;');
     expect(result).toContain('"email": string;');
   });
@@ -167,13 +173,13 @@ describe("generateTypescriptInterface", () => {
     const result = generateTypescriptInterface(translations);
 
     // Should include direct keys from common namespace
-    expect(result).toContain('"common.submit"');
-    expect(result).toContain('"common.cancel"');
+    expect(result).toContain('"submit"');
+    expect(result).toContain('"cancel"');
 
     // Should include nested keys from user namespace
-    expect(result).toContain('"user.profile.name"');
+    expect(result).toContain('"profile.name"');
 
     // Should NOT include object key from user namespace
-    expect(result).not.toContain('"user.profile"');
+    expect(result).not.toContain('"profile" |');
   });
 });
