@@ -243,6 +243,9 @@ export function generateTypescriptInterface(
     `const defineRequirement = createDefineRequirement<${interfaceName}>();`
   );
   lines.push("");
+  lines.push("/**");
+  lines.push(" * @public");
+  lines.push(" */");
   lines.push("export default defineRequirement;");
   lines.push("");
 
