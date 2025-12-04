@@ -42,7 +42,7 @@ npx colocale check messages/ja          # Single locale
 npx colocale check messages              # All locales + consistency check
 
 # Generate type definitions
-npx colocale codegen messages/en types/messages.d.ts
+npx colocale codegen messages types/messages.d.ts
 ```
 
 ## Quick Start
@@ -75,7 +75,7 @@ Create JSON files for each namespace.
 ### 2. Generate Type Definitions (Recommended)
 
 ```bash
-npx colocale codegen messages/en types/messages.d.ts
+npx colocale codegen messages types/messages.d.ts
 ```
 
 This automatically generates TypeScript type definitions from your translation files.
@@ -480,7 +480,7 @@ You can automatically generate TypeScript type definitions from JSON files. This
 
 ```bash
 # Generate type definition file
-npx colocale codegen messages/en types/messages.d.ts
+npx colocale codegen messages types/messages.d.ts
 ```
 
 **Example of generated type definitions:**
@@ -567,7 +567,7 @@ const req: TranslationRequirement<TranslationKey<"user">> = defineRequirement(
 ### Development Workflow
 
 1. **Update translation files**
-2. **Regenerate type definitions**: `npx colocale codegen messages/en types/messages.d.ts`
+2. **Regenerate type definitions**: `npx colocale codegen messages types/messages.d.ts`
 3. **Enjoy type safety**: Detect non-existent keys at compile time
 
 ### Add to package.json Scripts
@@ -576,7 +576,7 @@ const req: TranslationRequirement<TranslationKey<"user">> = defineRequirement(
 {
   "scripts": {
     "check": "colocale check messages",
-    "codegen": "colocale codegen messages/en types/messages.d.ts",
+    "codegen": "colocale codegen messages types/messages.d.ts",
     "codegen:watch": "nodemon --watch messages --ext json --exec 'npm run codegen'"
   }
 }

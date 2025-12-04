@@ -94,3 +94,50 @@ export async function loadAllLocaleTranslations(
 
   return localeTranslations;
 }
+
+/**
+ * Get the first locale directory from a base directory
+ * A locale directory is one that contains JSON translation files.
+ * Returns the first valid locale directory found (order depends on filesystem).
+ * 
+ * @param basePath - Base directory that may contain locale subdirectories
+ * @returns Path to the first locale directory found, or null if none found
+ */
+export async function getFirstLocaleDirectory(
+  basePath: string
+): Promise<string | null> {
+  let entries: string[];
+  try {
+    entries = await readdir(basePath);
+  } catch (error) {
+    return null;
+  }
+
+  for (const entry of entries) {
+    const entryPath = join(basePath, entry);
+
+    let stats;
+    try {
+      stats = await stat(entryPath);
+    } catch (error) {
+      continue;
+    }
+
+    // Only process directories
+    if (stats.isDirectory()) {
+      // Check if directory contains JSON files (translation files)
+      try {
+        const files = await readdir(entryPath);
+        const hasJsonFiles = files.some(file => file.endsWith('.json'));
+        if (hasJsonFiles) {
+          return entryPath;
+        }
+      } catch (error) {
+        // Skip directories that can't be read
+        continue;
+      }
+    }
+  }
+
+  return null;
+}
