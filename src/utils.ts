@@ -32,6 +32,37 @@ export function defineRequirement<
 }
 
 /**
+ * Create a type-specific defineRequirement function with full type inference
+ *
+ * This helper uses currying to enable better type inference ergonomics. By specifying
+ * the translation structure type once, subsequent calls get full type safety without
+ * requiring verbose type parameters.
+ *
+ * @template T - The translation structure type (e.g., TranslationStructure)
+ * @returns A function that defines requirements for the given translation structure
+ *
+ * @example
+ * ```typescript
+ * import { createDefineRequirement } from 'colocale';
+ * import type { TranslationStructure } from './messages.types';
+ *
+ * // Create a typed helper once
+ * const defineRequirement = createDefineRequirement<TranslationStructure>();
+ *
+ * // Use it with full type inference and type safety
+ * const requirement = defineRequirement("common", ["submit", "cancel"]);
+ * //                                      ^         ^
+ * //                                      Type-checked against TranslationStructure
+ * ```
+ */
+export function createDefineRequirement<T>() {
+  return <
+    N extends Namespace<T>,
+    const K extends readonly KeysForNamespace<T, N>[]
+  >(namespace: N, keys: K): TranslationRequirement<K> => defineRequirement<T, N, K>(namespace, keys);
+}
+
+/**
  * Get nested object value from dot notation path
  * @param obj - Object to search
  * @param path - Dot notation path (e.g., "profile.name")
