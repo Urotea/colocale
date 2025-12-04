@@ -40,6 +40,13 @@ export type NamespaceTranslations = Record<string, string | NestedTranslations>;
 export type NestedTranslations = Record<string, string>;
 
 /**
+ * Type for locale-indexed translation files
+ * Structure: { locale: { namespace: translations } }
+ * Example: { en: { common: {...} }, ja: { common: {...} } }
+ */
+export type LocaleTranslations = Record<string, TranslationFile>;
+
+/**
  * Validation error types
  */
 export type ValidationErrorType =
