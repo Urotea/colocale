@@ -4,10 +4,37 @@ import {
   type TranslationFile,
   createDefineRequirement,
   createTranslator,
-  defineRequirement,
   mergeRequirements,
   pickMessages,
 } from "./index";
+
+// Define a test translation structure type for type-safe defineRequirement
+interface TestTranslationStructure {
+  common: {
+    submit: string;
+    cancel: string;
+    itemCount: string;
+  };
+  user: {
+    profile: {
+      name: string;
+      email: string;
+    };
+  };
+  shop: {
+    cart: {
+      item: string;
+    };
+    cartSummary: string;
+  };
+  results: {
+    itemsFound: string;
+    greeting: string;
+  };
+}
+
+// Create type-safe defineRequirement function for tests
+const defineRequirement = createDefineRequirement<TestTranslationStructure>();
 
 // Test translation files
 const testMessages: TranslationFile = {
@@ -49,22 +76,22 @@ describe("mergeRequirements", () => {
 
   test("Merge multiple translation requirements", () => {
     const req1 = defineRequirement("common", ["submit"]);
-    const req2 = defineRequirement("user", ["name"]);
+    const req2 = defineRequirement("user", ["profile.name"]);
     const result = mergeRequirements(req1, req2);
     expect(result).toEqual([req1, req2]);
   });
 
   test("Merge arrays", () => {
     const req1 = defineRequirement("common", ["submit"]);
-    const req2 = defineRequirement("user", ["name"]);
+    const req2 = defineRequirement("user", ["profile.name"]);
     const result = mergeRequirements(req1, req2);
     expect(result).toEqual([req1, req2]);
   });
 
   test("Merge multiple requirements", () => {
     const req1 = defineRequirement("common", ["submit"]);
-    const req2 = defineRequirement("user", ["name"]);
-    const req3 = defineRequirement("shop", ["item"]);
+    const req2 = defineRequirement("user", ["profile.name"]);
+    const req3 = defineRequirement("shop", ["cartSummary"]);
     const result = mergeRequirements(req1, req2, req3);
     expect(result).toEqual([req1, req2, req3]);
   });
@@ -76,24 +103,24 @@ describe("mergeRequirements", () => {
 
   test("Flatten array of requirements", () => {
     const req1 = defineRequirement("common", ["submit"]);
-    const req2 = defineRequirement("user", ["name"]);
-    const req3 = defineRequirement("shop", ["item"]);
+    const req2 = defineRequirement("user", ["profile.name"]);
+    const req3 = defineRequirement("shop", ["cartSummary"]);
     const result = mergeRequirements([req1, req2], req3);
     expect(result).toEqual([req1, req2, req3]);
   });
 
   test("Flatten multiple arrays of requirements", () => {
     const req1 = defineRequirement("common", ["submit"]);
-    const req2 = defineRequirement("user", ["name"]);
-    const req3 = defineRequirement("shop", ["item"]);
+    const req2 = defineRequirement("user", ["profile.name"]);
+    const req3 = defineRequirement("shop", ["cartSummary"]);
     const result = mergeRequirements([req1, req2], [req3]);
     expect(result).toEqual([req1, req2, req3]);
   });
 
   test("Merge nested mergeRequirements results", () => {
     const req1 = defineRequirement("common", ["submit"]);
-    const req2 = defineRequirement("user", ["name"]);
-    const req3 = defineRequirement("shop", ["item"]);
+    const req2 = defineRequirement("user", ["profile.name"]);
+    const req3 = defineRequirement("shop", ["cartSummary"]);
     const req4 = defineRequirement("results", ["itemsFound"]);
 
     const merged1 = mergeRequirements(req1, req2);
@@ -105,8 +132,8 @@ describe("mergeRequirements", () => {
 
   test("Mix single requirements and arrays", () => {
     const req1 = defineRequirement("common", ["submit"]);
-    const req2 = defineRequirement("user", ["name"]);
-    const req3 = defineRequirement("shop", ["item"]);
+    const req2 = defineRequirement("user", ["profile.name"]);
+    const req3 = defineRequirement("shop", ["cartSummary"]);
     const req4 = defineRequirement("results", ["itemsFound"]);
 
     const result = mergeRequirements(req1, [req2, req3], req4);
@@ -121,7 +148,7 @@ describe("mergeRequirements", () => {
 
   test("Flatten empty array within arguments", () => {
     const req1 = defineRequirement("common", ["submit"]);
-    const req2 = defineRequirement("user", ["name"]);
+    const req2 = defineRequirement("user", ["profile.name"]);
     const result = mergeRequirements(req1, [], req2);
     expect(result).toEqual([req1, req2]);
   });
@@ -181,13 +208,13 @@ describe("pickMessages", () => {
   });
 
   test("Non-existent key", () => {
-    const requirements = [defineRequirement("common", ["nonexistent"])];
+    const requirements = [defineRequirement("common", ["nonexistent" as any])];
     const result = pickMessages(testMessages, requirements);
     expect(result).toEqual({});
   });
 
   test("Non-existent namespace", () => {
-    const requirements = [defineRequirement("nonexistent", ["submit"])];
+    const requirements = [defineRequirement("nonexistent" as any, ["submit"])];
     const result = pickMessages(testMessages, requirements);
     expect(result).toEqual({});
   });
@@ -306,30 +333,33 @@ describe("createTranslator with TranslationRequirement", () => {
     const messages: Messages = {
       "common.submit": "送信",
     };
-    const requirement = defineRequirement("common", ["submit", "nonexistent"]);
+    const requirement = defineRequirement("common", [
+      "submit",
+      "nonexistent" as any,
+    ]);
     const t = createTranslator(messages, requirement);
-    expect(t("nonexistent")).toBe("nonexistent");
+    expect(t("nonexistent" as any)).toBe("nonexistent");
   });
 
   test("Multiple uses of same placeholder", () => {
     const messages: Messages = {
-      "test.repeated":
+      "results.greeting":
         "{{name}}さん、こんにちは。{{name}}さんの注文を確認します。",
     };
-    const requirement = defineRequirement("test", ["repeated"]);
+    const requirement = defineRequirement("results", ["greeting"]);
     const t = createTranslator(messages, requirement);
-    expect(t("repeated", { name: "田中" })).toBe(
+    expect(t("greeting", { name: "田中" })).toBe(
       "田中さん、こんにちは。田中さんの注文を確認します。"
     );
   });
 
   test("Number to string conversion", () => {
     const messages: Messages = {
-      "test.number": "価格: {{price}}円",
+      "results.itemsFound": "価格: {{price}}円",
     };
-    const requirement = defineRequirement("test", ["number"]);
+    const requirement = defineRequirement("results", ["itemsFound"]);
     const t = createTranslator(messages, requirement);
-    expect(t("number", { price: 1000 })).toBe("価格: 1000円");
+    expect(t("itemsFound", { price: 1000 })).toBe("価格: 1000円");
   });
 });
 
@@ -358,47 +388,32 @@ describe("Edge cases", () => {
 });
 
 describe("createDefineRequirement", () => {
-  // Define a test translation structure type
-  interface TestTranslationStructure {
-    common: {
-      submit: string;
-      cancel: string;
-      itemCount: string;
-    };
-    user: {
-      profile: {
-        name: string;
-        email: string;
-      };
-    };
-    shop: {
-      cart: {
-        item: string;
-      };
-      cartSummary: string;
-    };
-    results: {
-      itemsFound: string;
-      greeting: string;
+  // Define another test translation structure type to test isolation
+  interface AnotherTestTranslationStructure {
+    other: {
+      test: string;
     };
   }
 
   test("Create typed defineRequirement function", () => {
-    const typedDefineRequirement = createDefineRequirement<TestTranslationStructure>();
+    const typedDefineRequirement =
+      createDefineRequirement<AnotherTestTranslationStructure>();
     expect(typeof typedDefineRequirement).toBe("function");
   });
 
   test("Basic usage with type-specific function", () => {
-    const typedDefineRequirement = createDefineRequirement<TestTranslationStructure>();
-    const requirement = typedDefineRequirement("common", ["submit", "cancel"]);
+    const typedDefineRequirement =
+      createDefineRequirement<AnotherTestTranslationStructure>();
+    const requirement = typedDefineRequirement("other", ["test"]);
     expect(requirement).toEqual({
-      namespace: "common",
-      keys: ["submit", "cancel"],
+      namespace: "other",
+      keys: ["test"],
     });
   });
 
   test("Works with nested keys", () => {
-    const typedDefineRequirement = createDefineRequirement<TestTranslationStructure>();
+    const typedDefineRequirement =
+      createDefineRequirement<TestTranslationStructure>();
     const requirement = typedDefineRequirement("user", [
       "profile.name",
       "profile.email",
@@ -410,7 +425,8 @@ describe("createDefineRequirement", () => {
   });
 
   test("Works with pickMessages", () => {
-    const typedDefineRequirement = createDefineRequirement<TestTranslationStructure>();
+    const typedDefineRequirement =
+      createDefineRequirement<TestTranslationStructure>();
     const requirements = [
       typedDefineRequirement("common", ["submit", "cancel"]),
     ];
@@ -422,7 +438,8 @@ describe("createDefineRequirement", () => {
   });
 
   test("Works with createTranslator", () => {
-    const typedDefineRequirement = createDefineRequirement<TestTranslationStructure>();
+    const typedDefineRequirement =
+      createDefineRequirement<TestTranslationStructure>();
     const messages: Messages = {
       "common.submit": "送信",
       "common.cancel": "キャンセル",
@@ -434,7 +451,8 @@ describe("createDefineRequirement", () => {
   });
 
   test("Multiple namespaces with same typed function", () => {
-    const typedDefineRequirement = createDefineRequirement<TestTranslationStructure>();
+    const typedDefineRequirement =
+      createDefineRequirement<TestTranslationStructure>();
     const req1 = typedDefineRequirement("common", ["submit"]);
     const req2 = typedDefineRequirement("user", ["profile.name"]);
     const req3 = typedDefineRequirement("results", ["itemsFound"]);
@@ -453,17 +471,19 @@ describe("createDefineRequirement", () => {
     });
   });
 
-  test("Interoperability with standard defineRequirement", () => {
-    const typedDefineRequirement = createDefineRequirement<TestTranslationStructure>();
+  test("Interoperability with main defineRequirement", () => {
+    const typedDefineRequirement =
+      createDefineRequirement<TestTranslationStructure>();
     const req1 = typedDefineRequirement("common", ["submit"]);
-    const req2 = defineRequirement("user", ["name"]);
+    const req2 = defineRequirement("user", ["profile.name"]);
 
     const result = mergeRequirements(req1, req2);
     expect(result).toEqual([req1, req2]);
   });
 
   test("Works with plural keys", () => {
-    const typedDefineRequirement = createDefineRequirement<TestTranslationStructure>();
+    const typedDefineRequirement =
+      createDefineRequirement<TestTranslationStructure>();
     const requirements = [typedDefineRequirement("common", ["itemCount"])];
     const result = pickMessages(testMessages, requirements);
     expect(result).toEqual({
@@ -474,7 +494,8 @@ describe("createDefineRequirement", () => {
   });
 
   test("Works with nested plural keys", () => {
-    const typedDefineRequirement = createDefineRequirement<TestTranslationStructure>();
+    const typedDefineRequirement =
+      createDefineRequirement<TestTranslationStructure>();
     const requirements = [typedDefineRequirement("shop", ["cart.item"])];
     const result = pickMessages(testMessages, requirements);
     expect(result).toEqual({
@@ -485,7 +506,8 @@ describe("createDefineRequirement", () => {
   });
 
   test("Multiple keys in single requirement", () => {
-    const typedDefineRequirement = createDefineRequirement<TestTranslationStructure>();
+    const typedDefineRequirement =
+      createDefineRequirement<TestTranslationStructure>();
     const requirement = typedDefineRequirement("results", [
       "itemsFound",
       "greeting",
@@ -497,8 +519,12 @@ describe("createDefineRequirement", () => {
   });
 
   test("Const assertion is preserved for keys", () => {
-    const typedDefineRequirement = createDefineRequirement<TestTranslationStructure>();
-    const requirement = typedDefineRequirement("common", ["submit", "cancel"] as const);
+    const typedDefineRequirement =
+      createDefineRequirement<TestTranslationStructure>();
+    const requirement = typedDefineRequirement("common", [
+      "submit",
+      "cancel",
+    ] as const);
     // The keys should maintain their literal types due to const assertion
     expect(requirement.keys).toEqual(["submit", "cancel"]);
     expect(requirement.keys[0]).toBe("submit");
