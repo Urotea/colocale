@@ -170,7 +170,7 @@ export function generateTypescriptInterface(
   );
   lines.push("");
 
-  // Generate KeysForNamespace type for each namespace
+  // Generate namespace-specific key types
   for (const [namespace, namespaceData] of Object.entries(translations)) {
     const keys: string[] = [];
     const processedKeys = new Set<string>();
@@ -210,21 +210,6 @@ export function generateTypescriptInterface(
     lines.push(`type ${capitalizedNs}Keys = ${keys.join(" | ")};`);
     lines.push("");
   }
-
-  lines.push("/**");
-  lines.push(" * Get valid keys for a specific namespace");
-  lines.push(" * @template N - The namespace name");
-  lines.push(" */");
-  lines.push("type KeysForNamespace<N extends Namespace> =");
-  const namespaceKeyMap = Object.keys(translations)
-    .map((ns) => {
-      const capitalizedNs = capitalizeFirst(ns);
-      return `  N extends "${ns}" ? ${capitalizedNs}Keys :`;
-    })
-    .join("\n");
-  lines.push(namespaceKeyMap);
-  lines.push("  never;");
-  lines.push("");
 
   // Add the exported defineRequirement function
   lines.push("/**");

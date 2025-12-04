@@ -176,4 +176,27 @@ describe("generateTypescriptInterface", () => {
     // Should NOT include object key from user namespace
     expect(result).not.toContain('"user.profile"');
   });
+
+  test("should not generate KeysForNamespace type", () => {
+    const translations: TranslationFile = {
+      common: {
+        submit: "Submit",
+        cancel: "Cancel",
+      },
+      user: {
+        profile: {
+          name: "Name",
+        },
+      },
+    };
+
+    const result = generateTypescriptInterface(translations);
+
+    // Should NOT generate KeysForNamespace type
+    expect(result).not.toContain("type KeysForNamespace");
+
+    // Should still generate namespace-specific key types
+    expect(result).toContain("type CommonKeys");
+    expect(result).toContain("type UserKeys");
+  });
 });
