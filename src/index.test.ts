@@ -15,7 +15,7 @@ const testMessages: TranslationFile = {
     cancel: "キャンセル",
     itemCount_zero: "アイテムがありません",
     itemCount_one: "1件のアイテム",
-    itemCount_other: "{count}件のアイテム",
+    itemCount_other: "{{count}}件のアイテム",
   },
   user: {
     profile: {
@@ -27,15 +27,15 @@ const testMessages: TranslationFile = {
     cart: {
       item_zero: "カートは空です",
       item_one: "1個の商品",
-      item_other: "{count}個の商品",
+      item_other: "{{count}}個の商品",
     },
-    cartSummary_zero: "{user}さんのカートは空です",
-    cartSummary_one: "{user}さんのカートに1個の商品があります",
-    cartSummary_other: "{user}さんのカートに{count}個の商品があります",
+    cartSummary_zero: "{{user}}さんのカートは空です",
+    cartSummary_one: "{{user}}さんのカートに1個の商品があります",
+    cartSummary_other: "{{user}}さんのカートに{{count}}個の商品があります",
   },
   results: {
-    itemsFound: "{count}件取得しました",
-    greeting: "こんにちは、{name}さん",
+    itemsFound: "{{count}}件取得しました",
+    greeting: "こんにちは、{{name}}さん",
   },
 };
 
@@ -92,7 +92,7 @@ describe("pickMessages", () => {
     const result = pickMessages(testMessages, requirements);
     expect(result).toEqual({
       "common.submit": "送信",
-      "results.itemsFound": "{count}件取得しました",
+      "results.itemsFound": "{{count}}件取得しました",
     });
   });
 
@@ -113,7 +113,7 @@ describe("pickMessages", () => {
     expect(result).toEqual({
       "common.itemCount_zero": "アイテムがありません",
       "common.itemCount_one": "1件のアイテム",
-      "common.itemCount_other": "{count}件のアイテム",
+      "common.itemCount_other": "{{count}}件のアイテム",
     });
   });
 
@@ -123,7 +123,7 @@ describe("pickMessages", () => {
     expect(result).toEqual({
       "shop.cart.item_zero": "カートは空です",
       "shop.cart.item_one": "1個の商品",
-      "shop.cart.item_other": "{count}個の商品",
+      "shop.cart.item_other": "{{count}}個の商品",
     });
   });
 
@@ -154,7 +154,7 @@ describe("createTranslator with TranslationRequirement", () => {
 
   test("Placeholder replacement (single)", () => {
     const messages: Messages = {
-      "results.itemsFound": "{count}件取得しました",
+      "results.itemsFound": "{{count}}件取得しました",
     };
     const requirement = defineRequirement("results", ["itemsFound"]);
     const t = createTranslator(messages, requirement);
@@ -163,7 +163,7 @@ describe("createTranslator with TranslationRequirement", () => {
 
   test("Placeholder replacement (multiple)", () => {
     const messages: Messages = {
-      "results.greeting": "こんにちは、{name}さん",
+      "results.greeting": "こんにちは、{{name}}さん",
     };
     const requirement = defineRequirement("results", ["greeting"]);
     const t = createTranslator(messages, requirement);
@@ -174,7 +174,7 @@ describe("createTranslator with TranslationRequirement", () => {
     const messages: Messages = {
       "common.itemCount_zero": "アイテムがありません",
       "common.itemCount_one": "1件のアイテム",
-      "common.itemCount_other": "{count}件のアイテム",
+      "common.itemCount_other": "{{count}}件のアイテム",
     };
     const requirement = defineRequirement("common", ["itemCount"]);
     const t = createTranslator(messages, requirement);
@@ -185,7 +185,7 @@ describe("createTranslator with TranslationRequirement", () => {
     const messages: Messages = {
       "common.itemCount_zero": "アイテムがありません",
       "common.itemCount_one": "1件のアイテム",
-      "common.itemCount_other": "{count}件のアイテム",
+      "common.itemCount_other": "{{count}}件のアイテム",
     };
     const requirement = defineRequirement("common", ["itemCount"]);
     const t = createTranslator(messages, requirement);
@@ -196,7 +196,7 @@ describe("createTranslator with TranslationRequirement", () => {
     const messages: Messages = {
       "common.itemCount_zero": "アイテムがありません",
       "common.itemCount_one": "1件のアイテム",
-      "common.itemCount_other": "{count}件のアイテム",
+      "common.itemCount_other": "{{count}}件のアイテム",
     };
     const requirement = defineRequirement("common", ["itemCount"]);
     const t = createTranslator(messages, requirement);
@@ -206,9 +206,9 @@ describe("createTranslator with TranslationRequirement", () => {
 
   test("Combination of plurals + placeholders", () => {
     const messages: Messages = {
-      "shop.cartSummary_zero": "{user}さんのカートは空です",
-      "shop.cartSummary_one": "{user}さんのカートに1個の商品があります",
-      "shop.cartSummary_other": "{user}さんのカートに{count}個の商品があります",
+      "shop.cartSummary_zero": "{{user}}さんのカートは空です",
+      "shop.cartSummary_one": "{{user}}さんのカートに1個の商品があります",
+      "shop.cartSummary_other": "{{user}}さんのカートに{{count}}個の商品があります",
     };
     const requirement = defineRequirement("shop", ["cartSummary"]);
     const t = createTranslator(messages, requirement);
@@ -225,7 +225,7 @@ describe("createTranslator with TranslationRequirement", () => {
 
   test("Partial plural keys (_other only)", () => {
     const messages: Messages = {
-      "common.itemCount_other": "{count}件のアイテム",
+      "common.itemCount_other": "{{count}}件のアイテム",
     };
     const requirement = defineRequirement("common", ["itemCount"]);
     const t = createTranslator(messages, requirement);
@@ -239,7 +239,7 @@ describe("createTranslator with TranslationRequirement", () => {
   test("Partial plural keys (_one and _other only)", () => {
     const messages: Messages = {
       "common.itemCount_one": "1件のアイテム",
-      "common.itemCount_other": "{count}件のアイテム",
+      "common.itemCount_other": "{{count}}件のアイテム",
     };
     const requirement = defineRequirement("common", ["itemCount"]);
     const t = createTranslator(messages, requirement);
@@ -259,7 +259,7 @@ describe("createTranslator with TranslationRequirement", () => {
 
   test("Multiple uses of same placeholder", () => {
     const messages: Messages = {
-      "test.repeated": "{name}さん、こんにちは。{name}さんの注文を確認します。",
+      "test.repeated": "{{name}}さん、こんにちは。{{name}}さんの注文を確認します。",
     };
     const requirement = defineRequirement("test", ["repeated"]);
     const t = createTranslator(messages, requirement);
@@ -270,7 +270,7 @@ describe("createTranslator with TranslationRequirement", () => {
 
   test("Number to string conversion", () => {
     const messages: Messages = {
-      "test.number": "価格: {price}円",
+      "test.number": "価格: {{price}}円",
     };
     const requirement = defineRequirement("test", ["number"]);
     const t = createTranslator(messages, requirement);
@@ -283,7 +283,7 @@ describe("Edge cases", () => {
     const messages: Messages = {
       "common.itemCount_zero": "アイテムがありません",
       "common.itemCount_one": "1件のアイテム",
-      "common.itemCount_other": "{count}件のアイテム",
+      "common.itemCount_other": "{{count}}件のアイテム",
     };
     const requirement = defineRequirement("common", ["itemCount"]);
     const t = createTranslator(messages, requirement);
@@ -294,7 +294,7 @@ describe("Edge cases", () => {
     const messages: Messages = {
       "common.itemCount_zero": "アイテムがありません",
       "common.itemCount_one": "1件のアイテム",
-      "common.itemCount_other": "{count}件のアイテム",
+      "common.itemCount_other": "{{count}}件のアイテム",
     };
     const requirement = defineRequirement("common", ["itemCount"]);
     const t = createTranslator(messages, requirement);

@@ -48,7 +48,7 @@ export function getNestedValue(
 
 /**
  * Replace placeholders in message with values
- * Placeholder format: {name}
+ * Placeholder format: {{name}}
  * @param message - String containing placeholders
  * @param values - Object with replacement values
  * @returns String after replacement
@@ -59,7 +59,7 @@ export function replacePlaceholders(
 ): string {
   let result = message;
   for (const [key, value] of Object.entries(values)) {
-    const placeholder = `{${key}}`;
+    const placeholder = `{{${key}}}`;
     result = result.replaceAll(placeholder, String(value));
   }
   return result;
