@@ -2,13 +2,12 @@ import { describe, expect, test } from "bun:test";
 import {
   type Messages,
   type TranslationFile,
-  createDefineRequirement,
   createTranslator,
   mergeRequirements,
   pickMessages,
 } from "./index";
 
-// Define a test translation structure type for type-safe defineRequirement
+// Test translation structure type
 interface TestTranslationStructure {
   common: {
     submit: string;
@@ -32,9 +31,6 @@ interface TestTranslationStructure {
     greeting: string;
   };
 }
-
-// Create type-safe defineRequirement function for tests
-const defineRequirement = createDefineRequirement<TestTranslationStructure>();
 
 // Test translation files
 const testMessages: TranslationFile = {
@@ -69,29 +65,29 @@ const testMessages: TranslationFile = {
 
 describe("mergeRequirements", () => {
   test("Merge single translation requirement", () => {
-    const req = defineRequirement("common", ["submit"]);
+    const req = { namespace: "common", keys: ["submit"] };
     const result = mergeRequirements(req);
     expect(result).toEqual([req]);
   });
 
   test("Merge multiple translation requirements", () => {
-    const req1 = defineRequirement("common", ["submit"]);
-    const req2 = defineRequirement("user", ["profile.name"]);
+    const req1 = { namespace: "common", keys: ["submit"] };
+    const req2 = { namespace: "user", keys: ["profile.name"] };
     const result = mergeRequirements(req1, req2);
     expect(result).toEqual([req1, req2]);
   });
 
   test("Merge arrays", () => {
-    const req1 = defineRequirement("common", ["submit"]);
-    const req2 = defineRequirement("user", ["profile.name"]);
+    const req1 = { namespace: "common", keys: ["submit"] };
+    const req2 = { namespace: "user", keys: ["profile.name"] };
     const result = mergeRequirements(req1, req2);
     expect(result).toEqual([req1, req2]);
   });
 
   test("Merge multiple requirements", () => {
-    const req1 = defineRequirement("common", ["submit"]);
-    const req2 = defineRequirement("user", ["profile.name"]);
-    const req3 = defineRequirement("shop", ["cartSummary"]);
+    const req1 = { namespace: "common", keys: ["submit"] };
+    const req2 = { namespace: "user", keys: ["profile.name"] };
+    const req3 = { namespace: "shop", keys: ["cartSummary"] };
     const result = mergeRequirements(req1, req2, req3);
     expect(result).toEqual([req1, req2, req3]);
   });
@@ -102,26 +98,26 @@ describe("mergeRequirements", () => {
   });
 
   test("Flatten array of requirements", () => {
-    const req1 = defineRequirement("common", ["submit"]);
-    const req2 = defineRequirement("user", ["profile.name"]);
-    const req3 = defineRequirement("shop", ["cartSummary"]);
+    const req1 = { namespace: "common", keys: ["submit"] };
+    const req2 = { namespace: "user", keys: ["profile.name"] };
+    const req3 = { namespace: "shop", keys: ["cartSummary"] };
     const result = mergeRequirements([req1, req2], req3);
     expect(result).toEqual([req1, req2, req3]);
   });
 
   test("Flatten multiple arrays of requirements", () => {
-    const req1 = defineRequirement("common", ["submit"]);
-    const req2 = defineRequirement("user", ["profile.name"]);
-    const req3 = defineRequirement("shop", ["cartSummary"]);
+    const req1 = { namespace: "common", keys: ["submit"] };
+    const req2 = { namespace: "user", keys: ["profile.name"] };
+    const req3 = { namespace: "shop", keys: ["cartSummary"] };
     const result = mergeRequirements([req1, req2], [req3]);
     expect(result).toEqual([req1, req2, req3]);
   });
 
   test("Merge nested mergeRequirements results", () => {
-    const req1 = defineRequirement("common", ["submit"]);
-    const req2 = defineRequirement("user", ["profile.name"]);
-    const req3 = defineRequirement("shop", ["cartSummary"]);
-    const req4 = defineRequirement("results", ["itemsFound"]);
+    const req1 = { namespace: "common", keys: ["submit"] };
+    const req2 = { namespace: "user", keys: ["profile.name"] };
+    const req3 = { namespace: "shop", keys: ["cartSummary"] };
+    const req4 = { namespace: "results", keys: ["itemsFound"] };
 
     const merged1 = mergeRequirements(req1, req2);
     const merged2 = mergeRequirements(req3, req4);
@@ -131,24 +127,24 @@ describe("mergeRequirements", () => {
   });
 
   test("Mix single requirements and arrays", () => {
-    const req1 = defineRequirement("common", ["submit"]);
-    const req2 = defineRequirement("user", ["profile.name"]);
-    const req3 = defineRequirement("shop", ["cartSummary"]);
-    const req4 = defineRequirement("results", ["itemsFound"]);
+    const req1 = { namespace: "common", keys: ["submit"] };
+    const req2 = { namespace: "user", keys: ["profile.name"] };
+    const req3 = { namespace: "shop", keys: ["cartSummary"] };
+    const req4 = { namespace: "results", keys: ["itemsFound"] };
 
     const result = mergeRequirements(req1, [req2, req3], req4);
     expect(result).toEqual([req1, req2, req3, req4]);
   });
 
   test("Flatten single-element array", () => {
-    const req = defineRequirement("common", ["submit"]);
+    const req = { namespace: "common", keys: ["submit"] };
     const result = mergeRequirements([req]);
     expect(result).toEqual([req]);
   });
 
   test("Flatten empty array within arguments", () => {
-    const req1 = defineRequirement("common", ["submit"]);
-    const req2 = defineRequirement("user", ["profile.name"]);
+    const req1 = { namespace: "common", keys: ["submit"] };
+    const req2 = { namespace: "user", keys: ["profile.name"] };
     const result = mergeRequirements(req1, [], req2);
     expect(result).toEqual([req1, req2]);
   });
@@ -156,7 +152,7 @@ describe("mergeRequirements", () => {
 
 describe("pickMessages", () => {
   test("Single translation requirement", () => {
-    const requirements = [defineRequirement("common", ["submit", "cancel"])];
+    const requirements = [{ namespace: "common", keys: ["submit", "cancel"] }];
     const result = pickMessages(testMessages, requirements);
     expect(result).toEqual({
       "common.submit": "送信",
@@ -166,8 +162,8 @@ describe("pickMessages", () => {
 
   test("Multiple translation requirements", () => {
     const requirements = [
-      defineRequirement("common", ["submit"]),
-      defineRequirement("results", ["itemsFound"]),
+      { namespace: "common", keys: ["submit"] },
+      { namespace: "results", keys: ["itemsFound"] },
     ];
     const result = pickMessages(testMessages, requirements);
     expect(result).toEqual({
@@ -178,7 +174,7 @@ describe("pickMessages", () => {
 
   test("Nested keys", () => {
     const requirements = [
-      defineRequirement("user", ["profile.name", "profile.email"]),
+      { namespace: "user", keys: ["profile.name", "profile.email"] },
     ];
     const result = pickMessages(testMessages, requirements);
     expect(result).toEqual({
@@ -188,7 +184,7 @@ describe("pickMessages", () => {
   });
 
   test("Automatic extraction of plural keys", () => {
-    const requirements = [defineRequirement("common", ["itemCount"])];
+    const requirements = [{ namespace: "common", keys: ["itemCount"] }];
     const result = pickMessages(testMessages, requirements);
     expect(result).toEqual({
       "common.itemCount_zero": "アイテムがありません",
@@ -198,7 +194,7 @@ describe("pickMessages", () => {
   });
 
   test("Automatic extraction of nested plural keys", () => {
-    const requirements = [defineRequirement("shop", ["cart.item"])];
+    const requirements = [{ namespace: "shop", keys: ["cart.item"] }];
     const result = pickMessages(testMessages, requirements);
     expect(result).toEqual({
       "shop.cart.item_zero": "カートは空です",
@@ -209,14 +205,18 @@ describe("pickMessages", () => {
 
   test("Non-existent key", () => {
     // biome-ignore lint/suspicious/noExplicitAny: Testing invalid key handling
-    const requirements = [defineRequirement("common", ["nonexistent" as any])];
+    const requirements = [
+      { namespace: "common", keys: ["nonexistent" as any] },
+    ];
     const result = pickMessages(testMessages, requirements);
     expect(result).toEqual({});
   });
 
   test("Non-existent namespace", () => {
     // biome-ignore lint/suspicious/noExplicitAny: Testing invalid namespace handling
-    const requirements = [defineRequirement("nonexistent" as any, ["submit"])];
+    const requirements = [
+      { namespace: "nonexistent" as any, keys: ["submit"] },
+    ];
     const result = pickMessages(testMessages, requirements);
     expect(result).toEqual({});
   });
@@ -228,7 +228,7 @@ describe("createTranslator with TranslationRequirement", () => {
       "common.submit": "送信",
       "common.cancel": "キャンセル",
     };
-    const requirement = defineRequirement("common", ["submit", "cancel"]);
+    const requirement = { namespace: "common", keys: ["submit", "cancel"] };
     const t = createTranslator(messages, requirement);
     expect(t("submit")).toBe("送信");
     expect(t("cancel")).toBe("キャンセル");
@@ -238,7 +238,7 @@ describe("createTranslator with TranslationRequirement", () => {
     const messages: Messages = {
       "results.itemsFound": "{{count}}件取得しました",
     };
-    const requirement = defineRequirement("results", ["itemsFound"]);
+    const requirement = { namespace: "results", keys: ["itemsFound"] };
     const t = createTranslator(messages, requirement);
     expect(t("itemsFound", { count: 5 })).toBe("5件取得しました");
   });
@@ -247,7 +247,7 @@ describe("createTranslator with TranslationRequirement", () => {
     const messages: Messages = {
       "results.greeting": "こんにちは、{{name}}さん",
     };
-    const requirement = defineRequirement("results", ["greeting"]);
+    const requirement = { namespace: "results", keys: ["greeting"] };
     const t = createTranslator(messages, requirement);
     expect(t("greeting", { name: "田中" })).toBe("こんにちは、田中さん");
   });
@@ -258,7 +258,7 @@ describe("createTranslator with TranslationRequirement", () => {
       "common.itemCount_one": "1件のアイテム",
       "common.itemCount_other": "{{count}}件のアイテム",
     };
-    const requirement = defineRequirement("common", ["itemCount"]);
+    const requirement = { namespace: "common", keys: ["itemCount"] };
     const t = createTranslator(messages, requirement);
     expect(t("itemCount", { count: 0 })).toBe("アイテムがありません");
   });
@@ -269,7 +269,7 @@ describe("createTranslator with TranslationRequirement", () => {
       "common.itemCount_one": "1件のアイテム",
       "common.itemCount_other": "{{count}}件のアイテム",
     };
-    const requirement = defineRequirement("common", ["itemCount"]);
+    const requirement = { namespace: "common", keys: ["itemCount"] };
     const t = createTranslator(messages, requirement);
     expect(t("itemCount", { count: 1 })).toBe("1件のアイテム");
   });
@@ -280,7 +280,7 @@ describe("createTranslator with TranslationRequirement", () => {
       "common.itemCount_one": "1件のアイテム",
       "common.itemCount_other": "{{count}}件のアイテム",
     };
-    const requirement = defineRequirement("common", ["itemCount"]);
+    const requirement = { namespace: "common", keys: ["itemCount"] };
     const t = createTranslator(messages, requirement);
     expect(t("itemCount", { count: 5 })).toBe("5件のアイテム");
     expect(t("itemCount", { count: 100 })).toBe("100件のアイテム");
@@ -293,7 +293,7 @@ describe("createTranslator with TranslationRequirement", () => {
       "shop.cartSummary_other":
         "{{user}}さんのカートに{{count}}個の商品があります",
     };
-    const requirement = defineRequirement("shop", ["cartSummary"]);
+    const requirement = { namespace: "shop", keys: ["cartSummary"] };
     const t = createTranslator(messages, requirement);
     expect(t("cartSummary", { count: 0, user: "田中" })).toBe(
       "田中さんのカートは空です"
@@ -310,7 +310,7 @@ describe("createTranslator with TranslationRequirement", () => {
     const messages: Messages = {
       "common.itemCount_other": "{{count}}件のアイテム",
     };
-    const requirement = defineRequirement("common", ["itemCount"]);
+    const requirement = { namespace: "common", keys: ["itemCount"] };
     const t = createTranslator(messages, requirement);
     // If count === 0 and _zero is not available, fallback to _other
     expect(t("itemCount", { count: 0 })).toBe("0件のアイテム");
@@ -324,7 +324,7 @@ describe("createTranslator with TranslationRequirement", () => {
       "common.itemCount_one": "1件のアイテム",
       "common.itemCount_other": "{{count}}件のアイテム",
     };
-    const requirement = defineRequirement("common", ["itemCount"]);
+    const requirement = { namespace: "common", keys: ["itemCount"] };
     const t = createTranslator(messages, requirement);
     expect(t("itemCount", { count: 0 })).toBe("0件のアイテム");
     expect(t("itemCount", { count: 1 })).toBe("1件のアイテム");
@@ -335,11 +335,14 @@ describe("createTranslator with TranslationRequirement", () => {
     const messages: Messages = {
       "common.submit": "送信",
     };
-    const requirement = defineRequirement("common", [
-      "submit",
-      // biome-ignore lint/suspicious/noExplicitAny: Testing invalid key handling
-      "nonexistent" as any,
-    ]);
+    const requirement = {
+      namespace: "common",
+      keys: [
+        "submit",
+        // biome-ignore lint/suspicious/noExplicitAny: Testing invalid key handling
+        "nonexistent" as any,
+      ],
+    };
     const t = createTranslator(messages, requirement);
     // biome-ignore lint/suspicious/noExplicitAny: Testing invalid key handling
     expect(t("nonexistent" as any)).toBe("nonexistent");
@@ -350,7 +353,7 @@ describe("createTranslator with TranslationRequirement", () => {
       "results.greeting":
         "{{name}}さん、こんにちは。{{name}}さんの注文を確認します。",
     };
-    const requirement = defineRequirement("results", ["greeting"]);
+    const requirement = { namespace: "results", keys: ["greeting"] };
     const t = createTranslator(messages, requirement);
     expect(t("greeting", { name: "田中" })).toBe(
       "田中さん、こんにちは。田中さんの注文を確認します。"
@@ -361,7 +364,7 @@ describe("createTranslator with TranslationRequirement", () => {
     const messages: Messages = {
       "results.itemsFound": "価格: {{price}}円",
     };
-    const requirement = defineRequirement("results", ["itemsFound"]);
+    const requirement = { namespace: "results", keys: ["itemsFound"] };
     const t = createTranslator(messages, requirement);
     expect(t("itemsFound", { price: 1000 })).toBe("価格: 1000円");
   });
@@ -374,7 +377,7 @@ describe("Edge cases", () => {
       "common.itemCount_one": "1件のアイテム",
       "common.itemCount_other": "{{count}}件のアイテム",
     };
-    const requirement = defineRequirement("common", ["itemCount"]);
+    const requirement = { namespace: "common", keys: ["itemCount"] };
     const t = createTranslator(messages, requirement);
     expect(t("itemCount", { count: -1 })).toBe("-1件のアイテム");
   });
@@ -385,153 +388,8 @@ describe("Edge cases", () => {
       "common.itemCount_one": "1件のアイテム",
       "common.itemCount_other": "{{count}}件のアイテム",
     };
-    const requirement = defineRequirement("common", ["itemCount"]);
+    const requirement = { namespace: "common", keys: ["itemCount"] };
     const t = createTranslator(messages, requirement);
     expect(t("itemCount", { count: 0.5 })).toBe("0.5件のアイテム");
-  });
-});
-
-describe("createDefineRequirement", () => {
-  // Define another test translation structure type to test isolation
-  interface AnotherTestTranslationStructure {
-    other: {
-      test: string;
-    };
-  }
-
-  test("Create typed defineRequirement function", () => {
-    const typedDefineRequirement =
-      createDefineRequirement<AnotherTestTranslationStructure>();
-    expect(typeof typedDefineRequirement).toBe("function");
-  });
-
-  test("Basic usage with type-specific function", () => {
-    const typedDefineRequirement =
-      createDefineRequirement<AnotherTestTranslationStructure>();
-    const requirement = typedDefineRequirement("other", ["test"]);
-    expect(requirement).toEqual({
-      namespace: "other",
-      keys: ["test"],
-    });
-  });
-
-  test("Works with nested keys", () => {
-    const typedDefineRequirement =
-      createDefineRequirement<TestTranslationStructure>();
-    const requirement = typedDefineRequirement("user", [
-      "profile.name",
-      "profile.email",
-    ]);
-    expect(requirement).toEqual({
-      namespace: "user",
-      keys: ["profile.name", "profile.email"],
-    });
-  });
-
-  test("Works with pickMessages", () => {
-    const typedDefineRequirement =
-      createDefineRequirement<TestTranslationStructure>();
-    const requirements = [
-      typedDefineRequirement("common", ["submit", "cancel"]),
-    ];
-    const result = pickMessages(testMessages, requirements);
-    expect(result).toEqual({
-      "common.submit": "送信",
-      "common.cancel": "キャンセル",
-    });
-  });
-
-  test("Works with createTranslator", () => {
-    const typedDefineRequirement =
-      createDefineRequirement<TestTranslationStructure>();
-    const messages: Messages = {
-      "common.submit": "送信",
-      "common.cancel": "キャンセル",
-    };
-    const requirement = typedDefineRequirement("common", ["submit", "cancel"]);
-    const t = createTranslator(messages, requirement);
-    expect(t("submit")).toBe("送信");
-    expect(t("cancel")).toBe("キャンセル");
-  });
-
-  test("Multiple namespaces with same typed function", () => {
-    const typedDefineRequirement =
-      createDefineRequirement<TestTranslationStructure>();
-    const req1 = typedDefineRequirement("common", ["submit"]);
-    const req2 = typedDefineRequirement("user", ["profile.name"]);
-    const req3 = typedDefineRequirement("results", ["itemsFound"]);
-
-    expect(req1).toEqual({
-      namespace: "common",
-      keys: ["submit"],
-    });
-    expect(req2).toEqual({
-      namespace: "user",
-      keys: ["profile.name"],
-    });
-    expect(req3).toEqual({
-      namespace: "results",
-      keys: ["itemsFound"],
-    });
-  });
-
-  test("Interoperability with main defineRequirement", () => {
-    const typedDefineRequirement =
-      createDefineRequirement<TestTranslationStructure>();
-    const req1 = typedDefineRequirement("common", ["submit"]);
-    const req2 = defineRequirement("user", ["profile.name"]);
-
-    const result = mergeRequirements(req1, req2);
-    expect(result).toEqual([req1, req2]);
-  });
-
-  test("Works with plural keys", () => {
-    const typedDefineRequirement =
-      createDefineRequirement<TestTranslationStructure>();
-    const requirements = [typedDefineRequirement("common", ["itemCount"])];
-    const result = pickMessages(testMessages, requirements);
-    expect(result).toEqual({
-      "common.itemCount_zero": "アイテムがありません",
-      "common.itemCount_one": "1件のアイテム",
-      "common.itemCount_other": "{{count}}件のアイテム",
-    });
-  });
-
-  test("Works with nested plural keys", () => {
-    const typedDefineRequirement =
-      createDefineRequirement<TestTranslationStructure>();
-    const requirements = [typedDefineRequirement("shop", ["cart.item"])];
-    const result = pickMessages(testMessages, requirements);
-    expect(result).toEqual({
-      "shop.cart.item_zero": "カートは空です",
-      "shop.cart.item_one": "1個の商品",
-      "shop.cart.item_other": "{{count}}個の商品",
-    });
-  });
-
-  test("Multiple keys in single requirement", () => {
-    const typedDefineRequirement =
-      createDefineRequirement<TestTranslationStructure>();
-    const requirement = typedDefineRequirement("results", [
-      "itemsFound",
-      "greeting",
-    ]);
-    expect(requirement).toEqual({
-      namespace: "results",
-      keys: ["itemsFound", "greeting"],
-    });
-  });
-
-  test("Const assertion is preserved for keys", () => {
-    const typedDefineRequirement =
-      createDefineRequirement<TestTranslationStructure>();
-    const requirement = typedDefineRequirement("common", [
-      "submit",
-      "cancel",
-    ] as const);
-    // The keys should maintain their literal types due to const assertion
-    expect(requirement.keys).toEqual(["submit", "cancel"]);
-    expect(requirement.keys[0]).toBe("submit");
-    expect(requirement.keys[1]).toBe("cancel");
   });
 });

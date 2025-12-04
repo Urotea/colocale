@@ -54,8 +54,14 @@ export function generateTypescriptInterface(
   lines.push(" */");
   lines.push("");
 
-  // Add import statement for createDefineRequirement
-  lines.push("import { createDefineRequirement } from 'colocale';");
+  // Add types needed for defineRequirement
+  lines.push("/**");
+  lines.push(" * Translation requirement type");
+  lines.push(" */");
+  lines.push("interface TranslationRequirement<K extends readonly string[]> {");
+  lines.push("  namespace: string;");
+  lines.push("  keys: K;");
+  lines.push("}");
   lines.push("");
 
   // Generate namespace interfaces
@@ -242,9 +248,15 @@ export function generateTypescriptInterface(
   );
   lines.push(" * ```");
   lines.push(" */");
-  lines.push(
-    `const defineRequirement = createDefineRequirement<${interfaceName}>();`
-  );
+  lines.push("function defineRequirement<");
+  lines.push("  N extends Namespace,");
+  lines.push("  const K extends readonly KeysForNamespace<N>[]");
+  lines.push(">(");
+  lines.push("  namespace: N,");
+  lines.push("  keys: K");
+  lines.push("): TranslationRequirement<K> {");
+  lines.push("  return { keys, namespace };");
+  lines.push("}");
   lines.push("");
   lines.push("/**");
   lines.push(" * @public");
