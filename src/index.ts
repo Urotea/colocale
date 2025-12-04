@@ -41,6 +41,7 @@ import type {
 export function mergeRequirements(
   ...requirements: (TranslationRequirement | TranslationRequirement[])[]
 ): TranslationRequirement[] {
+  // .flat() flattens one level, converting (T | T[])[] to T[]
   return requirements.flat();
 }
 
