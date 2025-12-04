@@ -121,46 +121,6 @@ export function generateTypescriptInterface(
   lines.push("}");
   lines.push("");
 
-  // Generate union type for all translation keys
-  lines.push("/**");
-  lines.push(" * Union type of all translation keys");
-  lines.push(" */");
-  lines.push("type TranslationKeys =");
-
-  const allKeys: string[] = [];
-  for (const [namespace, namespaceData] of Object.entries(translations)) {
-    const processedKeys = new Set<string>();
-
-    for (const key of Object.keys(namespaceData)) {
-      // Remove plural suffix for the key
-      const baseKey = removePluralSuffix(key);
-
-      // Skip if we've already processed this base key
-      if (processedKeys.has(baseKey)) {
-        continue;
-      }
-      processedKeys.add(baseKey);
-
-      // Check for nested keys
-      const value = namespaceData[key];
-      if (typeof value === "object" && value !== null) {
-        // Only add nested keys, not the parent object key
-        for (const nestedKey of Object.keys(value)) {
-          const baseNestedKey = removePluralSuffix(nestedKey);
-          allKeys.push(`"${namespace}.${baseKey}.${baseNestedKey}"`);
-        }
-      } else {
-        // Only add the key if its value is a string (not an object)
-        allKeys.push(`"${namespace}.${baseKey}"`);
-      }
-    }
-  }
-
-  const keyUnion = allKeys.map((k) => `  | ${k}`).join("\n");
-  lines.push(keyUnion);
-  lines.push(";");
-  lines.push("");
-
   // Generate helper types for type-safe defineRequirement
   lines.push("/**");
   lines.push(" * Internal helper types for translation structure");
