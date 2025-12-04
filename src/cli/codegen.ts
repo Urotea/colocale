@@ -19,6 +19,10 @@ export function generateTypescriptInterface(
   lines.push(" */");
   lines.push("");
 
+  // Add import statement for createDefineRequirement
+  lines.push("import { createDefineRequirement } from 'colocale';");
+  lines.push("");
+
   // Generate namespace interfaces
   const namespaceInterfaces: string[] = [];
 
@@ -26,7 +30,7 @@ export function generateTypescriptInterface(
     const interfaceNamespace = capitalizeFirst(namespace);
     const namespaceInterfaceName = `${interfaceNamespace}Messages`;
 
-    lines.push(`export interface ${namespaceInterfaceName} {`);
+    lines.push(`interface ${namespaceInterfaceName} {`);
 
     for (const [key, value] of Object.entries(namespaceData)) {
       if (typeof value === "string") {
@@ -57,7 +61,7 @@ export function generateTypescriptInterface(
   }
 
   // Generate main interface that combines all namespaces
-  lines.push(`export interface ${interfaceName} {`);
+  lines.push(`interface ${interfaceName} {`);
   for (const namespace of Object.keys(translations)) {
     const interfaceNamespace = capitalizeFirst(namespace);
     lines.push(`  "${namespace}": ${interfaceNamespace}Messages;`);
@@ -69,7 +73,7 @@ export function generateTypescriptInterface(
   lines.push("/**");
   lines.push(" * Union type of all translation keys");
   lines.push(" */");
-  lines.push("export type TranslationKeys =");
+  lines.push("type TranslationKeys =");
 
   const allKeys: string[] = [];
   for (const [namespace, namespaceData] of Object.entries(translations)) {
@@ -111,16 +115,7 @@ export function generateTypescriptInterface(
   // Generate helper types for type-safe defineRequirement
   lines.push("/**");
   lines.push(
-    " * Helper types for type-safe defineRequirement usage"
-  );
-  lines.push(" * @example");
-  lines.push(" * import { defineRequirement } from 'colocale';");
-  lines.push(
-    " * import type { TranslationStructure, Namespace, KeysForNamespace } from './messages.types';"
-  );
-  lines.push(" *");
-  lines.push(
-    " * const req = defineRequirement<TranslationStructure, 'common', ['submit']>('common', ['submit']);"
+    " * Internal helper types for translation structure"
   );
   lines.push(" */");
   lines.push("");
@@ -128,7 +123,7 @@ export function generateTypescriptInterface(
   lines.push(" * Union type of all valid namespace names");
   lines.push(" */");
   lines.push(
-    `export type Namespace = ${Object.keys(translations)
+    `type Namespace = ${Object.keys(translations)
       .map((ns) => `"${ns}"`)
       .join(" | ")};`
   );
@@ -154,7 +149,7 @@ export function generateTypescriptInterface(
     lines.push(` * Valid keys for the '${namespace}' namespace`);
     lines.push(" */");
     lines.push(
-      `export type ${capitalizedNs}Keys = ${keys.join(" | ")};`
+      `type ${capitalizedNs}Keys = ${keys.join(" | ")};`
     );
     lines.push("");
   }
@@ -163,7 +158,7 @@ export function generateTypescriptInterface(
   lines.push(" * Get valid keys for a specific namespace");
   lines.push(" * @template N - The namespace name");
   lines.push(" */");
-  lines.push("export type KeysForNamespace<N extends Namespace> =");
+  lines.push("type KeysForNamespace<N extends Namespace> =");
   const namespaceKeyMap = Object.keys(translations)
     .map((ns) => {
       const capitalizedNs = capitalizeFirst(ns);
@@ -172,6 +167,21 @@ export function generateTypescriptInterface(
     .join("\n");
   lines.push(namespaceKeyMap);
   lines.push("  never;");
+  lines.push("");
+
+  // Add the exported defineRequirement function
+  lines.push("/**");
+  lines.push(" * Type-safe defineRequirement function for this translation structure");
+  lines.push(" * ");
+  lines.push(" * @example");
+  lines.push(" * ```typescript");
+  lines.push(" * import { defineRequirement } from './messages.types';");
+  lines.push(" * ");
+  lines.push(" * // Full type inference and validation");
+  lines.push(" * const req = defineRequirement(\"common\", [\"submit\", \"cancel\"]);");
+  lines.push(" * ```");
+  lines.push(" */");
+  lines.push(`export const defineRequirement = createDefineRequirement<${interfaceName}>();`);
   lines.push("");
 
   return lines.join("\n");
@@ -185,7 +195,7 @@ function generateNestedInterface(
   nested: NestedTranslations
 ): string {
   const lines: string[] = [];
-  lines.push(`export interface ${interfaceName} {`);
+  lines.push(`interface ${interfaceName} {`);
 
   for (const key of Object.keys(nested)) {
     lines.push(`  "${key}": string;`);
