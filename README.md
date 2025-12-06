@@ -204,7 +204,7 @@ Extracts only the needed translations from translation files.
 ```typescript
 function pickMessages(
   allMessages: TranslationFile,
-  requirements: TranslationRequirement[]
+  requirements: TranslationRequirement[] | TranslationRequirement
 ): Messages;
 ```
 
@@ -588,10 +588,11 @@ type UserKeys = "profile.name" | "profile.email";
  * Get valid keys for a specific namespace
  * @template N - The namespace name
  */
-type KeysForNamespace<N extends Namespace> =
-  N extends "common" ? CommonKeys :
-  N extends "user" ? UserKeys :
-  never;
+type KeysForNamespace<N extends Namespace> = N extends "common"
+  ? CommonKeys
+  : N extends "user"
+  ? UserKeys
+  : never;
 
 /**
  * Type-safe defineRequirement function for this translation structure
@@ -599,10 +600,7 @@ type KeysForNamespace<N extends Namespace> =
 function defineRequirement<
   N extends Namespace,
   const K extends readonly KeysForNamespace<N>[]
->(
-  namespace: N,
-  keys: K
-): TranslationRequirement<K> {
+>(namespace: N, keys: K): TranslationRequirement<K> {
   return { keys, namespace };
 }
 

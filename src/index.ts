@@ -50,17 +50,23 @@ export function mergeRequirements(
  *
  * When base keys are specified, keys with _zero, _one, _other suffixes are automatically extracted
  *
- * @template R - Array of TranslationRequirements
+ * @template R - Array of TranslationRequirements or a single TranslationRequirement
  * @param allMessages - Object containing all translation data
- * @param requirements - List of required translation keys
+ * @param requirements - List of required translation keys or a single requirement
  * @returns Messages object (key format: "namespace.key")
  */
 export function pickMessages<
-  R extends readonly TranslationRequirement<readonly string[]>[]
+  R extends
+    | readonly TranslationRequirement<readonly string[]>[]
+    | TranslationRequirement<readonly string[]>
 >(allMessages: TranslationFile, requirements: R): Messages {
   const messages: Record<string, string> = {};
 
-  for (const requirement of requirements) {
+  const requirementsArray = Array.isArray(requirements)
+    ? requirements
+    : [requirements];
+
+  for (const requirement of requirementsArray) {
     const { namespace, keys } = requirement;
     const namespaceData = allMessages[namespace];
 
