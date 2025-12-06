@@ -162,8 +162,8 @@ export function generateTypescriptInterface(
   lines.push(">(");
   lines.push("  namespace: N,");
   lines.push("  keys: K");
-  lines.push("): TranslationRequirement<K> {");
-  lines.push("  return { keys, namespace };");
+  lines.push("): TranslationRequirement<K>[] {");
+  lines.push("  return [{ keys, namespace }];");
   lines.push("}");
   lines.push("");
   lines.push("/**");

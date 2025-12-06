@@ -32,52 +32,17 @@ import type {
 } from "./types";
 
 /**
- * Merge multiple translation requirements into a single requirement
+ * Merge multiple translation requirements into a single array
  * @param requirements - Translation requirements or arrays of translation requirements (variadic)
- * @returns A single TranslationRequirement with merged keys
+ * @returns Flattened array of translation requirements
  */
 export function mergeRequirements(
   ...requirements: (
     | TranslationRequirement<readonly string[]>
     | TranslationRequirement<readonly string[]>[]
   )[]
-): TranslationRequirement<readonly string[]> {
-  const flattened = requirements.flat();
-  
-  if (flattened.length === 0) {
-    return { namespace: "__merged__", keys: [] };
-  }
-  
-  // Collect all namespaces and keys
-  const namespaceKeysMap = new Map<string, Set<string>>();
-  
-  for (const req of flattened) {
-    if (!namespaceKeysMap.has(req.namespace)) {
-      namespaceKeysMap.set(req.namespace, new Set());
-    }
-    const keySet = namespaceKeysMap.get(req.namespace)!;
-    for (const key of req.keys) {
-      keySet.add(key);
-    }
-  }
-  
-  // Merge all keys with namespace prefix
-  const allKeys: string[] = [];
-  for (const [namespace, keySet] of namespaceKeysMap) {
-    for (const key of keySet) {
-      // If the namespace is already __merged__, the keys already have namespace prefix
-      if (namespace === "__merged__") {
-        allKeys.push(key);
-      } else {
-        allKeys.push(`${namespace}.${key}`);
-      }
-    }
-  }
-  
-  return {
-    namespace: "__merged__",
-    keys: allKeys,
-  };
+): TranslationRequirement<readonly string[]>[] {
+  return requirements.flat();
 }
 
 /**
@@ -85,56 +50,42 @@ export function mergeRequirements(
  *
  * When base keys are specified, keys with _zero, _one, _other suffixes are automatically extracted
  *
- * @template R - TranslationRequirement or array of TranslationRequirements
+ * @template R - Array of TranslationRequirements
  * @param allMessages - Object containing all translation data
- * @param requirements - Required translation keys (single requirement or array)
+ * @param requirements - List of required translation keys
  * @returns Messages object (key format: "namespace.key")
  */
 export function pickMessages<
-  R extends TranslationRequirement<readonly string[]> | readonly TranslationRequirement<readonly string[]>[]
+  R extends readonly TranslationRequirement<readonly string[]>[]
 >(allMessages: TranslationFile, requirements: R): Messages {
   const messages: Record<string, string> = {};
-  
-  // Normalize to array
-  const requirementsArray = Array.isArray(requirements) ? requirements : [requirements];
 
-  for (const requirement of requirementsArray) {
+  for (const requirement of requirements) {
     const { namespace, keys } = requirement;
-    
-    for (const key of keys) {
-      // Handle merged namespace format (namespace.key)
-      let actualNamespace = namespace;
-      let actualKey = key;
-      
-      if (namespace === "__merged__" && key.includes(".")) {
-        // Split namespace.key for merged requirements
-        const parts = key.split(".");
-        actualNamespace = parts[0];
-        actualKey = parts.slice(1).join(".");
-      }
-      
-      const namespaceData = allMessages[actualNamespace];
-      if (!namespaceData) {
-        continue;
-      }
+    const namespaceData = allMessages[namespace];
 
+    if (!namespaceData) {
+      continue;
+    }
+
+    for (const key of keys) {
       // Check direct key
-      if (typeof namespaceData[actualKey] === "string") {
-        messages[`${actualNamespace}.${actualKey}`] = namespaceData[actualKey] as string;
+      if (typeof namespaceData[key] === "string") {
+        messages[`${namespace}.${key}`] = namespaceData[key];
       } else {
         // Check nested key
-        const value = getNestedValue(namespaceData, actualKey);
+        const value = getNestedValue(namespaceData, key);
         if (value !== undefined) {
-          messages[`${actualNamespace}.${actualKey}`] = value;
+          messages[`${namespace}.${key}`] = value;
         }
       }
 
       // Attempt automatic extraction of plural keys
-      const pluralKeys = extractPluralKeys(allMessages, actualNamespace, actualKey);
+      const pluralKeys = extractPluralKeys(allMessages, namespace, key);
       for (const pluralKey of pluralKeys) {
         const value = getNestedValue(namespaceData, pluralKey);
         if (value !== undefined) {
-          messages[`${actualNamespace}.${pluralKey}`] = value;
+          messages[`${namespace}.${pluralKey}`] = value;
         }
       }
     }
