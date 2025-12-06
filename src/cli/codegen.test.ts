@@ -137,7 +137,7 @@ describe("generateTypescriptInterface", () => {
     expect(result).not.toContain('"cart.itemCount_other"');
   });
 
-  test("should generate correct interface structure", () => {
+  test("should not generate namespace interfaces", () => {
     const translations: TranslationFile = {
       user: {
         profile: {
@@ -149,12 +149,40 @@ describe("generateTypescriptInterface", () => {
 
     const result = generateTypescriptInterface(translations);
 
-    // Interface structure should still include nested objects
-    expect(result).toContain("interface UserMessages {");
-    expect(result).toContain('"profile": UserProfileMessages;');
-    expect(result).toContain("interface UserProfileMessages {");
-    expect(result).toContain('"name": string;');
-    expect(result).toContain('"email": string;');
+    // Should NOT include namespace interfaces (these are no longer generated)
+    expect(result).not.toContain("interface UserMessages {");
+    expect(result).not.toContain("interface UserProfileMessages {");
+    
+    // Should include the key types
+    expect(result).toContain("type UserKeys =");
+    expect(result).toContain('"profile.name"');
+    expect(result).toContain('"profile.email"');
+  });
+
+  test("should not generate TranslationStructure interface", () => {
+    const translations: TranslationFile = {
+      common: {
+        submit: "Submit",
+        cancel: "Cancel",
+      },
+      user: {
+        profile: {
+          name: "Name",
+        },
+      },
+    };
+
+    const result = generateTypescriptInterface(translations);
+
+    // Should NOT include the TranslationStructure interface (no longer needed)
+    expect(result).not.toContain("interface TranslationStructure");
+    
+    // Should include the TranslationRequirement type (which is needed)
+    expect(result).toContain("interface TranslationRequirement");
+    
+    // Should include the defineRequirement function
+    expect(result).toContain("function defineRequirement");
+    expect(result).toContain("export default defineRequirement;");
   });
 
   test("should handle multiple namespaces correctly", () => {

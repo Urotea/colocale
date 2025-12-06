@@ -164,10 +164,7 @@ program
       console.log(`📄 Output: ${resolvedOutputPath}\n`);
 
       // Generate TypeScript interface
-      const interfaceCode = generateTypescriptInterface(
-        translations,
-        "TranslationStructure"
-      );
+      const interfaceCode = generateTypescriptInterface(translations);
 
       // Ensure output directory exists
       await mkdir(dirname(resolvedOutputPath), { recursive: true });

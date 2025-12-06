@@ -204,8 +204,8 @@ describe("pickMessages", () => {
   });
 
   test("Non-existent key", () => {
-    // biome-ignore lint/suspicious/noExplicitAny: Testing invalid key handling
     const requirements = [
+      // biome-ignore lint/suspicious/noExplicitAny: Testing invalid key handling
       { namespace: "common", keys: ["nonexistent" as any] },
     ];
     const result = pickMessages(testMessages, requirements);
@@ -213,8 +213,8 @@ describe("pickMessages", () => {
   });
 
   test("Non-existent namespace", () => {
-    // biome-ignore lint/suspicious/noExplicitAny: Testing invalid namespace handling
     const requirements = [
+      // biome-ignore lint/suspicious/noExplicitAny: Testing invalid namespace handling
       { namespace: "nonexistent" as any, keys: ["submit"] },
     ];
     const result = pickMessages(testMessages, requirements);
