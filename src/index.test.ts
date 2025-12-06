@@ -67,21 +67,30 @@ describe("mergeRequirements", () => {
   test("Merge single translation requirement", () => {
     const req = { namespace: "common", keys: ["submit"] };
     const result = mergeRequirements(req);
-    expect(result).toEqual([req]);
+    expect(result).toEqual({
+      namespace: "__merged__",
+      keys: ["common.submit"],
+    });
   });
 
   test("Merge multiple translation requirements", () => {
     const req1 = { namespace: "common", keys: ["submit"] };
     const req2 = { namespace: "user", keys: ["profile.name"] };
     const result = mergeRequirements(req1, req2);
-    expect(result).toEqual([req1, req2]);
+    expect(result).toEqual({
+      namespace: "__merged__",
+      keys: ["common.submit", "user.profile.name"],
+    });
   });
 
   test("Merge arrays", () => {
     const req1 = { namespace: "common", keys: ["submit"] };
     const req2 = { namespace: "user", keys: ["profile.name"] };
     const result = mergeRequirements(req1, req2);
-    expect(result).toEqual([req1, req2]);
+    expect(result).toEqual({
+      namespace: "__merged__",
+      keys: ["common.submit", "user.profile.name"],
+    });
   });
 
   test("Merge multiple requirements", () => {
@@ -89,12 +98,18 @@ describe("mergeRequirements", () => {
     const req2 = { namespace: "user", keys: ["profile.name"] };
     const req3 = { namespace: "shop", keys: ["cartSummary"] };
     const result = mergeRequirements(req1, req2, req3);
-    expect(result).toEqual([req1, req2, req3]);
+    expect(result).toEqual({
+      namespace: "__merged__",
+      keys: ["common.submit", "user.profile.name", "shop.cartSummary"],
+    });
   });
 
   test("Empty array", () => {
     const result = mergeRequirements();
-    expect(result).toEqual([]);
+    expect(result).toEqual({
+      namespace: "",
+      keys: [],
+    });
   });
 
   test("Flatten array of requirements", () => {
@@ -102,7 +117,10 @@ describe("mergeRequirements", () => {
     const req2 = { namespace: "user", keys: ["profile.name"] };
     const req3 = { namespace: "shop", keys: ["cartSummary"] };
     const result = mergeRequirements([req1, req2], req3);
-    expect(result).toEqual([req1, req2, req3]);
+    expect(result).toEqual({
+      namespace: "__merged__",
+      keys: ["common.submit", "user.profile.name", "shop.cartSummary"],
+    });
   });
 
   test("Flatten multiple arrays of requirements", () => {
@@ -110,7 +128,10 @@ describe("mergeRequirements", () => {
     const req2 = { namespace: "user", keys: ["profile.name"] };
     const req3 = { namespace: "shop", keys: ["cartSummary"] };
     const result = mergeRequirements([req1, req2], [req3]);
-    expect(result).toEqual([req1, req2, req3]);
+    expect(result).toEqual({
+      namespace: "__merged__",
+      keys: ["common.submit", "user.profile.name", "shop.cartSummary"],
+    });
   });
 
   test("Merge nested mergeRequirements results", () => {
@@ -123,7 +144,15 @@ describe("mergeRequirements", () => {
     const merged2 = mergeRequirements(req3, req4);
     const allMerged = mergeRequirements(merged1, merged2);
 
-    expect(allMerged).toEqual([req1, req2, req3, req4]);
+    expect(allMerged).toEqual({
+      namespace: "__merged__",
+      keys: [
+        "common.submit",
+        "user.profile.name",
+        "shop.cartSummary",
+        "results.itemsFound",
+      ],
+    });
   });
 
   test("Mix single requirements and arrays", () => {
@@ -133,20 +162,34 @@ describe("mergeRequirements", () => {
     const req4 = { namespace: "results", keys: ["itemsFound"] };
 
     const result = mergeRequirements(req1, [req2, req3], req4);
-    expect(result).toEqual([req1, req2, req3, req4]);
+    expect(result).toEqual({
+      namespace: "__merged__",
+      keys: [
+        "common.submit",
+        "user.profile.name",
+        "shop.cartSummary",
+        "results.itemsFound",
+      ],
+    });
   });
 
   test("Flatten single-element array", () => {
     const req = { namespace: "common", keys: ["submit"] };
     const result = mergeRequirements([req]);
-    expect(result).toEqual([req]);
+    expect(result).toEqual({
+      namespace: "__merged__",
+      keys: ["common.submit"],
+    });
   });
 
   test("Flatten empty array within arguments", () => {
     const req1 = { namespace: "common", keys: ["submit"] };
     const req2 = { namespace: "user", keys: ["profile.name"] };
     const result = mergeRequirements(req1, [], req2);
-    expect(result).toEqual([req1, req2]);
+    expect(result).toEqual({
+      namespace: "__merged__",
+      keys: ["common.submit", "user.profile.name"],
+    });
   });
 });
 
@@ -219,6 +262,39 @@ describe("pickMessages", () => {
     ];
     const result = pickMessages(testMessages, requirements);
     expect(result).toEqual({});
+  });
+
+  test("Single requirement object (not array)", () => {
+    const requirement = { namespace: "common", keys: ["submit", "cancel"] };
+    const result = pickMessages(testMessages, requirement);
+    expect(result).toEqual({
+      "common.submit": "送信",
+      "common.cancel": "キャンセル",
+    });
+  });
+
+  test("Merged requirement from mergeRequirements", () => {
+    const req1 = { namespace: "common", keys: ["submit"] };
+    const req2 = { namespace: "results", keys: ["itemsFound"] };
+    const merged = mergeRequirements(req1, req2);
+    const result = pickMessages(testMessages, merged);
+    expect(result).toEqual({
+      "common.submit": "送信",
+      "results.itemsFound": "{{count}}件取得しました",
+    });
+  });
+
+  test("Merged requirement with nested keys", () => {
+    const req1 = { namespace: "user", keys: ["profile.name"] };
+    const req2 = { namespace: "shop", keys: ["cartSummary"] };
+    const merged = mergeRequirements(req1, req2);
+    const result = pickMessages(testMessages, merged);
+    expect(result).toEqual({
+      "user.profile.name": "名前",
+      "shop.cartSummary_zero": "{{user}}さんのカートは空です",
+      "shop.cartSummary_one": "{{user}}さんのカートに1個の商品があります",
+      "shop.cartSummary_other": "{{user}}さんのカートに{{count}}個の商品があります",
+    });
   });
 });
 
