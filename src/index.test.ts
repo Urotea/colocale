@@ -107,7 +107,7 @@ describe("mergeRequirements", () => {
   test("Empty array", () => {
     const result = mergeRequirements();
     expect(result).toEqual({
-      namespace: "",
+      namespace: "__merged__",
       keys: [],
     });
   });

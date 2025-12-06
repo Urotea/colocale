@@ -45,7 +45,7 @@ export function mergeRequirements(
   const flattened = requirements.flat();
   
   if (flattened.length === 0) {
-    return { namespace: "", keys: [] };
+    return { namespace: "__merged__", keys: [] };
   }
   
   // Collect all namespaces and keys
