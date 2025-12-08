@@ -160,5 +160,3 @@ export function generateTypescriptInterface(
 
   return lines.join("\n");
 }
-
-

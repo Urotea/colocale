@@ -3,7 +3,7 @@
  * @template K - Array type of translation keys
  */
 export interface TranslationRequirement<
-  K extends readonly string[] = readonly string[]
+  K extends readonly string[] = readonly string[],
 > {
   /** Array of translation keys required by the component (readonly) */
   keys: K;
@@ -98,7 +98,7 @@ type RequirementKeys<R> = R extends TranslationRequirement<infer K>
  * @template R - TranslationRequirement type that defines allowed keys
  */
 export type ConstrainedTranslatorFunction<
-  R extends TranslationRequirement<readonly string[]>
+  R extends TranslationRequirement<readonly string[]>,
 > = (key: RequirementKeys<R>, values?: PlaceholderValues) => string;
 
 // ============================================================================
@@ -109,7 +109,7 @@ export type ConstrainedTranslatorFunction<
  * Extract all valid keys for a namespace (flat structure only)
  * @template T - The namespace translations object (Record<string, string>)
  */
-type ExtractAllKeys<T> = T extends object ? (keyof T & string) : never;
+type ExtractAllKeys<T> = T extends object ? keyof T & string : never;
 
 /**
  * Extract valid namespace names from a translation structure

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { generateTypescriptInterface } from "./codegen";
 import type { TranslationFile } from "../types";
+import { generateTypescriptInterface } from "./codegen";
 
 describe("generateTypescriptInterface", () => {
   test("should generate types for flat structure keys", () => {
@@ -129,7 +129,7 @@ describe("generateTypescriptInterface", () => {
     // Should NOT include namespace interfaces (these are no longer generated)
     expect(result).not.toContain("interface UserMessages {");
     expect(result).not.toContain("interface UserProfileMessages {");
-    
+
     // Should include the key types
     expect(result).toContain("type UserKeys =");
     expect(result).toContain('"profile.name"');
@@ -151,10 +151,10 @@ describe("generateTypescriptInterface", () => {
 
     // Should NOT include the TranslationStructure interface (no longer needed)
     expect(result).not.toContain("interface TranslationStructure");
-    
+
     // Should include the TranslationRequirement type (which is needed)
     expect(result).toContain("interface TranslationRequirement");
-    
+
     // Should include the defineRequirement function
     expect(result).toContain("function defineRequirement");
     expect(result).toContain("export default defineRequirement;");

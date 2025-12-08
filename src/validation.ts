@@ -83,7 +83,7 @@ function validateNesting(
 
   for (const key in translations) {
     const value = translations[key];
-    if (typeof value === 'object' && value !== null) {
+    if (typeof value === "object" && value !== null) {
       errors.push({
         type: "invalid-nesting",
         namespace,
