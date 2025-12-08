@@ -1,28 +1,24 @@
 import { describe, expect, test } from "bun:test";
-import { generateTypescriptInterface } from "./codegen";
 import type { TranslationFile } from "../types";
+import { generateTypescriptInterface } from "./codegen";
 
 describe("generateTypescriptInterface", () => {
-  test("should exclude object keys from TranslationKeys", () => {
+  test("should generate types for flat structure keys", () => {
     const translations: TranslationFile = {
       test: {
-        message: {
-          test: "message",
-        },
+        "message.test": "message",
       },
     };
 
     const result = generateTypescriptInterface(translations);
 
-    // Should include nested string keys
+    // Should include flat keys with dots
     expect(result).toContain('"message.test"');
 
-    // Should NOT include object keys in the Keys type
     const testKeysMatch = result.match(/type TestKeys = ([^;]+);/);
     expect(testKeysMatch).not.toBeNull();
     if (testKeysMatch) {
       const testKeys = testKeysMatch[1];
-      expect(testKeys).not.toContain('"message"');
       expect(testKeys).toContain('"message.test"');
     }
   });
@@ -42,57 +38,45 @@ describe("generateTypescriptInterface", () => {
     expect(result).toContain('"cancel"');
   });
 
-  test("should handle mix of direct and nested keys", () => {
+  test("should handle flat keys with dot notation", () => {
     const translations: TranslationFile = {
       test: {
         directKey: "direct value",
-        nested: {
-          key1: "nested value 1",
-          key2: "nested value 2",
-        },
+        "nested.key1": "nested value 1",
+        "nested.key2": "nested value 2",
         anotherDirect: "another direct value",
       },
     };
 
     const result = generateTypescriptInterface(translations);
 
-    // Should include direct string keys
+    // Should include all flat keys
     expect(result).toContain('"directKey"');
     expect(result).toContain('"anotherDirect"');
-
-    // Should include nested string keys
     expect(result).toContain('"nested.key1"');
     expect(result).toContain('"nested.key2"');
-
-    // Should NOT include object keys
-    expect(result).not.toContain('"nested" |');
   });
 
-  test("should exclude object keys from namespace-specific keys", () => {
+  test("should generate types for flat structure with dots", () => {
     const translations: TranslationFile = {
       user: {
-        profile: {
-          name: "Name",
-          email: "Email",
-        },
+        "profile.name": "Name",
+        "profile.email": "Email",
       },
     };
 
     const result = generateTypescriptInterface(translations);
 
-    // Check that UserKeys only includes nested string keys
+    // Check that UserKeys includes flat keys with dots
     const userKeysMatch = result.match(/type UserKeys = ([^;]+);/);
     expect(userKeysMatch).not.toBeNull();
 
     if (userKeysMatch) {
       const userKeys = userKeysMatch[1];
 
-      // Should include nested string keys
+      // Should include flat keys with dots
       expect(userKeys).toContain('"profile.name"');
       expect(userKeys).toContain('"profile.email"');
-
-      // Should NOT include object key
-      expect(userKeys).not.toContain('"profile"');
     }
   });
 
@@ -114,23 +98,18 @@ describe("generateTypescriptInterface", () => {
     expect(result).not.toContain('"itemCount_other"');
   });
 
-  test("should handle nested keys with plural suffixes", () => {
+  test("should handle flat keys with plural suffixes", () => {
     const translations: TranslationFile = {
       shop: {
-        cart: {
-          itemCount_one: "1 item in cart",
-          itemCount_other: "{{count}} items in cart",
-        },
+        "cart.itemCount_one": "1 item in cart",
+        "cart.itemCount_other": "{{count}} items in cart",
       },
     };
 
     const result = generateTypescriptInterface(translations);
 
-    // Should include base nested key without plural suffix
+    // Should include base flat key without plural suffix
     expect(result).toContain('"cart.itemCount"');
-
-    // Should NOT include object key
-    expect(result).not.toContain('"cart" |');
 
     // Should NOT include keys with plural suffix
     expect(result).not.toContain('"cart.itemCount_one"');
@@ -140,10 +119,8 @@ describe("generateTypescriptInterface", () => {
   test("should not generate namespace interfaces", () => {
     const translations: TranslationFile = {
       user: {
-        profile: {
-          name: "Name",
-          email: "Email",
-        },
+        "profile.name": "Name",
+        "profile.email": "Email",
       },
     };
 
@@ -152,7 +129,7 @@ describe("generateTypescriptInterface", () => {
     // Should NOT include namespace interfaces (these are no longer generated)
     expect(result).not.toContain("interface UserMessages {");
     expect(result).not.toContain("interface UserProfileMessages {");
-    
+
     // Should include the key types
     expect(result).toContain("type UserKeys =");
     expect(result).toContain('"profile.name"');
@@ -166,9 +143,7 @@ describe("generateTypescriptInterface", () => {
         cancel: "Cancel",
       },
       user: {
-        profile: {
-          name: "Name",
-        },
+        "profile.name": "Name",
       },
     };
 
@@ -176,10 +151,10 @@ describe("generateTypescriptInterface", () => {
 
     // Should NOT include the TranslationStructure interface (no longer needed)
     expect(result).not.toContain("interface TranslationStructure");
-    
+
     // Should include the TranslationRequirement type (which is needed)
     expect(result).toContain("interface TranslationRequirement");
-    
+
     // Should include the defineRequirement function
     expect(result).toContain("function defineRequirement");
     expect(result).toContain("export default defineRequirement;");
@@ -192,9 +167,7 @@ describe("generateTypescriptInterface", () => {
         cancel: "Cancel",
       },
       user: {
-        profile: {
-          name: "Name",
-        },
+        "profile.name": "Name",
       },
     };
 
@@ -204,10 +177,7 @@ describe("generateTypescriptInterface", () => {
     expect(result).toContain('"submit"');
     expect(result).toContain('"cancel"');
 
-    // Should include nested keys from user namespace
+    // Should include flat keys with dots from user namespace
     expect(result).toContain('"profile.name"');
-
-    // Should NOT include object key from user namespace
-    expect(result).not.toContain('"profile" |');
   });
 });

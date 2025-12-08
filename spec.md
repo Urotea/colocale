@@ -55,7 +55,7 @@ type TranslationKey = string;
 ```
 
 - 翻訳キーを表す文字列型
-- ネスト構造をドット記法で表現（例: `"user.profile.name"`）
+- ネスト構造をドット記法で表現（例: `"profile.name"`）
 - 複数形のサフィックス（`_zero`, `_one`, `_other`）を含む場合もある
 
 #### 3.1. 2 TranslationRequirement
@@ -109,13 +109,11 @@ interface PluralOptions {
 ```typescript
 type TranslationFile = Record<string, NamespaceTranslations>;
 
-type NamespaceTranslations = Record<string, string | NestedTranslations>;
-
-type NestedTranslations = Record<string, string>;
+type NamespaceTranslations = Record<string, string>;
 ```
 
 - トップレベル: 名前空間のマップ
-- 名前空間内: キーと翻訳文字列のマップ（1 階層のネストまで許可）
+- 名前空間内: キーと翻訳文字列のマップ（フラット構造のみ、レベル0）
 
 ## 4. 翻訳ファイル形式
 
@@ -140,15 +138,13 @@ messages/
 }
 ```
 
-#### 4.2.2 ネスト形式（1 階層まで）
+#### 4.2.2 Flat structure with dot notation (Level 0)
 
 ```json
 {
   "user": {
-    "profile": {
-      "name": "名前",
-      "email": "メールアドレス"
-    }
+    "profile.name": "名前",
+    "profile.email": "メールアドレス"
   }
 }
 ```
@@ -193,11 +189,9 @@ messages/
 ```json
 {
   "shop": {
-    "cart": {
-      "item_zero": "カートは空です",
-      "item_one": "1個の商品",
-      "item_other": "{{count}}個の商品"
-    }
+    "cart.item_zero": "カートは空です",
+    "cart.item_one": "1個の商品",
+    "cart.item_other": "{{count}}個の商品"
   }
 }
 ```
@@ -369,17 +363,17 @@ t("itemCount", { count: 5 }); // "5件のアイテム"
 
 ```typescript
 function getNestedValue(
-  obj: Record<string, any>,
-  path: string
+  obj: Record<string, unknown>,
+  key: string
 ): string | undefined;
 ```
 
-**目的:** ドット記法のパスからネストしたオブジェクトの値を取得
+**目的:** フラット構造のオブジェクトから値を取得
 
 **引数:**
 
 - `obj`: 検索対象のオブジェクト
-- `path`: ドット記法のパス（例: `"profile.name"`）
+- `key`: キー（フラット構造でドット記法を含む可能性がある、例: `"profile.name"`）
 
 **戻り値:**
 
@@ -387,9 +381,9 @@ function getNestedValue(
 
 **動作:**
 
-- パスを `. ` で分割
-- 順番にオブジェクトを辿る
-- 途中でパスが見つからない場合は `undefined` を返す
+- キーで直接オブジェクトから値を取得
+- 値が文字列の場合は返す
+- 見つからない場合は `undefined` を返す
 
 ### 6.2 プレースホルダー置換
 

@@ -99,22 +99,8 @@ export function generateTypescriptInterface(
       }
       processedKeys.add(baseKey);
 
-      // Check for nested keys (only 1 level supported by design)
-      const value = namespaceData[key];
-      if (typeof value === "object" && value !== null) {
-        // Only add nested keys, not the parent object key
-        const nestedProcessedKeys = new Set<string>();
-        for (const nestedKey of Object.keys(value)) {
-          const baseNestedKey = removePluralSuffix(nestedKey);
-          if (!nestedProcessedKeys.has(baseNestedKey)) {
-            nestedProcessedKeys.add(baseNestedKey);
-            keys.push(`"${baseKey}.${baseNestedKey}"`);
-          }
-        }
-      } else {
-        // Only add the key if its value is a string (not an object)
-        keys.push(`"${baseKey}"`);
-      }
+      // In flat structure, all values are strings
+      keys.push(`"${baseKey}"`);
     }
 
     const capitalizedNs = capitalizeFirst(namespace);
@@ -174,5 +160,3 @@ export function generateTypescriptInterface(
 
   return lines.join("\n");
 }
-
-

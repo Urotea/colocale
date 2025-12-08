@@ -58,7 +58,7 @@ export function mergeRequirements(
 export function pickMessages<
   R extends
     | readonly TranslationRequirement<readonly string[]>[]
-    | TranslationRequirement<readonly string[]>
+    | TranslationRequirement<readonly string[]>,
 >(allMessages: TranslationFile, requirements: R): Messages {
   const messages: Record<string, string> = {};
 
@@ -75,15 +75,10 @@ export function pickMessages<
     }
 
     for (const key of keys) {
-      // Check direct key
-      if (typeof namespaceData[key] === "string") {
-        messages[`${namespace}.${key}`] = namespaceData[key];
-      } else {
-        // Check nested key
-        const value = getNestedValue(namespaceData, key);
-        if (value !== undefined) {
-          messages[`${namespace}.${key}`] = value;
-        }
+      // Check direct key (flat structure)
+      const value = getNestedValue(namespaceData, key);
+      if (value !== undefined) {
+        messages[`${namespace}.${key}`] = value;
       }
 
       // Attempt automatic extraction of plural keys
@@ -125,7 +120,7 @@ export function pickMessages<
  * ```
  */
 export function createTranslator<
-  R extends TranslationRequirement<readonly string[]>
+  R extends TranslationRequirement<readonly string[]>,
 >(messages: Messages, requirement: R): ConstrainedTranslatorFunction<R> {
   const namespace = requirement.namespace;
 

@@ -57,7 +57,7 @@ export function resolvePluralMessage(
 }
 
 /**
- * Extract all plural-related keys from translation file
+ * Extract all plural-related keys from translation file (flat structure)
  * @param allMessages - All translation data
  * @param namespace - Namespace
  * @param baseKey - Base key
@@ -78,18 +78,13 @@ export function extractPluralKeys(
 
   for (const suffix of suffixes) {
     const keyWithSuffix = `${baseKey}${suffix}`;
-    // Check direct key
-    if (keyWithSuffix in namespaceData) {
+    // Check direct key in flat structure
+    const value = getNestedValue(
+      namespaceData as Record<string, unknown>,
+      keyWithSuffix
+    );
+    if (value !== undefined) {
       pluralKeys.push(keyWithSuffix);
-    } else {
-      // Check nested key
-      const value = getNestedValue(
-        namespaceData as Record<string, unknown>,
-        keyWithSuffix
-      );
-      if (value !== undefined) {
-        pluralKeys.push(keyWithSuffix);
-      }
     }
   }
 

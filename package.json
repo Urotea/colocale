@@ -16,9 +16,7 @@
   "bin": {
     "colocale": "./dist/cli/main.js"
   },
-  "files": [
-    "dist"
-  ],
+  "files": ["dist"],
   "author": "Urotea",
   "license": "MIT",
   "repository": {

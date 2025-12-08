@@ -15,15 +15,11 @@ interface TestTranslationStructure {
     itemCount: string;
   };
   user: {
-    profile: {
-      name: string;
-      email: string;
-    };
+    "profile.name": string;
+    "profile.email": string;
   };
   shop: {
-    cart: {
-      item: string;
-    };
+    "cart.item": string;
     cartSummary: string;
   };
   results: {
@@ -42,17 +38,13 @@ const testMessages: TranslationFile = {
     itemCount_other: "{{count}}件のアイテム",
   },
   user: {
-    profile: {
-      name: "名前",
-      email: "メールアドレス",
-    },
+    "profile.name": "名前",
+    "profile.email": "メールアドレス",
   },
   shop: {
-    cart: {
-      item_zero: "カートは空です",
-      item_one: "1個の商品",
-      item_other: "{{count}}個の商品",
-    },
+    "cart.item_zero": "カートは空です",
+    "cart.item_one": "1個の商品",
+    "cart.item_other": "{{count}}個の商品",
     cartSummary_zero: "{{user}}さんのカートは空です",
     cartSummary_one: "{{user}}さんのカートに1個の商品があります",
     cartSummary_other: "{{user}}さんのカートに{{count}}個の商品があります",
