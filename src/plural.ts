@@ -7,6 +7,14 @@ import { getNestedValue } from "./utils";
  * @param count - Numeric value to determine suffix
  * @param locale - Optional locale for plural rules (defaults to "en")
  * @returns Key with suffix (e.g., "itemCount_one", "itemCount_other")
+ * 
+ * @remarks
+ * The locale parameter defaults to "en". In a production application, you may want to
+ * determine the locale from the current language context. The translation file structure
+ * itself defines which plural categories are needed, so the main impact of locale is
+ * determining which category a given count falls into.
+ * 
+ * Future enhancement: Accept locale from a global context or configuration.
  */
 function selectPluralKey(
   baseKey: string,
