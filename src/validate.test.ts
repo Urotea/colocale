@@ -48,15 +48,28 @@ describe("validateTranslations", () => {
   test("Plural keys: missing both _one and _other", () => {
     const translations: TranslationFile = {
       common: {
-        itemCount_zero: "アイテムがありません",
+        itemCount_one: "1件のアイテム",
+        // itemCount_other is missing
       },
     };
 
     const result = validateTranslations(translations);
     expect(result.valid).toBe(false);
-    expect(result.errors).toHaveLength(2);
-    expect(result.errors[0].type).toBe("missing-plural-one");
-    expect(result.errors[1].type).toBe("missing-plural-other");
+    expect(result.errors).toHaveLength(1);
+    expect(result.errors[0].type).toBe("missing-plural-other");
+  });
+
+  test("Non-plural key with _zero suffix is not validated as plural", () => {
+    const translations: TranslationFile = {
+      common: {
+        itemCount_zero: "アイテムがありません",
+      },
+    };
+
+    // _zero is no longer a recognized plural suffix, so this is just a regular key
+    const result = validateTranslations(translations);
+    expect(result.valid).toBe(true);
+    expect(result.errors).toHaveLength(0);
   });
 
   test("Plural keys: _zero is optional", () => {

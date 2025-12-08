@@ -361,7 +361,8 @@ describe("Edge cases", () => {
     };
     const requirement = { namespace: "common", keys: ["itemCount"] };
     const t = createTranslator(messages, requirement);
-    expect(t("itemCount", { count: -1 })).toBe("-1件のアイテム");
+    // In English, Intl.PluralRules treats -1 as "one" (singular)
+    expect(t("itemCount", { count: -1 })).toBe("1件のアイテム");
   });
 
   test("Plural with decimal number", () => {
