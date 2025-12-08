@@ -104,6 +104,7 @@ describe("validateTranslations", () => {
         profile: {
           name: "名前",
         },
+        // biome-ignore lint/suspicious/noExplicitAny: Testing invalid object handling
       } as any,
     };
 
