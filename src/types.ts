@@ -26,13 +26,11 @@ export type PlaceholderValues = Record<string, string | number>;
 /**
  * Translation file type
  * Top level: Map of namespaces
- * Within namespace: Map of keys and translation strings (allows up to 1 level of nesting)
+ * Within namespace: Map of keys and translation strings (flat structure only)
  */
 export type TranslationFile = Record<string, NamespaceTranslations>;
 
-export type NamespaceTranslations = Record<string, string | NestedTranslations>;
-
-export type NestedTranslations = Record<string, string>;
+export type NamespaceTranslations = Record<string, string>;
 
 /**
  * Type for locale-indexed translation files
@@ -108,36 +106,10 @@ export type ConstrainedTranslatorFunction<
 // ============================================================================
 
 /**
- * Extract nested keys from a namespace as dot-notation strings
- * Handles nested object structures (interfaces or object types)
- *
- * Note: The translation file format only supports up to 1 level of nesting,
- * as defined by the NamespaceTranslations and NestedTranslations types.
- * This is a design constraint of the library.
- *
- * @template T - The namespace translations object
+ * Extract all valid keys for a namespace (flat structure only)
+ * @template T - The namespace translations object (Record<string, string>)
  */
-type ExtractNestedKeys<T> = T extends object
-  ? {
-      [K in keyof T]: T[K] extends string
-        ? never
-        : T[K] extends object
-        ? K extends string
-          ? keyof T[K] extends string
-            ? `${K}.${keyof T[K] & string}`
-            : never
-          : never
-        : never;
-    }[keyof T]
-  : never;
-
-/**
- * Extract all valid keys for a namespace (including top-level and nested keys)
- * @template T - The namespace translations object
- */
-type ExtractAllKeys<T> = T extends object
-  ? (keyof T & string) | ExtractNestedKeys<T>
-  : never;
+type ExtractAllKeys<T> = T extends object ? (keyof T & string) : never;
 
 /**
  * Extract valid namespace names from a translation structure

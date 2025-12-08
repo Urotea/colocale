@@ -1,25 +1,20 @@
 import type {
   LocaleTranslations,
   NamespaceTranslations,
-  NestedTranslations,
   TranslationFile,
   ValidationError,
   ValidationResult,
 } from "./types";
 
 /**
- * Collect all keys from a translation object (including nested keys)
+ * Collect all keys from a translation object (flat structure only)
  */
 function collectAllKeys(obj: NamespaceTranslations, prefix = ""): Set<string> {
   const keys = new Set<string>();
 
   for (const key in obj) {
-    const fullKey = prefix ? `${prefix}.${key}` : key;
     if (typeof obj[key] === "string") {
-      keys.add(fullKey);
-    } else if (typeof obj[key] === "object" && obj[key] !== null) {
-      const nestedKeys = collectAllKeys(obj[key], fullKey);
-      nestedKeys.forEach((k) => keys.add(k));
+      keys.add(key);
     }
   }
 
@@ -78,7 +73,7 @@ function validatePluralKeys(
 }
 
 /**
- * Check nesting depth
+ * Check nesting depth (must be flat - level 0 only)
  */
 function validateNesting(
   namespace: string,
@@ -86,66 +81,42 @@ function validateNesting(
 ): ValidationError[] {
   const errors: ValidationError[] = [];
 
-  function checkDepth(
-    obj: NamespaceTranslations | NestedTranslations,
-    path: string,
-    depth: number
-  ) {
-    if (depth > 1) {
+  for (const key in translations) {
+    const value = translations[key];
+    if (typeof value === 'object' && value !== null) {
       errors.push({
         type: "invalid-nesting",
         namespace,
-        key: path,
-        message: `Nesting depth must be 1 level or less: "${path}"`,
+        key,
+        message: `Nested structures are not allowed. Use flat structure with dot notation (e.g., "profile.name"): "${key}"`,
       });
-      return;
-    }
-
-    for (const key in obj) {
-      const currentPath = path ? `${path}.${key}` : key;
-      if (typeof obj[key] === "object" && obj[key] !== null) {
-        checkDepth(obj[key], currentPath, depth + 1);
-      }
     }
   }
-
-  checkDepth(translations, "", 0);
 
   return errors;
 }
 
 /**
- * Check key naming rules
+ * Check key naming rules (allows dot notation for flat structure)
  */
 function validateKeyNames(
   namespace: string,
   translations: NamespaceTranslations
 ): ValidationError[] {
   const errors: ValidationError[] = [];
-  const validKeyPattern = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
+  // Allow dots in keys for flat structure (e.g., "profile.name")
+  const validKeyPattern = /^[a-zA-Z_][a-zA-Z0-9_.]*$/;
 
-  function checkKeys(
-    obj: NamespaceTranslations | NestedTranslations,
-    path: string
-  ) {
-    for (const key in obj) {
-      if (!validKeyPattern.test(key)) {
-        errors.push({
-          type: "invalid-key-name",
-          namespace,
-          key: path ? `${path}.${key}` : key,
-          message: `Invalid key name: "${key}" (only alphanumeric and underscore allowed)`,
-        });
-      }
-
-      const currentPath = path ? `${path}.${key}` : key;
-      if (typeof obj[key] === "object" && obj[key] !== null) {
-        checkKeys(obj[key], currentPath);
-      }
+  for (const key in translations) {
+    if (!validKeyPattern.test(key)) {
+      errors.push({
+        type: "invalid-key-name",
+        namespace,
+        key: key,
+        message: `Invalid key name: "${key}" (only alphanumeric, underscore, and dots allowed)`,
+      });
     }
   }
-
-  checkKeys(translations, "");
 
   return errors;
 }
@@ -160,33 +131,22 @@ function validatePlaceholders(
   const errors: ValidationError[] = [];
   const placeholderPattern = /\{\{([^{}]+)\}\}/g;
 
-  function checkPlaceholders(
-    obj: NamespaceTranslations | NestedTranslations,
-    path: string
-  ) {
-    for (const key in obj) {
-      const currentPath = path ? `${path}.${key}` : key;
-
-      if (typeof obj[key] === "string") {
-        const matches = obj[key].matchAll(placeholderPattern);
-        for (const match of matches) {
-          const placeholderName = match[1];
-          if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(placeholderName)) {
-            errors.push({
-              type: "invalid-placeholder",
-              namespace,
-              key: currentPath,
-              message: `Invalid placeholder: "{{${placeholderName}}}" (only alphanumeric and underscore allowed)`,
-            });
-          }
+  for (const key in translations) {
+    if (typeof translations[key] === "string") {
+      const matches = translations[key].matchAll(placeholderPattern);
+      for (const match of matches) {
+        const placeholderName = match[1];
+        if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(placeholderName)) {
+          errors.push({
+            type: "invalid-placeholder",
+            namespace,
+            key: key,
+            message: `Invalid placeholder: "{{${placeholderName}}}" (only alphanumeric and underscore allowed)`,
+          });
         }
-      } else if (typeof obj[key] === "object" && obj[key] !== null) {
-        checkPlaceholders(obj[key], currentPath);
       }
     }
   }
-
-  checkPlaceholders(translations, "");
 
   return errors;
 }

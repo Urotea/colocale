@@ -1,6 +1,4 @@
 {
-  "profile": {
-    "name": "名前",
-    "email": "メールアドレス"
-  }
+  "profile.name": "名前",
+  "profile.email": "メールアドレス"
 }

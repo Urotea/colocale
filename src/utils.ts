@@ -1,33 +1,18 @@
 import type { PlaceholderValues } from "./types";
 
 /**
- * Get nested object value from dot notation path
+ * Get value from flat object (no longer needs nested traversal)
  * @param obj - Object to search
- * @param path - Dot notation path (e.g., "profile.name")
+ * @param key - Key (may contain dots in flat structure)
  * @returns Found string, or undefined
  * @internal
  */
 export function getNestedValue(
   obj: Record<string, unknown>,
-  path: string
+  key: string
 ): string | undefined {
-  const keys = path.split(".");
-  let current: unknown = obj;
-
-  for (const key of keys) {
-    if (
-      current &&
-      typeof current === "object" &&
-      current !== null &&
-      key in current
-    ) {
-      current = (current as Record<string, unknown>)[key];
-    } else {
-      return undefined;
-    }
-  }
-
-  return typeof current === "string" ? current : undefined;
+  const value = obj[key];
+  return typeof value === "string" ? value : undefined;
 }
 
 /**

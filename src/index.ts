@@ -75,15 +75,10 @@ export function pickMessages<
     }
 
     for (const key of keys) {
-      // Check direct key
-      if (typeof namespaceData[key] === "string") {
-        messages[`${namespace}.${key}`] = namespaceData[key];
-      } else {
-        // Check nested key
-        const value = getNestedValue(namespaceData, key);
-        if (value !== undefined) {
-          messages[`${namespace}.${key}`] = value;
-        }
+      // Check direct key (flat structure)
+      const value = getNestedValue(namespaceData, key);
+      if (value !== undefined) {
+        messages[`${namespace}.${key}`] = value;
       }
 
       // Attempt automatic extraction of plural keys

@@ -1,6 +1,4 @@
 {
-  "profile": {
-    "name": "Name",
-    "email": "Email"
-  }
+  "profile.name": "Name",
+  "profile.email": "Email"
 }
