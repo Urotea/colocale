@@ -9,6 +9,7 @@ export type {
   TranslationFile,
   ConstrainedTranslatorFunction,
   LocaleTranslations,
+  Locale,
   Namespace,
   KeysForNamespace,
 } from "./types";
@@ -25,6 +26,7 @@ import { getNestedValue, replacePlaceholders } from "./utils";
 
 import type {
   ConstrainedTranslatorFunction,
+  Locale,
   Messages,
   PlaceholderValues,
   TranslationFile,
@@ -48,19 +50,20 @@ export function mergeRequirements(
 /**
  * Extract only the required translations from translation files
  *
- * When base keys are specified, keys with _zero, _one, _other suffixes are automatically extracted
+ * When base keys are specified, keys with _one, _other suffixes are automatically extracted
  *
  * @template R - Array of TranslationRequirements or a single TranslationRequirement
  * @param allMessages - Object containing all translation data
  * @param requirements - List of required translation keys or a single requirement
- * @returns Messages object (key format: "namespace.key")
+ * @param locale - Locale identifier (e.g., "en", "ja", "fr")
+ * @returns Messages object with locale information
  */
 export function pickMessages<
   R extends
     | readonly TranslationRequirement<readonly string[]>[]
     | TranslationRequirement<readonly string[]>,
->(allMessages: TranslationFile, requirements: R): Messages {
-  const messages: Record<string, string> = {};
+>(allMessages: TranslationFile, requirements: R, locale: Locale): Messages {
+  const translations: Record<string, string> = {};
 
   const requirementsArray = Array.isArray(requirements)
     ? requirements
@@ -78,7 +81,7 @@ export function pickMessages<
       // Check direct key (flat structure)
       const value = getNestedValue(namespaceData, key);
       if (value !== undefined) {
-        messages[`${namespace}.${key}`] = value;
+        translations[`${namespace}.${key}`] = value;
       }
 
       // Attempt automatic extraction of plural keys
@@ -86,13 +89,13 @@ export function pickMessages<
       for (const pluralKey of pluralKeys) {
         const value = getNestedValue(namespaceData, pluralKey);
         if (value !== undefined) {
-          messages[`${namespace}.${pluralKey}`] = value;
+          translations[`${namespace}.${pluralKey}`] = value;
         }
       }
     }
   }
 
-  return messages;
+  return { locale, translations };
 }
 
 /**
@@ -123,19 +126,26 @@ export function createTranslator<
   R extends TranslationRequirement<readonly string[]>,
 >(messages: Messages, requirement: R): ConstrainedTranslatorFunction<R> {
   const namespace = requirement.namespace;
+  const locale = messages.locale;
 
   return (key: string, values?: PlaceholderValues): string => {
     let message: string | undefined;
 
     // If count is provided, attempt plural handling
     if (values && "count" in values && typeof values.count === "number") {
-      message = resolvePluralMessage(messages, namespace, key, values.count);
+      message = resolvePluralMessage(
+        messages.translations,
+        namespace,
+        key,
+        values.count,
+        locale
+      );
     }
 
     // If not plural or plural resolution failed, try regular key
     if (message === undefined) {
       const fullKey = `${namespace}.${key}`;
-      message = messages[fullKey];
+      message = messages.translations[fullKey];
     }
 
     // If message not found, return key as-is

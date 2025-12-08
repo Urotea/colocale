@@ -33,7 +33,6 @@ const testMessages: TranslationFile = {
   common: {
     submit: "送信",
     cancel: "キャンセル",
-    itemCount_zero: "アイテムがありません",
     itemCount_one: "1件のアイテム",
     itemCount_other: "{{count}}件のアイテム",
   },
@@ -42,10 +41,8 @@ const testMessages: TranslationFile = {
     "profile.email": "メールアドレス",
   },
   shop: {
-    "cart.item_zero": "カートは空です",
     "cart.item_one": "1個の商品",
     "cart.item_other": "{{count}}個の商品",
-    cartSummary_zero: "{{user}}さんのカートは空です",
     cartSummary_one: "{{user}}さんのカートに1個の商品があります",
     cartSummary_other: "{{user}}さんのカートに{{count}}個の商品があります",
   },
@@ -145,10 +142,13 @@ describe("mergeRequirements", () => {
 describe("pickMessages", () => {
   test("Single translation requirement", () => {
     const requirements = [{ namespace: "common", keys: ["submit", "cancel"] }];
-    const result = pickMessages(testMessages, requirements);
+    const result = pickMessages(testMessages, requirements, "ja");
     expect(result).toEqual({
-      "common.submit": "送信",
-      "common.cancel": "キャンセル",
+      locale: "ja",
+      translations: {
+        "common.submit": "送信",
+        "common.cancel": "キャンセル",
+      },
     });
   });
 
@@ -157,10 +157,13 @@ describe("pickMessages", () => {
       { namespace: "common", keys: ["submit"] },
       { namespace: "results", keys: ["itemsFound"] },
     ];
-    const result = pickMessages(testMessages, requirements);
+    const result = pickMessages(testMessages, requirements, "ja");
     expect(result).toEqual({
-      "common.submit": "送信",
-      "results.itemsFound": "{{count}}件取得しました",
+      locale: "ja",
+      translations: {
+        "common.submit": "送信",
+        "results.itemsFound": "{{count}}件取得しました",
+      },
     });
   });
 
@@ -168,30 +171,37 @@ describe("pickMessages", () => {
     const requirements = [
       { namespace: "user", keys: ["profile.name", "profile.email"] },
     ];
-    const result = pickMessages(testMessages, requirements);
+    const result = pickMessages(testMessages, requirements, "ja");
     expect(result).toEqual({
-      "user.profile.name": "名前",
-      "user.profile.email": "メールアドレス",
+      locale: "ja",
+      translations: {
+        "user.profile.name": "名前",
+        "user.profile.email": "メールアドレス",
+      },
     });
   });
 
   test("Automatic extraction of plural keys", () => {
     const requirements = [{ namespace: "common", keys: ["itemCount"] }];
-    const result = pickMessages(testMessages, requirements);
+    const result = pickMessages(testMessages, requirements, "ja");
     expect(result).toEqual({
-      "common.itemCount_zero": "アイテムがありません",
-      "common.itemCount_one": "1件のアイテム",
-      "common.itemCount_other": "{{count}}件のアイテム",
+      locale: "ja",
+      translations: {
+        "common.itemCount_one": "1件のアイテム",
+        "common.itemCount_other": "{{count}}件のアイテム",
+      },
     });
   });
 
   test("Automatic extraction of nested plural keys", () => {
     const requirements = [{ namespace: "shop", keys: ["cart.item"] }];
-    const result = pickMessages(testMessages, requirements);
+    const result = pickMessages(testMessages, requirements, "ja");
     expect(result).toEqual({
-      "shop.cart.item_zero": "カートは空です",
-      "shop.cart.item_one": "1個の商品",
-      "shop.cart.item_other": "{{count}}個の商品",
+      locale: "ja",
+      translations: {
+        "shop.cart.item_one": "1個の商品",
+        "shop.cart.item_other": "{{count}}個の商品",
+      },
     });
   });
 
@@ -200,8 +210,11 @@ describe("pickMessages", () => {
       // biome-ignore lint/suspicious/noExplicitAny: Testing invalid key handling
       { namespace: "common", keys: ["nonexistent" as any] },
     ];
-    const result = pickMessages(testMessages, requirements);
-    expect(result).toEqual({});
+    const result = pickMessages(testMessages, requirements, "ja");
+    expect(result).toEqual({
+      locale: "ja",
+      translations: {},
+    });
   });
 
   test("Non-existent namespace", () => {
@@ -209,16 +222,22 @@ describe("pickMessages", () => {
       // biome-ignore lint/suspicious/noExplicitAny: Testing invalid namespace handling
       { namespace: "nonexistent" as any, keys: ["submit"] },
     ];
-    const result = pickMessages(testMessages, requirements);
-    expect(result).toEqual({});
+    const result = pickMessages(testMessages, requirements, "ja");
+    expect(result).toEqual({
+      locale: "ja",
+      translations: {},
+    });
   });
 });
 
 describe("createTranslator with TranslationRequirement", () => {
   test("Basic translation", () => {
     const messages: Messages = {
-      "common.submit": "送信",
-      "common.cancel": "キャンセル",
+      locale: "ja",
+      translations: {
+        "common.submit": "送信",
+        "common.cancel": "キャンセル",
+      },
     };
     const requirement = { namespace: "common", keys: ["submit", "cancel"] };
     const t = createTranslator(messages, requirement);
@@ -228,7 +247,10 @@ describe("createTranslator with TranslationRequirement", () => {
 
   test("Placeholder replacement (single)", () => {
     const messages: Messages = {
-      "results.itemsFound": "{{count}}件取得しました",
+      locale: "ja",
+      translations: {
+        "results.itemsFound": "{{count}}件取得しました",
+      },
     };
     const requirement = { namespace: "results", keys: ["itemsFound"] };
     const t = createTranslator(messages, requirement);
@@ -237,7 +259,10 @@ describe("createTranslator with TranslationRequirement", () => {
 
   test("Placeholder replacement (multiple)", () => {
     const messages: Messages = {
-      "results.greeting": "こんにちは、{{name}}さん",
+      locale: "ja",
+      translations: {
+        "results.greeting": "こんにちは、{{name}}さん",
+      },
     };
     const requirement = { namespace: "results", keys: ["greeting"] };
     const t = createTranslator(messages, requirement);
@@ -246,31 +271,39 @@ describe("createTranslator with TranslationRequirement", () => {
 
   test("Plural handling (count = 0)", () => {
     const messages: Messages = {
-      "common.itemCount_zero": "アイテムがありません",
-      "common.itemCount_one": "1件のアイテム",
-      "common.itemCount_other": "{{count}}件のアイテム",
+      locale: "ja",
+      translations: {
+        "common.itemCount_one": "1件のアイテム",
+        "common.itemCount_other": "{{count}}件のアイテム",
+      },
     };
     const requirement = { namespace: "common", keys: ["itemCount"] };
     const t = createTranslator(messages, requirement);
-    expect(t("itemCount", { count: 0 })).toBe("アイテムがありません");
+    // For count = 0, Intl.PluralRules selects "other" in Japanese
+    expect(t("itemCount", { count: 0 })).toBe("0件のアイテム");
   });
 
   test("Plural handling (count = 1)", () => {
     const messages: Messages = {
-      "common.itemCount_zero": "アイテムがありません",
-      "common.itemCount_one": "1件のアイテム",
-      "common.itemCount_other": "{{count}}件のアイテム",
+      locale: "ja",
+      translations: {
+        "common.itemCount_one": "1件のアイテム",
+        "common.itemCount_other": "{{count}}件のアイテム",
+      },
     };
     const requirement = { namespace: "common", keys: ["itemCount"] };
     const t = createTranslator(messages, requirement);
+    // In Japanese, all numbers use "other", so this falls back to _other
     expect(t("itemCount", { count: 1 })).toBe("1件のアイテム");
   });
 
   test("Plural handling (count = 2+)", () => {
     const messages: Messages = {
-      "common.itemCount_zero": "アイテムがありません",
-      "common.itemCount_one": "1件のアイテム",
-      "common.itemCount_other": "{{count}}件のアイテム",
+      locale: "ja",
+      translations: {
+        "common.itemCount_one": "1件のアイテム",
+        "common.itemCount_other": "{{count}}件のアイテム",
+      },
     };
     const requirement = { namespace: "common", keys: ["itemCount"] };
     const t = createTranslator(messages, requirement);
@@ -280,15 +313,17 @@ describe("createTranslator with TranslationRequirement", () => {
 
   test("Combination of plurals + placeholders", () => {
     const messages: Messages = {
-      "shop.cartSummary_zero": "{{user}}さんのカートは空です",
-      "shop.cartSummary_one": "{{user}}さんのカートに1個の商品があります",
-      "shop.cartSummary_other":
-        "{{user}}さんのカートに{{count}}個の商品があります",
+      locale: "ja",
+      translations: {
+        "shop.cartSummary_one": "{{user}}さんのカートに1個の商品があります",
+        "shop.cartSummary_other":
+          "{{user}}さんのカートに{{count}}個の商品があります",
+      },
     };
     const requirement = { namespace: "shop", keys: ["cartSummary"] };
     const t = createTranslator(messages, requirement);
     expect(t("cartSummary", { count: 0, user: "田中" })).toBe(
-      "田中さんのカートは空です"
+      "田中さんのカートに0個の商品があります"
     );
     expect(t("cartSummary", { count: 1, user: "田中" })).toBe(
       "田中さんのカートに1個の商品があります"
@@ -300,21 +335,26 @@ describe("createTranslator with TranslationRequirement", () => {
 
   test("Partial plural keys (_other only)", () => {
     const messages: Messages = {
-      "common.itemCount_other": "{{count}}件のアイテム",
+      locale: "ja",
+      translations: {
+        "common.itemCount_other": "{{count}}件のアイテム",
+      },
     };
     const requirement = { namespace: "common", keys: ["itemCount"] };
     const t = createTranslator(messages, requirement);
-    // If count === 0 and _zero is not available, fallback to _other
+    // Fallback to _other for all counts when _one is not available
     expect(t("itemCount", { count: 0 })).toBe("0件のアイテム");
-    // If count === 1, _one is required so not found (react-i18next compatible)
-    expect(t("itemCount", { count: 1 })).toBe("itemCount");
+    expect(t("itemCount", { count: 1 })).toBe("1件のアイテム");
     expect(t("itemCount", { count: 5 })).toBe("5件のアイテム");
   });
 
   test("Partial plural keys (_one and _other only)", () => {
     const messages: Messages = {
-      "common.itemCount_one": "1件のアイテム",
-      "common.itemCount_other": "{{count}}件のアイテム",
+      locale: "ja",
+      translations: {
+        "common.itemCount_one": "1件のアイテム",
+        "common.itemCount_other": "{{count}}件のアイテム",
+      },
     };
     const requirement = { namespace: "common", keys: ["itemCount"] };
     const t = createTranslator(messages, requirement);
@@ -325,7 +365,10 @@ describe("createTranslator with TranslationRequirement", () => {
 
   test("Non-existent key", () => {
     const messages: Messages = {
-      "common.submit": "送信",
+      locale: "ja",
+      translations: {
+        "common.submit": "送信",
+      },
     };
     const requirement = {
       namespace: "common",
@@ -342,8 +385,11 @@ describe("createTranslator with TranslationRequirement", () => {
 
   test("Multiple uses of same placeholder", () => {
     const messages: Messages = {
-      "results.greeting":
-        "{{name}}さん、こんにちは。{{name}}さんの注文を確認します。",
+      locale: "ja",
+      translations: {
+        "results.greeting":
+          "{{name}}さん、こんにちは。{{name}}さんの注文を確認します。",
+      },
     };
     const requirement = { namespace: "results", keys: ["greeting"] };
     const t = createTranslator(messages, requirement);
@@ -354,7 +400,10 @@ describe("createTranslator with TranslationRequirement", () => {
 
   test("Number to string conversion", () => {
     const messages: Messages = {
-      "results.itemsFound": "価格: {{price}}円",
+      locale: "ja",
+      translations: {
+        "results.itemsFound": "価格: {{price}}円",
+      },
     };
     const requirement = { namespace: "results", keys: ["itemsFound"] };
     const t = createTranslator(messages, requirement);
@@ -365,20 +414,25 @@ describe("createTranslator with TranslationRequirement", () => {
 describe("Edge cases", () => {
   test("Plural with negative number", () => {
     const messages: Messages = {
-      "common.itemCount_zero": "アイテムがありません",
-      "common.itemCount_one": "1件のアイテム",
-      "common.itemCount_other": "{{count}}件のアイテム",
+      locale: "ja",
+      translations: {
+        "common.itemCount_one": "1件のアイテム",
+        "common.itemCount_other": "{{count}}件のアイテム",
+      },
     };
     const requirement = { namespace: "common", keys: ["itemCount"] };
     const t = createTranslator(messages, requirement);
+    // In Japanese, all numbers use "other"
     expect(t("itemCount", { count: -1 })).toBe("-1件のアイテム");
   });
 
   test("Plural with decimal number", () => {
     const messages: Messages = {
-      "common.itemCount_zero": "アイテムがありません",
-      "common.itemCount_one": "1件のアイテム",
-      "common.itemCount_other": "{{count}}件のアイテム",
+      locale: "ja",
+      translations: {
+        "common.itemCount_one": "1件のアイテム",
+        "common.itemCount_other": "{{count}}件のアイテム",
+      },
     };
     const requirement = { namespace: "common", keys: ["itemCount"] };
     const t = createTranslator(messages, requirement);

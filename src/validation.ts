@@ -38,7 +38,7 @@ function validatePluralKeys(
 
   // Classify plural keys
   for (const key of keys) {
-    const match = key.match(/^(.+)_(zero|one|other)$/);
+    const match = key.match(/^(.+)_(one|other)$/);
     if (match) {
       const baseKey = match[1];
       const suffix = match[2];
@@ -56,7 +56,7 @@ function validatePluralKeys(
         type: "missing-plural-one",
         namespace,
         key: baseKey,
-        message: `Plural key "${baseKey}_one" is required (react-i18next compatible)`,
+        message: `Plural key "${baseKey}_one" is required (Intl.PluralRules compatible)`,
       });
     }
     if (!suffixes.has("other")) {
@@ -64,7 +64,7 @@ function validatePluralKeys(
         type: "missing-plural-other",
         namespace,
         key: baseKey,
-        message: `Plural key "${baseKey}_other" is required (react-i18next compatible)`,
+        message: `Plural key "${baseKey}_other" is required (Intl.PluralRules compatible)`,
       });
     }
   }

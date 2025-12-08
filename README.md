@@ -9,7 +9,7 @@ Inspired by GraphQL's fragment collocation pattern, each component can declarati
 - 🎯 **Colocation**: Define translation keys alongside your components
 - 🔒 **Type-safe**: Full TypeScript support with auto-generated types
 - 📦 **Lightweight**: Zero dependencies, simple API
-- 🌐 **Pluralization**: react-i18next compatible plural handling
+- 🌐 **Pluralization**: Built on `Intl.PluralRules` for proper plural handling
 - ⚡ **Fast**: Extract and send only the translations needed by components
 - 🔄 **Universal**: Works in both server and client components
 
@@ -59,7 +59,6 @@ Create JSON files for each namespace using **flat structure** (level 0).
 {
   "submit": "Submit",
   "cancel": "Cancel",
-  "itemCount_zero": "No items",
   "itemCount_one": "1 item",
   "itemCount_other": "{{count}} items"
 }
@@ -82,6 +81,7 @@ node scripts/flatten-translations.js messages
 ```
 
 This will convert:
+
 ```json
 {
   "profile": {
@@ -92,6 +92,7 @@ This will convert:
 ```
 
 To:
+
 ```json
 {
   "profile.name": "Name",
@@ -198,8 +199,12 @@ export default async function Page({ params }: { params: { locale: string } }) {
     user: (await import(`@/messages/${params.locale}/user.json`)).default,
   };
 
-  // Extract only the needed translations
-  const messages = pickMessages(allMessages, userPageTranslations);
+  // Extract only the needed translations with locale information
+  const messages = pickMessages(
+    allMessages,
+    userPageTranslations,
+    params.locale
+  );
 
   return <UserPage messages={messages} />;
 }
@@ -230,11 +235,20 @@ Extracts only the needed translations from translation files.
 ```typescript
 function pickMessages(
   allMessages: TranslationFile,
-  requirements: TranslationRequirement[] | TranslationRequirement
+  requirements: TranslationRequirement[] | TranslationRequirement,
+  locale: Locale
 ): Messages;
 ```
 
-**Automatic plural extraction**: When you specify a base key (e.g., `"itemCount"`), keys with `_zero`, `_one`, `_other` suffixes are automatically extracted.
+**Parameters:**
+
+- `allMessages`: Object containing all translation data
+- `requirements`: Translation requirement(s) defining which keys to extract
+- `locale`: Locale identifier (see `Locale` type) - used for proper pluralization with `Intl.PluralRules`
+
+**Locale type**: The `Locale` type provides autocomplete for common locale codes (e.g., `"en"`, `"ja"`, `"en-US"`, `"zh-CN"`) while still accepting any BCP 47 language tag as a string.
+
+**Automatic plural extraction**: When you specify a base key (e.g., `"itemCount"`), keys with `_one`, `_other` suffixes are automatically extracted based on `Intl.PluralRules`.
 
 ### createTranslator
 
@@ -322,7 +336,6 @@ t("greeting", { name: "John" }); // "Hello, John"
 ```json
 {
   "common": {
-    "itemCount_zero": "No items",
     "itemCount_one": "1 item",
     "itemCount_other": "{{count}} items"
   }
@@ -337,32 +350,33 @@ import { createTranslator } from "colocale";
 
 // Specify only the base key in translation requirements
 export const translations = defineRequirement("common", [
-  "itemCount", // _zero, _one, _other are automatically extracted
+  "itemCount", // _one, _other are automatically extracted
 ]);
 
 const t = createTranslator(messages, translations);
 
-t("itemCount", { count: 0 }); // "No items"
+t("itemCount", { count: 0 }); // "0 items"
 t("itemCount", { count: 1 }); // "1 item"
 t("itemCount", { count: 5 }); // "5 items"
 ```
 
 **Note:** The `codegen` command automatically removes plural suffixes from generated types, so you only need to specify the base key (e.g., `itemCount` instead of `itemCount_one`, `itemCount_other`).
 
-**Pluralization rules (react-i18next compatible):**
+**Pluralization rules (Intl.PluralRules):**
 
-- `count === 0` → `{key}_zero` (falls back to `_other` if not present)
-- `count === 1` → `{key}_one` (required)
-- Otherwise → `{key}_other` (required)
+- Uses `Intl.PluralRules` to determine the appropriate form
+- Only `_one` and `_other` suffixes are supported
+- For English: `count === 1` → `{key}_one`, otherwise → `{key}_other`
+- Other languages may have different rules (e.g., Russian has `one`, `few`, `many`, `other`)
+- Falls back to `_other` if the selected form is not found
 
-**Note:** `_one` and `_other` are required. If they don't exist, the base key (without suffix) will be used if available, but it won't function correctly as a plural. Only `_zero` is optional; if omitted, `_other` is used when `count === 0`.
+**Note:** Both `_one` and `_other` are required for proper pluralization. The library will fall back to `_other` if a specific form is not found.
 
 ### Pluralization + Placeholders
 
 ```json
 {
   "shop": {
-    "cartSummary_zero": "{{user}}'s cart is empty",
     "cartSummary_one": "{{user}} has 1 item in cart",
     "cartSummary_other": "{{user}} has {{count}} items in cart"
   }
@@ -377,7 +391,10 @@ const shopReq = defineRequirement("shop", ["cartSummary"]);
 const t = createTranslator(messages, shopReq);
 
 t("cartSummary", { count: 0, user: "John" });
-// "John's cart is empty"
+// "John has 0 items in cart"
+
+t("cartSummary", { count: 1, user: "John" });
+// "John has 1 item in cart"
 
 t("cartSummary", { count: 5, user: "John" });
 // "John has 5 items in cart"
@@ -531,7 +548,7 @@ if (!crossLocaleResult.valid) {
 
 #### Per-Locale Validation
 
-- **Plural key consistency**: `_one` and `_other` are required (`_zero` is optional)
+- **Plural key consistency**: `_one` and `_other` are required (based on `Intl.PluralRules`)
 - **Nesting depth**: Flat structure only (level 0) - nested objects are not allowed
 - **Key naming rules**: Alphanumeric characters, underscores, and dots (for flat structure grouping)
 - **Placeholder format**: `{{name}}` format, with alphanumeric characters and underscores only
@@ -653,7 +670,7 @@ export const userProfileTranslations = defineRequirement("user", [
 ]);
 
 // Extract needed translations
-const messages = pickMessages(allMessages, userProfileTranslations);
+const messages = pickMessages(allMessages, userProfileTranslations, locale);
 
 // createTranslator is type-safe and constrained to the requirement keys
 const t = createTranslator(messages, userProfileTranslations);

@@ -9,7 +9,7 @@ Next.js App Router において、サーバーコンポーネントとクライ�
 ### 1.2 主要機能
 
 - プレースホルダー置換機能
-- 複数形対応（Pluralization）- react-i18next 互換
+- 複数形対応（Pluralization）- Intl.PluralRules を使用
 - TypeScript による型安全性
 - Fragment collocation パターンによる翻訳キーの管理
 - サーバー・クライアントコンポーネント両対応
@@ -56,7 +56,16 @@ type TranslationKey = string;
 
 - 翻訳キーを表す文字列型
 - ネスト構造をドット記法で表現（例: `"profile.name"`）
-- 複数形のサフィックス（`_zero`, `_one`, `_other`）を含む場合もある
+- 複数形のサフィックス（`_one`, `_other`）を含む場合もある
+
+#### 3.1.1.1 Locale
+
+```typescript
+type Locale = "en" | "ja";
+```
+
+- ロケール識別子を表す型
+- よく使われるロケールコードが型定義に含まれ、オートコンプリートで表示される
 
 #### 3.1. 2 TranslationRequirement
 
@@ -69,17 +78,20 @@ interface TranslationRequirement {
 
 - `keys`: コンポーネントが必要とする翻訳キーの配列（読み取り専用）
 - `namespace`: 翻訳の名前空間（例: `"common"`, `"user"`, `"shop"`）
-- **注意**: 複数形を使用する場合、基本キー（例: `"itemCount"`）のみを指定し、サフィックス付きキー（例: `"itemCount_zero"`）は自動的に解決される
+- **注意**: 複数形を使用する場合、基本キー（例: `"itemCount"`）のみを指定し、サフィックス付きキー（例: `"itemCount_one"`, `"itemCount_other"`）は自動的に解決される
 
 #### 3.1.3 Messages
 
 ```typescript
-type Messages = Record<string, string>;
+interface Messages {
+  locale: Locale;
+  translations: Record<string, string>;
+}
 ```
 
-- 解決済み翻訳メッセージを格納するオブジェクト
-- キー形式: `"namespace.key"` （例: `"common.submit"`）
-- 値: 翻訳済み文字列
+- ロケール情報と解決済み翻訳メッセージを格納するオブジェクト
+- `locale`: ロケール識別子（例: `"en"`, `"ja"`）、複数形ルールの決定に使用される
+- `translations`: キー形式 `"namespace.key"` （例: `"common.submit"`）をキーとする翻訳文字列のマップ
 
 #### 3.1.4 PlaceholderValues
 
@@ -113,7 +125,7 @@ type NamespaceTranslations = Record<string, string>;
 ```
 
 - トップレベル: 名前空間のマップ
-- 名前空間内: キーと翻訳文字列のマップ（フラット構造のみ、レベル0）
+- 名前空間内: キーと翻訳文字列のマップ（フラット構造のみ、レベル 0）
 
 ## 4. 翻訳ファイル形式
 
@@ -171,7 +183,6 @@ messages/
 ```json
 {
   "common": {
-    "itemCount_zero": "アイテムがありません",
     "itemCount_one": "1件のアイテム",
     "itemCount_other": "{{count}}件のアイテム"
   }
@@ -180,8 +191,7 @@ messages/
 
 **サフィックスの種類:**
 
-- `_zero`: 値が 0 の場合（オプショナル）
-- `_one`: 値が 1 の場合（オプショナル）
+- `_one`: Intl.PluralRules が "one" を返す場合（通常、値が 1 の場合）
 - `_other`: その他の場合（必須）
 
 **ネストとの組み合わせ:**
@@ -189,7 +199,6 @@ messages/
 ```json
 {
   "shop": {
-    "cart.item_zero": "カートは空です",
     "cart.item_one": "1個の商品",
     "cart.item_other": "{{count}}個の商品"
   }
@@ -201,7 +210,6 @@ messages/
 ```json
 {
   "common": {
-    "itemCount_zero": "No items",
     "itemCount_one": "1 item",
     "itemCount_other": "{{count}} items"
   }
@@ -210,10 +218,10 @@ messages/
 
 **複数形ルール選択ロジック:**
 
-1. 値が 0 の場合、`key_zero` が存在すればそれを使用
-2. 値が 1 の場合、`key_one` が存在すればそれを使用
-3. それ以外の場合、`key_other` を使用（必須）
-4. 該当するキーが存在しない場合、`key_other` にフォールバック
+1. `Intl.PluralRules` を使用して適切なフォームを決定（例: "one", "other"）
+2. 決定されたフォームに対応するキー（例: `key_one`, `key_other`）を使用
+3. 該当するキーが存在しない場合、`key_other` にフォールバック
+4. 言語によって異なるルールが適用される（例: 英語では 1 が "one"、それ以外が "other"）
 
 ---
 
@@ -261,29 +269,38 @@ const requirements = mergeRequirements(
 ```typescript
 function pickMessages(
   allMessages: TranslationFile,
-  requirements: TranslationRequirement[]
+  requirements: TranslationRequirement[],
+  locale: Locale
 ): Messages;
 ```
 
-**目的:** 翻訳ファイルから必要な翻訳のみを抽出
+**目的:** 翻訳ファイルから必要な翻訳のみを抽出し、ロケール情報と共に返す
 
 **引数:**
 
 - `allMessages`: 全翻訳データを含むオブジェクト
 - `requirements`: 必要な翻訳キーのリスト
+- `locale`: ロケール識別子（`Locale` 型）。オートコンプリート対応
 
 **戻り値:**
 
-- `Messages` オブジェクト（キー形式: `"namespace.key"`）
+- `Messages` オブジェクト（ロケール情報と翻訳データを含む）
+  ```typescript
+  {
+    locale: Locale;
+    translations: Record<string, string>;
+  }
+  ```
 
 **動作:**
 
 1. 各 `TranslationRequirement` を処理
 2. 指定された `namespace` から `keys` に該当する翻訳を取得
 3. ネストしたキー（ドット記法）にも対応
-4. **複数形キーの自動解決**: 基本キー（例: `"itemCount"`）が指定された場合、`_zero`, `_one`, `_other` サフィックス付きキーも自動的に抽出
-5. 見つからないキーは警告をログ出力（開発環境のみ）
-6. `"namespace.key"` 形式で `Messages` オブジェクトに格納
+4. **複数形キーの自動解決**: 基本キー（例: `"itemCount"`）が指定された場合、`_one`, `_other` サフィックス付きキーも自動的に抽出（Intl.PluralRules ベース）
+5. ロケール情報を含む `Messages` オブジェクトを返す
+6. 見つからないキーは警告をログ出力（開発環境のみ）
+7. `"namespace.key"` 形式で `Messages` オブジェクトに格納
 
 **複数形キーの解決例:**
 
@@ -296,7 +313,6 @@ requirements = [{
 
 // 出力 Messages
 {
-  'common.itemCount_zero': 'アイテムがありません',
   'common.itemCount_one': '1件のアイテム',
   'common.itemCount_other': '{{count}}件のアイテム'
 }
@@ -335,8 +351,8 @@ type TranslatorFunction = (key: string, values?: PlaceholderValues) => string;
 **翻訳関数の動作:**
 
 1. `values` に `count` プロパティが含まれているかチェック
-2. `count` が存在する場合、複数形ルールに基づいて適切なキーを選択
-3. 選択されたキーで `namespace. key` 形式でメッセージを取得
+2. `count` が存在する場合、Intl.PluralRules を使用して適切なキーを選択
+3. 選択されたキーで `namespace.key` 形式でメッセージを取得
 4. `values` が提供されている場合、プレースホルダーの置換
 5. 処理済み文字列を返す
 
@@ -345,9 +361,9 @@ type TranslatorFunction = (key: string, values?: PlaceholderValues) => string;
 ```typescript
 const t = createTranslator(messages, "common");
 
-t("itemCount", { count: 0 }); // "アイテムがありません"
-t("itemCount", { count: 1 }); // "1件のアイテム"
-t("itemCount", { count: 5 }); // "5件のアイテム"
+t("itemCount", { count: 0 }); // "0件のアイテム" (Intl.PluralRules で "other" が選択される)
+t("itemCount", { count: 1 }); // "1件のアイテム" (Intl.PluralRules で "one" が選択される)
+t("itemCount", { count: 5 }); // "5件のアイテム" (Intl.PluralRules で "other" が選択される)
 ```
 
 **フォールバック:**
@@ -425,30 +441,31 @@ function replacePlaceholders(
 #### 6.3. 1 selectPluralKey
 
 ```typescript
-function selectPluralKey(baseKey: string, count: number): string;
+function selectPluralKey(
+  baseKey: string,
+  count: number,
+  locale: string
+): string;
 ```
 
-**目的:** 数値に応じて適切な複数形キーのサフィックスを選択
+**目的:** Intl.PluralRules を使用して適切な複数形キーのサフィックスを選択
 
 **引数:**
 
 - `baseKey`: 基本キー名（例: `"itemCount"`）
 - `count`: 判定する数値
+- `locale`: ロケール（例: `"en"`, `"ja"`）
 
 **戻り値:**
 
-- サフィックス付きキー（例: `"itemCount_zero"`, `"itemCount_one"`, `"itemCount_other"`）
+- サフィックス付きキー（例: `"itemCount_one"`, `"itemCount_other"`）
 
 **選択ロジック:**
 
-```
-if (count === 0) {
-  return `${baseKey}_zero`
-} else if (count === 1) {
-  return `${baseKey}_one`
-} else {
-  return `${baseKey}_other`
-}
+```typescript
+const pluralRules = new Intl.PluralRules(locale);
+const rule = pluralRules.select(count); // "one", "other" など
+return `${baseKey}_${rule}`;
 ```
 
 #### 6.3.2 resolvePluralMessage
@@ -458,11 +475,12 @@ function resolvePluralMessage(
   messages: Messages,
   namespace: string,
   baseKey: string,
-  count: number
+  count: number,
+  locale: string
 ): string | undefined;
 ```
 
-**目的:** 複数形ルールに基づいてメッセージを解決
+**目的:** Intl.PluralRules に基づいてメッセージを解決
 
 **引数:**
 
@@ -470,6 +488,7 @@ function resolvePluralMessage(
 - `namespace`: 名前空間
 - `baseKey`: 基本キー
 - `count`: 数値
+- `locale`: ロケール
 
 **戻り値:**
 
@@ -477,18 +496,15 @@ function resolvePluralMessage(
 
 **動作:**
 
-1. `selectPluralKey` で適切なキーを選択
+1. `selectPluralKey` で Intl.PluralRules を使用して適切なキーを選択
 2. `namespace.selectedKey` 形式でメッセージを取得
-3. 見つからない場合、フォールバックチェーンを試行:
-   - `_zero` または `_one` が見つからない → `_other` を試行
-   - `_other` も見つからない → `undefined` を返す
+3. 見つからない場合、`_other` にフォールバック
+4. `_other` も見つからない場合は `undefined` を返す
 
 **フォールバックチェーン:**
 
 ```
-count === 0: itemCount_zero → itemCount_other → undefined
-count === 1: itemCount_one → itemCount_other → undefined
-count >= 2: itemCount_other → undefined
+選択されたフォーム（例: _one） → _other → undefined
 ```
 
 #### 6.3.3 extractPluralKeys
@@ -511,11 +527,11 @@ function extractPluralKeys(
 
 **戻り値:**
 
-- 存在する複数形キーの配列（例: `["itemCount_zero", "itemCount_one", "itemCount_other"]`）
+- 存在する複数形キーの配列（例: `["itemCount_one", "itemCount_other"]`）
 
 **動作:**
 
-1. `namespace` 内で `baseKey_zero`, `baseKey_one`, `baseKey_other` を検索
+1. `namespace` 内で `baseKey_one`, `baseKey_other` を検索（Intl.PluralRules ベース）
 2. ネストしたキー（ドット記法）にも対応
 3. 存在するキーのみを配列に追加
 
@@ -550,7 +566,7 @@ type NestedKeyOf<T> = T extends object
 
 **複数形キーの扱い:**
 
-- `_zero`, `_one`, `_other` サフィックス付きキーも型に含まれる
+- `_one`, `_other` サフィックス付きキーも型に含まれる
 - ただし、`TranslationRequirement` では基本キーのみを指定することを推奨
 
 **生成例:**
@@ -560,7 +576,6 @@ type NestedKeyOf<T> = T extends object
 {
   "common": {
     "submit": "送信",
-    "itemCount_zero": "アイテムがありません",
     "itemCount_one": "1件のアイテム",
     "itemCount_other": "{{count}}件のアイテム"
   }
@@ -570,7 +585,6 @@ type NestedKeyOf<T> = T extends object
 type Keys =
   | "common"
   | "common.submit"
-  | "common.itemCount_zero"
   | "common.itemCount_one"
   | "common.itemCount_other"
 ```
@@ -604,9 +618,9 @@ const commonTranslations: TypedTranslationRequirement<
 // 非推奨: サフィックス付きキーを明示的に指定
 const verboseTranslations: TypedTranslationRequirement<
   "common",
-  "itemCount_zero" | "itemCount_one" | "itemCount_other"
+  "itemCount_one" | "itemCount_other"
 > = {
-  keys: ["itemCount_zero", "itemCount_one", "itemCount_other"] as const,
+  keys: ["itemCount_one", "itemCount_other"] as const,
   namespace: "common",
 };
 ```
@@ -705,7 +719,7 @@ import Parent, { parentTranslations } from "./Parent";
 export default async function Page({ params }: { params: { locale: string } }) {
   const allMessages = (await import(`@/messages/${params.locale}.json`))
     .default;
-  const messages = pickMessages(allMessages, parentTranslations);
+  const messages = pickMessages(allMessages, parentTranslations, params.locale);
 
   return <Parent messages={messages} />;
 }
@@ -730,7 +744,6 @@ t("greeting", { name: "John", time: "morning" }); // "おはよう、Johnさん"
 ```json
 {
   "common": {
-    "itemCount_zero": "アイテムがありません",
     "itemCount_one": "1件のアイテム",
     "itemCount_other": "{{count}}件のアイテム"
   }
@@ -742,9 +755,9 @@ t("greeting", { name: "John", time: "morning" }); // "おはよう、Johnさん"
 ```typescript
 const t = createTranslator(messages, "common");
 
-t("itemCount", { count: 0 }); // "アイテムがありません"
-t("itemCount", { count: 1 }); // "1件のアイテム"
-t("itemCount", { count: 5 }); // "5件のアイテム"
+t("itemCount", { count: 0 }); // "0件のアイテム" (Intl.PluralRules で "other")
+t("itemCount", { count: 1 }); // "1件のアイテム" (Intl.PluralRules で "one")
+t("itemCount", { count: 5 }); // "5件のアイテム" (Intl.PluralRules で "other")
 ```
 
 ### 8.6 複数形 + プレースホルダーの組み合わせ
@@ -754,7 +767,6 @@ t("itemCount", { count: 5 }); // "5件のアイテム"
 ```json
 {
   "shop": {
-    "cartSummary_zero": "{{user}}さんのカートは空です",
     "cartSummary_one": "{{user}}さんのカートに1個の商品があります",
     "cartSummary_other": "{{user}}さんのカートに{{count}}個の商品があります"
   }
@@ -767,7 +779,7 @@ t("itemCount", { count: 5 }); // "5件のアイテム"
 const t = createTranslator(messages, "shop");
 
 t("cartSummary", { count: 0, user: "田中" });
-// "田中さんのカートは空です"
+// "田中さんのカートに0個の商品があります"
 
 t("cartSummary", { count: 1, user: "田中" });
 // "田中さんのカートに1個の商品があります"
@@ -800,8 +812,7 @@ t("cartSummary", { count: 5, user: "田中" });
 2. **複数形キーが部分的に存在しない場合:**
 
    ```
-   _zero なし → _other にフォールバック
-   _one なし → _other にフォールバック
+   選択されたフォーム（例: _one）なし → _other にフォールバック
    _other なし → エラーログ + 基本キーを表示
    ```
 
@@ -891,7 +902,7 @@ t("cartSummary", { count: 5, user: "田中" });
    - ネストしたキー
    - 存在しないキー
    - 存在しない名前空間
-   - **複数形キーの自動抽出（\_zero, \_one, \_other）**
+   - **複数形キーの自動抽出（\_one, \_other）**
    - **部分的な複数形キー（\_other のみ、など）**
    - **複数形キーとネストの組み合わせ**
 
@@ -913,15 +924,15 @@ t("cartSummary", { count: 5, user: "田中" });
 
 4. **selectPluralKey:**
 
-   - count = 0 → `_zero`
-   - count = 1 → `_one`
-   - count = 2+ → `_other`
+   - Intl.PluralRules のテスト（異なるロケール）
+   - count = 0 → ロケールに応じた結果
+   - count = 1 → 通常 `_one`
+   - count = 2+ → ロケールに応じた結果
    - 負の数の処理
 
 5. **resolvePluralMessage:**
 
-   - 完全な複数形セット（\_zero, \_one, \_other）
-   - 部分的なセット（\_one と \_other のみ）
+   - 完全な複数形セット（\_one, \_other）
    - \_other のみ
    - フォールバックチェーン
    - 複数形キーが全く存在しない場合
