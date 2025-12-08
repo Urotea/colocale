@@ -50,7 +50,9 @@ npx colocale codegen messages src/i18n/defineRequirement.ts  # Custom output pat
 
 ### 1. Create Translation Files
 
-Create JSON files for each namespace.
+Create JSON files for each namespace using **flat structure** (level 0).
+
+**Important:** Translation files now use flat structure only. Nested objects are not allowed. Use dot notation for grouping (e.g., `"profile.name"` instead of nested `{"profile": {"name": "..."}}`).
 
 ```json
 // messages/en/common.json
@@ -66,10 +68,34 @@ Create JSON files for each namespace.
 ```json
 // messages/en/user.json
 {
+  "profile.name": "Name",
+  "profile.email": "Email"
+}
+```
+
+#### Migrating from Nested Structure
+
+If you have existing translation files with nested structure (level 1), you can use the migration script:
+
+```bash
+node scripts/flatten-translations.js messages
+```
+
+This will convert:
+```json
+{
   "profile": {
     "name": "Name",
     "email": "Email"
   }
+}
+```
+
+To:
+```json
+{
+  "profile.name": "Name",
+  "profile.email": "Email"
 }
 ```
 
@@ -362,10 +388,8 @@ t("cartSummary", { count: 5, user: "John" });
 ```json
 {
   "user": {
-    "profile": {
-      "name": "Name",
-      "email": "Email"
-    }
+    "profile.name": "Name",
+    "profile.email": "Email"
   }
 }
 ```
@@ -508,8 +532,8 @@ if (!crossLocaleResult.valid) {
 #### Per-Locale Validation
 
 - **Plural key consistency**: `_one` and `_other` are required (`_zero` is optional)
-- **Nesting depth**: Up to 1 level allowed
-- **Key naming rules**: Only alphanumeric characters and underscores
+- **Nesting depth**: Flat structure only (level 0) - nested objects are not allowed
+- **Key naming rules**: Alphanumeric characters, underscores, and dots (for flat structure grouping)
 - **Placeholder format**: `{{name}}` format, with alphanumeric characters and underscores only
 
 #### Cross-Locale Consistency Validation
