@@ -72,13 +72,11 @@ describe("validateTranslations", () => {
     expect(result.errors).toHaveLength(0);
   });
 
-  test("Nested plural keys", () => {
+  test("Nested plural keys (flat structure)", () => {
     const translations: TranslationFile = {
       shop: {
-        cart: {
-          item_one: "1個の商品",
-          item_other: "{{count}}個の商品",
-        },
+        "cart.item_one": "1個の商品",
+        "cart.item_other": "{{count}}個の商品",
       },
     };
 
@@ -87,30 +85,26 @@ describe("validateTranslations", () => {
     expect(result.errors).toHaveLength(0);
   });
 
-  test("Nesting depth: 1 level (valid)", () => {
+  test("Nesting depth: 0 level flat structure with dots (valid)", () => {
+    const translations: TranslationFile = {
+      user: {
+        "profile.name": "名前",
+        "profile.email": "メールアドレス",
+      },
+    };
+
+    const result = validateTranslations(translations);
+    expect(result.valid).toBe(true);
+    expect(result.errors).toHaveLength(0);
+  });
+
+  test("Nesting depth: 1+ levels (error)", () => {
     const translations: TranslationFile = {
       user: {
         profile: {
           name: "名前",
-          email: "メールアドレス",
         },
-      },
-    };
-
-    const result = validateTranslations(translations);
-    expect(result.valid).toBe(true);
-    expect(result.errors).toHaveLength(0);
-  });
-
-  test("Nesting depth: 2+ levels (error)", () => {
-    const translations: TranslationFile = {
-      user: {
-        profile: {
-          personal: {
-            name: "名前",
-          },
-        },
-      },
+      } as any,
     };
 
     const result = validateTranslations(translations);
@@ -125,6 +119,7 @@ describe("validateTranslations", () => {
         submit_button: "送信",
         cancel123: "キャンセル",
         _private: "プライベート",
+        "profile.name": "名前", // dots allowed in flat structure
       },
     };
 

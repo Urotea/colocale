@@ -74,21 +74,17 @@ describe("validateCrossLocale", () => {
     expect(result.errors[0].locale).toBe("ja");
   });
 
-  test("should handle nested keys correctly", () => {
+  test("should handle flat keys with dots correctly", () => {
     const localeTranslations: LocaleTranslations = {
       en: {
         user: {
-          profile: {
-            name: "Name",
-            email: "Email",
-          },
+          "profile.name": "Name",
+          "profile.email": "Email",
         },
       },
       ja: {
         user: {
-          profile: {
-            name: "名前",
-          },
+          "profile.name": "名前",
         },
       },
     };
