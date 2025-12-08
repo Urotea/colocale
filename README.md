@@ -9,7 +9,7 @@ Inspired by GraphQL's fragment collocation pattern, each component can declarati
 - 🎯 **Colocation**: Define translation keys alongside your components
 - 🔒 **Type-safe**: Full TypeScript support with auto-generated types
 - 📦 **Lightweight**: Zero dependencies, simple API
-- 🌐 **Pluralization**: react-i18next compatible plural handling
+- 🌐 **Pluralization**: Intl.PluralRules-based plural handling with automatic locale support
 - ⚡ **Fast**: Extract and send only the translations needed by components
 - 🔄 **Universal**: Works in both server and client components
 
@@ -59,8 +59,7 @@ Create JSON files for each namespace using **flat structure** (level 0).
 {
   "submit": "Submit",
   "cancel": "Cancel",
-  "itemCount_zero": "No items",
-  "itemCount_one": "1 item",
+  "itemCount_one": "{{count}} item",
   "itemCount_other": "{{count}} items"
 }
 ```
@@ -234,7 +233,7 @@ function pickMessages(
 ): Messages;
 ```
 
-**Automatic plural extraction**: When you specify a base key (e.g., `"itemCount"`), keys with `_zero`, `_one`, `_other` suffixes are automatically extracted.
+**Automatic plural extraction**: When you specify a base key (e.g., `"itemCount"`), keys with plural suffixes based on `Intl.PluralRules` categories are automatically extracted (e.g., `_one`, `_other`, `_few`, `_many`, etc.).
 
 ### createTranslator
 
@@ -317,13 +316,14 @@ t("greeting", { name: "John" }); // "Hello, John"
 
 ### Pluralization
 
+### Pluralization
+
 **Translation file:**
 
 ```json
 {
   "common": {
-    "itemCount_zero": "No items",
-    "itemCount_one": "1 item",
+    "itemCount_one": "{{count}} item",
     "itemCount_other": "{{count}} items"
   }
 }
@@ -337,33 +337,39 @@ import { createTranslator } from "colocale";
 
 // Specify only the base key in translation requirements
 export const translations = defineRequirement("common", [
-  "itemCount", // _zero, _one, _other are automatically extracted
+  "itemCount", // Plural forms are automatically extracted
 ]);
 
 const t = createTranslator(messages, translations);
 
-t("itemCount", { count: 0 }); // "No items"
+t("itemCount", { count: 0 }); // "0 items"
 t("itemCount", { count: 1 }); // "1 item"
 t("itemCount", { count: 5 }); // "5 items"
 ```
 
 **Note:** The `codegen` command automatically removes plural suffixes from generated types, so you only need to specify the base key (e.g., `itemCount` instead of `itemCount_one`, `itemCount_other`).
 
-**Pluralization rules (react-i18next compatible):**
+**Pluralization rules (Intl.PluralRules):**
 
-- `count === 0` → `{key}_zero` (falls back to `_other` if not present)
-- `count === 1` → `{key}_one` (required)
-- Otherwise → `{key}_other` (required)
+colocale uses the native `Intl.PluralRules` API to determine plural forms based on locale. Common categories include:
 
-**Note:** `_one` and `_other` are required. If they don't exist, the base key (without suffix) will be used if available, but it won't function correctly as a plural. Only `_zero` is optional; if omitted, `_other` is used when `count === 0`.
+- `one` - Used for singular forms (e.g., count = 1 in English)
+- `other` - Default form (e.g., count = 0, 2, 3, ... in English)
+- `zero`, `two`, `few`, `many` - Used in some languages with more complex plural rules
+
+The `_other` suffix is required as the fallback. Other categories are optional and depend on the language's plural rules.
+
+**Examples for different locales:**
+- English: `one` (1), `other` (0, 2, 3, ...)
+- Japanese: `other` (all counts - Japanese doesn't distinguish plurals)
+- Arabic: `zero` (0), `one` (1), `two` (2), `few` (3-10), `many` (11-99), `other` (100+)
 
 ### Pluralization + Placeholders
 
 ```json
 {
   "shop": {
-    "cartSummary_zero": "{{user}}'s cart is empty",
-    "cartSummary_one": "{{user}} has 1 item in cart",
+    "cartSummary_one": "{{user}} has {{count}} item in cart",
     "cartSummary_other": "{{user}} has {{count}} items in cart"
   }
 }
@@ -377,7 +383,10 @@ const shopReq = defineRequirement("shop", ["cartSummary"]);
 const t = createTranslator(messages, shopReq);
 
 t("cartSummary", { count: 0, user: "John" });
-// "John's cart is empty"
+// "John has 0 items in cart"
+
+t("cartSummary", { count: 1, user: "John" });
+// "John has 1 item in cart"
 
 t("cartSummary", { count: 5, user: "John" });
 // "John has 5 items in cart"
@@ -490,7 +499,7 @@ import type { LocaleTranslations } from "colocale";
 // Validate a single locale
 const translations = {
   common: {
-    itemCount_one: "1 item",
+    itemCount_one: "{{count}} item",
     // Missing itemCount_other will cause an error
   },
 };
@@ -531,7 +540,7 @@ if (!crossLocaleResult.valid) {
 
 #### Per-Locale Validation
 
-- **Plural key consistency**: `_one` and `_other` are required (`_zero` is optional)
+- **Plural key consistency**: `_other` is required as the fallback; other categories (`_one`, `_few`, `_many`, etc.) are optional and based on `Intl.PluralRules`
 - **Nesting depth**: Flat structure only (level 0) - nested objects are not allowed
 - **Key naming rules**: Alphanumeric characters, underscores, and dots (for flat structure grouping)
 - **Placeholder format**: `{{name}}` format, with alphanumeric characters and underscores only
