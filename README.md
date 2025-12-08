@@ -218,7 +218,7 @@ function pickMessages(
 - `requirements`: Translation requirement(s) defining which keys to extract
 - `locale`: Locale identifier (see `Locale` type) - used for proper pluralization with `Intl.PluralRules`
 
-**Locale type**: The `Locale` type provides autocomplete for common locale codes (e.g., `"en"`, `"ja"`, `"en-US"`, `"zh-CN"`) while still accepting any BCP 47 language tag as a string.
+**Locale type**: The `Locale` type provides autocomplete for supported locale codes (`"en"`, `"ja"`) while still accepting any BCP 47 language tag as a string.
 
 **Automatic plural extraction**: When you specify a base key (e.g., `"itemCount"`), keys with `_one`, `_other` suffixes are automatically extracted based on `Intl.PluralRules`.
 

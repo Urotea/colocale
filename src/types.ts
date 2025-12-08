@@ -16,7 +16,7 @@ export interface TranslationRequirement<
  * Key format: "namespace.key" (e.g., "common.submit")
  */
 export interface Messages {
-  /** Locale identifier (e.g., "en", "ja", "fr") */
+  /** Locale identifier (e.g., "en", "ja") */
   locale: Locale;
   /** Translation messages map */
   translations: Record<string, string>;

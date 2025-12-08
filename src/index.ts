@@ -55,7 +55,7 @@ export function mergeRequirements(
  * @template R - Array of TranslationRequirements or a single TranslationRequirement
  * @param allMessages - Object containing all translation data
  * @param requirements - List of required translation keys or a single requirement
- * @param locale - Locale identifier (e.g., "en", "ja", "fr")
+ * @param locale - Locale identifier (e.g., "en", "ja")
  * @returns Messages object with locale information
  */
 export function pickMessages<
