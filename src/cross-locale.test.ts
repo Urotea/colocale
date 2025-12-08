@@ -147,13 +147,13 @@ describe("validateCrossLocale", () => {
     const localeTranslations: LocaleTranslations = {
       en: {
         common: {
-          itemCount_one: "1 item",
-          itemCount_other: "{count} items",
+          itemCount_one: "{{count}} item",
+          itemCount_other: "{{count}} items",
         },
       },
       ja: {
         common: {
-          itemCount_one: "1件のアイテム",
+          itemCount_one: "{{count}}件のアイテム",
         },
       },
     };

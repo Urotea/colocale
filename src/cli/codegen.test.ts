@@ -83,7 +83,7 @@ describe("generateTypescriptInterface", () => {
   test("should handle plural keys correctly", () => {
     const translations: TranslationFile = {
       common: {
-        itemCount_one: "1 item",
+        itemCount_one: "{{count}} item",
         itemCount_other: "{{count}} items",
       },
     };
@@ -101,7 +101,7 @@ describe("generateTypescriptInterface", () => {
   test("should handle flat keys with plural suffixes", () => {
     const translations: TranslationFile = {
       shop: {
-        "cart.itemCount_one": "1 item in cart",
+        "cart.itemCount_one": "{{count}} item in cart",
         "cart.itemCount_other": "{{count}} items in cart",
       },
     };
