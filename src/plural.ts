@@ -2,42 +2,41 @@ import type { Messages, NamespaceTranslations } from "./types";
 import { getNestedValue } from "./utils";
 
 /**
- * Select appropriate plural key suffix based on count
+ * Select appropriate plural key suffix based on Intl.PluralRules
  * @param baseKey - Base key name (e.g., "itemCount")
  * @param count - Numeric value to determine suffix
- * @returns Key with suffix (e.g., "itemCount_zero", "itemCount_one", "itemCount_other")
+ * @param locale - Locale for pluralization rules (optional, defaults to "en")
+ * @returns Key with suffix (e.g., "itemCount_one", "itemCount_other")
  */
-function selectPluralKey(baseKey: string, count: number): string {
-  if (count === 0) {
-    return `${baseKey}_zero`;
-  } else if (count === 1) {
-    return `${baseKey}_one`;
-  } else {
-    return `${baseKey}_other`;
-  }
+function selectPluralKey(baseKey: string, count: number, locale = "en"): string {
+  const pluralRules = new Intl.PluralRules(locale);
+  const rule = pluralRules.select(count);
+  return `${baseKey}_${rule}`;
 }
 
 /**
- * Resolve message based on plural rules (react-i18next compatible)
+ * Resolve message based on Intl.PluralRules
  *
  * Rules:
- * - count === 0: Use _zero if available, otherwise use _other
- * - count === 1: Use _one (required)
- * - Other: Use _other (required)
+ * - Uses Intl.PluralRules to determine the appropriate form (e.g., "one", "other")
+ * - Only supports _one and _other suffixes
+ * - Falls back to _other if the selected form is not found
  *
  * @param messages - Messages object
  * @param namespace - Namespace
  * @param baseKey - Base key
  * @param count - Count value
+ * @param locale - Locale for pluralization rules (optional, defaults to "en")
  * @returns Resolved message, or undefined
  */
 export function resolvePluralMessage(
   messages: Messages,
   namespace: string,
   baseKey: string,
-  count: number
+  count: number,
+  locale = "en"
 ): string | undefined {
-  const selectedKey = selectPluralKey(baseKey, count);
+  const selectedKey = selectPluralKey(baseKey, count, locale);
   const fullKey = `${namespace}.${selectedKey}`;
 
   // Try selected key
@@ -45,12 +44,10 @@ export function resolvePluralMessage(
     return messages[fullKey];
   }
 
-  // Fallback to _other only if count === 0 and _zero is not found
-  if (count === 0) {
-    const otherKey = `${namespace}.${baseKey}_other`;
-    if (otherKey in messages) {
-      return messages[otherKey];
-    }
+  // Fallback to _other if the selected form is not found
+  const otherKey = `${namespace}.${baseKey}_other`;
+  if (otherKey in messages) {
+    return messages[otherKey];
   }
 
   return undefined;
@@ -58,6 +55,7 @@ export function resolvePluralMessage(
 
 /**
  * Extract all plural-related keys from translation file (flat structure)
+ * Based on Intl.PluralRules, only _one and _other suffixes are supported
  * @param allMessages - All translation data
  * @param namespace - Namespace
  * @param baseKey - Base key
@@ -74,7 +72,7 @@ export function extractPluralKeys(
   }
 
   const pluralKeys: string[] = [];
-  const suffixes = ["_zero", "_one", "_other"];
+  const suffixes = ["_one", "_other"];
 
   for (const suffix of suffixes) {
     const keyWithSuffix = `${baseKey}${suffix}`;

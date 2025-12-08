@@ -1,14 +1,11 @@
 import type { TranslationFile } from "../types";
 
 /**
- * Plural suffixes used in translation keys
+ * Plural suffixes used in translation keys (Intl.PluralRules compatible)
+ * Only "one" and "other" are supported
  */
 const PLURAL_SUFFIXES = [
-  "_zero",
   "_one",
-  "_two",
-  "_few",
-  "_many",
   "_other",
 ] as const;
 
