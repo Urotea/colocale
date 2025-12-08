@@ -72,7 +72,11 @@ function processFile(filePath) {
     fs.writeFileSync(filePath, JSON.stringify(flattened, null, 2) + '\n', 'utf8');
     console.log(`✓ Converted: ${filePath}`);
   } catch (error) {
-    console.error(`✗ Error processing ${filePath}:`, error.message);
+    if (error instanceof SyntaxError) {
+      console.error(`✗ JSON parsing error in ${filePath}:`, error.message);
+    } else {
+      console.error(`✗ Error processing ${filePath}:`, error.message);
+    }
   }
 }
 
