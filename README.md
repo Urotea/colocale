@@ -72,34 +72,6 @@ Create JSON files for each namespace using **flat structure** (level 0).
 }
 ```
 
-#### Migrating from Nested Structure
-
-If you have existing translation files with nested structure (level 1), you can use the migration script:
-
-```bash
-node scripts/flatten-translations.js messages
-```
-
-This will convert:
-
-```json
-{
-  "profile": {
-    "name": "Name",
-    "email": "Email"
-  }
-}
-```
-
-To:
-
-```json
-{
-  "profile.name": "Name",
-  "profile.email": "Email"
-}
-```
-
 ### 2. Generate Type-Safe defineRequirement Function (Recommended)
 
 ```bash
