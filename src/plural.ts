@@ -1,4 +1,4 @@
-import type { Messages, NamespaceTranslations } from "./types";
+import type { Locale, NamespaceTranslations } from "./types";
 import { getNestedValue } from "./utils";
 
 /**
@@ -8,7 +8,11 @@ import { getNestedValue } from "./utils";
  * @param locale - Locale for pluralization rules (optional, defaults to "en")
  * @returns Key with suffix (e.g., "itemCount_one", "itemCount_other")
  */
-function selectPluralKey(baseKey: string, count: number, locale = "en"): string {
+function selectPluralKey(
+  baseKey: string,
+  count: number,
+  locale: Locale = "en"
+): string {
   const pluralRules = new Intl.PluralRules(locale);
   const rule = pluralRules.select(count);
   return `${baseKey}_${rule}`;
@@ -22,7 +26,7 @@ function selectPluralKey(baseKey: string, count: number, locale = "en"): string 
  * - Only supports _one and _other suffixes
  * - Falls back to _other if the selected form is not found
  *
- * @param messages - Messages object
+ * @param messages - Translation messages map
  * @param namespace - Namespace
  * @param baseKey - Base key
  * @param count - Count value
@@ -30,11 +34,11 @@ function selectPluralKey(baseKey: string, count: number, locale = "en"): string 
  * @returns Resolved message, or undefined
  */
 export function resolvePluralMessage(
-  messages: Messages,
+  messages: Record<string, string>,
   namespace: string,
   baseKey: string,
   count: number,
-  locale = "en"
+  locale: Locale = "en"
 ): string | undefined {
   const selectedKey = selectPluralKey(baseKey, count, locale);
   const fullKey = `${namespace}.${selectedKey}`;

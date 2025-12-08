@@ -4,10 +4,7 @@ import type { TranslationFile } from "../types";
  * Plural suffixes used in translation keys (Intl.PluralRules compatible)
  * Only "one" and "other" are supported
  */
-const PLURAL_SUFFIXES = [
-  "_one",
-  "_other",
-] as const;
+const PLURAL_SUFFIXES = ["_one", "_other"] as const;
 
 /**
  * Remove plural suffix from a key if it exists

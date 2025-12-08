@@ -59,7 +59,7 @@ describe("validateTranslations", () => {
     expect(result.errors[0].type).toBe("missing-plural-other");
   });
 
-  test("Non-plural key with _zero suffix is not validated as plural", () => {
+  test("Key with _zero suffix is treated as regular key (not plural)", () => {
     const translations: TranslationFile = {
       common: {
         itemCount_zero: "アイテムがありません",
@@ -72,7 +72,7 @@ describe("validateTranslations", () => {
     expect(result.errors).toHaveLength(0);
   });
 
-  test("Plural keys: _zero is optional", () => {
+  test("Plural keys: _one and _other are sufficient", () => {
     const translations: TranslationFile = {
       common: {
         itemCount_one: "1件のアイテム",

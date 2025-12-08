@@ -81,6 +81,7 @@ node scripts/flatten-translations.js messages
 ```
 
 This will convert:
+
 ```json
 {
   "profile": {
@@ -91,6 +92,7 @@ This will convert:
 ```
 
 To:
+
 ```json
 {
   "profile.name": "Name",
@@ -197,8 +199,12 @@ export default async function Page({ params }: { params: { locale: string } }) {
     user: (await import(`@/messages/${params.locale}/user.json`)).default,
   };
 
-  // Extract only the needed translations
-  const messages = pickMessages(allMessages, userPageTranslations);
+  // Extract only the needed translations with locale information
+  const messages = pickMessages(
+    allMessages,
+    userPageTranslations,
+    params.locale
+  );
 
   return <UserPage messages={messages} />;
 }
@@ -229,9 +235,18 @@ Extracts only the needed translations from translation files.
 ```typescript
 function pickMessages(
   allMessages: TranslationFile,
-  requirements: TranslationRequirement[] | TranslationRequirement
+  requirements: TranslationRequirement[] | TranslationRequirement,
+  locale: Locale
 ): Messages;
 ```
+
+**Parameters:**
+
+- `allMessages`: Object containing all translation data
+- `requirements`: Translation requirement(s) defining which keys to extract
+- `locale`: Locale identifier (see `Locale` type) - used for proper pluralization with `Intl.PluralRules`
+
+**Locale type**: The `Locale` type provides autocomplete for common locale codes (e.g., `"en"`, `"ja"`, `"en-US"`, `"zh-CN"`) while still accepting any BCP 47 language tag as a string.
 
 **Automatic plural extraction**: When you specify a base key (e.g., `"itemCount"`), keys with `_one`, `_other` suffixes are automatically extracted based on `Intl.PluralRules`.
 
@@ -655,7 +670,7 @@ export const userProfileTranslations = defineRequirement("user", [
 ]);
 
 // Extract needed translations
-const messages = pickMessages(allMessages, userProfileTranslations);
+const messages = pickMessages(allMessages, userProfileTranslations, locale);
 
 // createTranslator is type-safe and constrained to the requirement keys
 const t = createTranslator(messages, userProfileTranslations);

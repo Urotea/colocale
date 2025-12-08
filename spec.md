@@ -58,6 +58,15 @@ type TranslationKey = string;
 - ネスト構造をドット記法で表現（例: `"profile.name"`）
 - 複数形のサフィックス（`_one`, `_other`）を含む場合もある
 
+#### 3.1.1.1 Locale
+
+```typescript
+type Locale = "en" | "ja";
+```
+
+- ロケール識別子を表す型
+- よく使われるロケールコードが型定義に含まれ、オートコンプリートで表示される
+
 #### 3.1. 2 TranslationRequirement
 
 ```typescript
@@ -74,12 +83,15 @@ interface TranslationRequirement {
 #### 3.1.3 Messages
 
 ```typescript
-type Messages = Record<string, string>;
+interface Messages {
+  locale: Locale;
+  translations: Record<string, string>;
+}
 ```
 
-- 解決済み翻訳メッセージを格納するオブジェクト
-- キー形式: `"namespace.key"` （例: `"common.submit"`）
-- 値: 翻訳済み文字列
+- ロケール情報と解決済み翻訳メッセージを格納するオブジェクト
+- `locale`: ロケール識別子（例: `"en"`, `"ja"`）、複数形ルールの決定に使用される
+- `translations`: キー形式 `"namespace.key"` （例: `"common.submit"`）をキーとする翻訳文字列のマップ
 
 #### 3.1.4 PlaceholderValues
 
@@ -113,7 +125,7 @@ type NamespaceTranslations = Record<string, string>;
 ```
 
 - トップレベル: 名前空間のマップ
-- 名前空間内: キーと翻訳文字列のマップ（フラット構造のみ、レベル0）
+- 名前空間内: キーと翻訳文字列のマップ（フラット構造のみ、レベル 0）
 
 ## 4. 翻訳ファイル形式
 
@@ -257,20 +269,28 @@ const requirements = mergeRequirements(
 ```typescript
 function pickMessages(
   allMessages: TranslationFile,
-  requirements: TranslationRequirement[]
+  requirements: TranslationRequirement[],
+  locale: Locale
 ): Messages;
 ```
 
-**目的:** 翻訳ファイルから必要な翻訳のみを抽出
+**目的:** 翻訳ファイルから必要な翻訳のみを抽出し、ロケール情報と共に返す
 
 **引数:**
 
 - `allMessages`: 全翻訳データを含むオブジェクト
 - `requirements`: 必要な翻訳キーのリスト
+- `locale`: ロケール識別子（`Locale` 型）。オートコンプリート対応
 
 **戻り値:**
 
-- `Messages` オブジェクト（キー形式: `"namespace.key"`）
+- `Messages` オブジェクト（ロケール情報と翻訳データを含む）
+  ```typescript
+  {
+    locale: Locale;
+    translations: Record<string, string>;
+  }
+  ```
 
 **動作:**
 
@@ -278,8 +298,9 @@ function pickMessages(
 2. 指定された `namespace` から `keys` に該当する翻訳を取得
 3. ネストしたキー（ドット記法）にも対応
 4. **複数形キーの自動解決**: 基本キー（例: `"itemCount"`）が指定された場合、`_one`, `_other` サフィックス付きキーも自動的に抽出（Intl.PluralRules ベース）
-5. 見つからないキーは警告をログ出力（開発環境のみ）
-6. `"namespace.key"` 形式で `Messages` オブジェクトに格納
+5. ロケール情報を含む `Messages` オブジェクトを返す
+6. 見つからないキーは警告をログ出力（開発環境のみ）
+7. `"namespace.key"` 形式で `Messages` オブジェクトに格納
 
 **複数形キーの解決例:**
 
@@ -420,7 +441,11 @@ function replacePlaceholders(
 #### 6.3. 1 selectPluralKey
 
 ```typescript
-function selectPluralKey(baseKey: string, count: number, locale: string): string;
+function selectPluralKey(
+  baseKey: string,
+  count: number,
+  locale: string
+): string;
 ```
 
 **目的:** Intl.PluralRules を使用して適切な複数形キーのサフィックスを選択
@@ -694,7 +719,7 @@ import Parent, { parentTranslations } from "./Parent";
 export default async function Page({ params }: { params: { locale: string } }) {
   const allMessages = (await import(`@/messages/${params.locale}.json`))
     .default;
-  const messages = pickMessages(allMessages, parentTranslations);
+  const messages = pickMessages(allMessages, parentTranslations, params.locale);
 
   return <Parent messages={messages} />;
 }

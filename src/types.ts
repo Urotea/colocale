@@ -14,9 +14,13 @@ export interface TranslationRequirement<
 /**
  * Object storing resolved translation messages
  * Key format: "namespace.key" (e.g., "common.submit")
- * @template K - Translation keys type
  */
-export type Messages = Record<string, string>;
+export interface Messages {
+  /** Locale identifier (e.g., "en", "ja", "fr") */
+  locale: Locale;
+  /** Translation messages map */
+  translations: Record<string, string>;
+}
 
 /**
  * Object with values to pass to placeholders
@@ -31,6 +35,21 @@ export type PlaceholderValues = Record<string, string | number>;
 export type TranslationFile = Record<string, NamespaceTranslations>;
 
 export type NamespaceTranslations = Record<string, string>;
+
+/**
+ * Locale identifier type
+ * Compatible with Intl APIs (BCP 47 language tags)
+ *
+ * This is a branded string type that provides autocomplete for common locales
+ * while accepting any valid BCP 47 language tag.
+ */
+export type Locale = "en" | "ja";
+
+/**
+ * Alternative: Use Intl API's locale parameter type directly
+ * This would be: string | string[] | Intl.Locale
+ * However, for this library's use case, we constrain it to string only.
+ */
 
 /**
  * Type for locale-indexed translation files
