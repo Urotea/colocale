@@ -36,9 +36,9 @@ function validatePluralKeys(
   const allKeys = collectAllKeys(translations);
   allKeys.forEach((key) => keys.add(key));
 
-  // Classify plural keys
+  // Classify plural keys - support all Intl.PluralRules categories
   for (const key of keys) {
-    const match = key.match(/^(.+)_(zero|one|other)$/);
+    const match = key.match(/^(.+)_(zero|one|two|few|many|other)$/);
     if (match) {
       const baseKey = match[1];
       const suffix = match[2];
@@ -49,22 +49,15 @@ function validatePluralKeys(
     }
   }
 
-  // Check plural key consistency
+  // Check plural key consistency - only require _other as mandatory
+  // _one is commonly used but not strictly required by all locales
   for (const [baseKey, suffixes] of pluralKeys) {
-    if (!suffixes.has("one")) {
-      errors.push({
-        type: "missing-plural-one",
-        namespace,
-        key: baseKey,
-        message: `Plural key "${baseKey}_one" is required (react-i18next compatible)`,
-      });
-    }
     if (!suffixes.has("other")) {
       errors.push({
         type: "missing-plural-other",
         namespace,
         key: baseKey,
-        message: `Plural key "${baseKey}_other" is required (react-i18next compatible)`,
+        message: `Plural key "${baseKey}_other" is required (Intl.PluralRules compatible)`,
       });
     }
   }

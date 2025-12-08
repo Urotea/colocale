@@ -17,7 +17,7 @@ describe("validateTranslations", () => {
     expect(result.errors).toHaveLength(0);
   });
 
-  test("Plural keys: missing _one", () => {
+  test("Plural keys: missing _one (allowed with Intl.PluralRules)", () => {
     const translations: TranslationFile = {
       common: {
         itemCount_other: "{{count}}件のアイテム",
@@ -25,10 +25,9 @@ describe("validateTranslations", () => {
     };
 
     const result = validateTranslations(translations);
-    expect(result.valid).toBe(false);
-    expect(result.errors).toHaveLength(1);
-    expect(result.errors[0].type).toBe("missing-plural-one");
-    expect(result.errors[0].key).toBe("itemCount");
+    // With Intl.PluralRules, only _other is required
+    expect(result.valid).toBe(true);
+    expect(result.errors).toHaveLength(0);
   });
 
   test("Plural keys: missing _other", () => {
@@ -48,21 +47,20 @@ describe("validateTranslations", () => {
   test("Plural keys: missing both _one and _other", () => {
     const translations: TranslationFile = {
       common: {
-        itemCount_zero: "アイテムがありません",
+        itemCount_few: "{{count}}件のアイテム",
       },
     };
 
     const result = validateTranslations(translations);
     expect(result.valid).toBe(false);
-    expect(result.errors).toHaveLength(2);
-    expect(result.errors[0].type).toBe("missing-plural-one");
-    expect(result.errors[1].type).toBe("missing-plural-other");
+    expect(result.errors).toHaveLength(1);
+    expect(result.errors[0].type).toBe("missing-plural-other");
   });
 
-  test("Plural keys: _zero is optional", () => {
+  test("Plural keys: all Intl.PluralRules categories are supported", () => {
     const translations: TranslationFile = {
       common: {
-        itemCount_one: "1件のアイテム",
+        itemCount_one: "{{count}}件のアイテム",
         itemCount_other: "{{count}}件のアイテム",
       },
     };
@@ -75,7 +73,7 @@ describe("validateTranslations", () => {
   test("Nested plural keys (flat structure)", () => {
     const translations: TranslationFile = {
       shop: {
-        "cart.item_one": "1個の商品",
+        "cart.item_one": "{{count}}個の商品",
         "cart.item_other": "{{count}}個の商品",
       },
     };
@@ -197,8 +195,8 @@ describe("validateTranslations", () => {
   test("Multiple namespaces with errors", () => {
     const translations: TranslationFile = {
       common: {
-        itemCount_one: "1件",
-        // itemCount_other is missing
+        itemCount_one: "{{count}}件",
+        // itemCount_other is missing - should cause error
       },
       user: {
         "invalid-key": "無効",
