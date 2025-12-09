@@ -233,21 +233,15 @@ export default async function Page({ params }: { params: { locale: string } }) {
 
 ```typescript
 export default async function Page({ params }: { params: { locale: string } }) {
-  // Dynamically import translations per locale and namespace
-  const jaCommon = (await import("@/messages/ja/common.json")).default;
-  const jaUser = (await import("@/messages/ja/user.json")).default;
-  const enCommon = (await import("@/messages/en/common.json")).default;
-  const enUser = (await import("@/messages/en/user.json")).default;
+  // Dynamically import only the needed locale's translations
+  const commonTranslations = (await import(`@/messages/${params.locale}/common.json`)).default;
+  const userTranslations = (await import(`@/messages/${params.locale}/user.json`)).default;
 
   // Compose into locale-grouped structure
   const allMessages = {
-    ja: {
-      common: jaCommon,
-      user: jaUser,
-    },
-    en: {
-      common: enCommon,
-      user: enUser,
+    [params.locale]: {
+      common: commonTranslations,
+      user: userTranslations,
     },
   };
   
