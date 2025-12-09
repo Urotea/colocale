@@ -191,7 +191,7 @@ export default function UserPage({ messages }: { messages: Messages }) {
 
 ### 6. Extract Translations in Server Components
 
-Translations must be organized in locale-grouped format where all locales are in a single structure:
+Translations must be organized in locale-grouped format. Import translation files per locale and namespace, then compose them:
 
 ```typescript
 // app/[locale]/users/page.tsx
@@ -199,13 +199,28 @@ import { pickMessages } from "colocale";
 import { userPageTranslations } from "./translations";
 import UserPage from "./UserPage";
 
-// Import all locales at once (static import for small dictionaries)
-import allTranslations from "@/messages/all.json";
+// Import translations per locale and namespace (static imports)
+import jaCommonTranslations from "@/messages/ja/common.json";
+import jaUserTranslations from "@/messages/ja/user.json";
+import enCommonTranslations from "@/messages/en/common.json";
+import enUserTranslations from "@/messages/en/user.json";
 
 export default async function Page({ params }: { params: { locale: string } }) {
+  // Compose into locale-grouped structure
+  const allMessages = {
+    ja: {
+      common: jaCommonTranslations,
+      user: jaUserTranslations,
+    },
+    en: {
+      common: enCommonTranslations,
+      user: enUserTranslations,
+    },
+  };
+
   // pickMessages filters by locale and extracts only the needed translations
   const messages = pickMessages(
-    allTranslations,
+    allMessages,
     userPageTranslations,
     params.locale
   );
@@ -214,16 +229,31 @@ export default async function Page({ params }: { params: { locale: string } }) {
 }
 ```
 
-**For larger applications, you can still use dynamic imports:**
+**For larger applications, you can use dynamic imports:**
 
 ```typescript
 export default async function Page({ params }: { params: { locale: string } }) {
-  // Dynamically load all translations for all locales
-  const allTranslations = (await import(`@/messages/all.json`)).default;
+  // Dynamically import translations per locale and namespace
+  const jaCommon = (await import("@/messages/ja/common.json")).default;
+  const jaUser = (await import("@/messages/ja/user.json")).default;
+  const enCommon = (await import("@/messages/en/common.json")).default;
+  const enUser = (await import("@/messages/en/user.json")).default;
+
+  // Compose into locale-grouped structure
+  const allMessages = {
+    ja: {
+      common: jaCommon,
+      user: jaUser,
+    },
+    en: {
+      common: enCommon,
+      user: enUser,
+    },
+  };
   
   // pickMessages filters to the specified locale
   const messages = pickMessages(
-    allTranslations,
+    allMessages,
     userPageTranslations,
     params.locale
   );
@@ -232,31 +262,31 @@ export default async function Page({ params }: { params: { locale: string } }) {
 }
 ```
 
-**Locale-grouped translation file format:**
+**Translation file structure:**
+
+```
+messages/
+  ├── ja/
+  │   ├── common.json
+  │   └── user.json
+  └── en/
+      ├── common.json
+      └── user.json
+```
 
 ```json
-// messages/all.json
+// messages/ja/common.json
 {
-  "ja": {
-    "common": {
-      "submit": "送信",
-      "cancel": "キャンセル"
-    },
-    "user": {
-      "profile.name": "名前",
-      "profile.email": "メールアドレス"
-    }
-  },
-  "en": {
-    "common": {
-      "submit": "Submit",
-      "cancel": "Cancel"
-    },
-    "user": {
-      "profile.name": "Name",
-      "profile.email": "Email"
-    }
-  }
+  "submit": "送信",
+  "cancel": "キャンセル"
+}
+```
+
+```json
+// messages/en/common.json
+{
+  "submit": "Submit",
+  "cancel": "Cancel"
 }
 ```
 
