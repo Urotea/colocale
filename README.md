@@ -215,6 +215,64 @@ export default async function Page({ params }: { params: { locale: string } }) {
 }
 ```
 
+### Alternative: Using Locale-Grouped Format
+
+Instead of dynamically importing separate files per locale, you can also use a locale-grouped format where all locales are loaded at once. This is useful when your translation dictionary is small and you want to use static imports:
+
+```typescript
+// app/[locale]/users/page.tsx
+import { pickMessages } from "colocale";
+import { userPageTranslations } from "./translations";
+import UserPage from "./UserPage";
+
+// Import all locales at once (static import)
+import allTranslations from "@/messages/all.json";
+
+export default async function Page({ params }: { params: { locale: string } }) {
+  // pickMessages will automatically filter by locale
+  const messages = pickMessages(
+    allTranslations,
+    userPageTranslations,
+    params.locale
+  );
+
+  return <UserPage messages={messages} />;
+}
+```
+
+**Locale-grouped translation file format:**
+
+```json
+// messages/all.json
+{
+  "ja": {
+    "common": {
+      "submit": "送信",
+      "cancel": "キャンセル"
+    },
+    "user": {
+      "profile.name": "名前",
+      "profile.email": "メールアドレス"
+    }
+  },
+  "en": {
+    "common": {
+      "submit": "Submit",
+      "cancel": "Cancel"
+    },
+    "user": {
+      "profile.name": "Name",
+      "profile.email": "Email"
+    }
+  }
+}
+```
+
+**When to use each format:**
+
+- **Namespace-grouped (separate files per locale)**: Best for larger applications with many translations. Enables dynamic imports and code splitting.
+- **Locale-grouped (all locales in one file)**: Best for smaller applications or when you want simpler file management and static imports.
+
 ### Benefits of This Pattern
 
 1. **Avoids Next.js bundler issues**: Translation requirements remain as plain objects, not proxy functions
@@ -235,11 +293,11 @@ export default async function Page({ params }: { params: { locale: string } }) {
 
 ### pickMessages
 
-Extracts only the needed translations from translation files.
+Extracts only the needed translations from translation files. Supports both namespace-grouped and locale-grouped formats.
 
 ```typescript
 function pickMessages(
-  allMessages: TranslationFile,
+  allMessages: TranslationInput,
   requirements: TranslationRequirement[] | TranslationRequirement,
   locale: Locale
 ): Messages;
@@ -247,13 +305,17 @@ function pickMessages(
 
 **Parameters:**
 
-- `allMessages`: Object containing all translation data
+- `allMessages`: Object containing all translation data. Accepts two formats:
+  - **Namespace-grouped** (traditional): `{ namespace: { key: value } }`
+  - **Locale-grouped** (new): `{ locale: { namespace: { key: value } } }`
 - `requirements`: Translation requirement(s) defining which keys to extract
-- `locale`: Locale identifier (see `Locale` type) - used for proper pluralization with `Intl.PluralRules`
+- `locale`: Locale identifier (see `Locale` type) - used for proper pluralization with `Intl.PluralRules` and for filtering locale-grouped translations
 
 **Locale type**: The `Locale` type provides autocomplete for supported locale codes (`"en"`, `"ja"`) while still accepting any BCP 47 language tag as a string.
 
 **Automatic plural extraction**: When you specify a base key (e.g., `"itemCount"`), keys with `_one`, `_other` suffixes are automatically extracted based on `Intl.PluralRules`.
+
+**Format detection**: The function automatically detects which format is used based on the structure of `allMessages`. When locale-grouped format is detected, only the translations for the specified locale are extracted.
 
 ### createTranslator
 
