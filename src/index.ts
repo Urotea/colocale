@@ -7,7 +7,6 @@ export type {
   TranslationRequirement,
   Messages,
   TranslationFile,
-  TranslationInput,
   ConstrainedTranslatorFunction,
   LocaleTranslations,
   Locale,
@@ -28,83 +27,12 @@ import { getNestedValue, replacePlaceholders } from "./utils";
 import type {
   ConstrainedTranslatorFunction,
   Locale,
+  LocaleTranslations,
   Messages,
   PlaceholderValues,
   TranslationFile,
-  TranslationInput,
   TranslationRequirement,
 } from "./types";
-
-/**
- * Detect if the input is locale-grouped format or namespace-grouped format
- * @param input - Translation input data
- * @param locale - Target locale
- * @returns True if input is locale-grouped format
- */
-function isLocaleGrouped(input: TranslationInput, locale: Locale): boolean {
-  // Check if the input has the locale as a top-level key
-  if (!(locale in input)) {
-    return false;
-  }
-
-  const localeData = input[locale];
-  
-  // Verify that localeData is an object
-  if (typeof localeData !== "object" || localeData === null) {
-    return false;
-  }
-
-  // Check if localeData contains namespace-like structure
-  // In locale-grouped format, each key under locale should be a namespace
-  // containing translation key-value pairs (strings)
-  for (const key in localeData) {
-    const value = (localeData as Record<string, unknown>)[key];
-    
-    // Each namespace should be an object
-    if (typeof value !== "object" || value === null) {
-      return false;
-    }
-
-    // Check if the namespace contains string values (translations)
-    // At least one key should have a string value to confirm it's a namespace
-    const namespaceData = value as Record<string, unknown>;
-    let hasStringValue = false;
-    
-    for (const nsKey in namespaceData) {
-      const nsValue = namespaceData[nsKey];
-      if (typeof nsValue === "string") {
-        hasStringValue = true;
-        break;
-      }
-    }
-
-    // If we found at least one string value in a namespace-like structure,
-    // we can be confident this is locale-grouped format
-    if (hasStringValue) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-/**
- * Extract TranslationFile from input based on format
- * @param input - Translation input data (either format)
- * @param locale - Target locale
- * @returns TranslationFile for the specified locale
- */
-function extractTranslationFile(
-  input: TranslationInput,
-  locale: Locale
-): TranslationFile {
-  if (isLocaleGrouped(input, locale)) {
-    // Locale-grouped format: return the translations for the specified locale
-    return (input[locale] as TranslationFile) || {};
-  }
-  // Namespace-grouped format: return as-is
-  return input as TranslationFile;
-}
 
 /**
  * Merge multiple translation requirements into a single array
@@ -126,7 +54,7 @@ export function mergeRequirements(
  * When base keys are specified, keys with _one, _other suffixes are automatically extracted
  *
  * @template R - Array of TranslationRequirements or a single TranslationRequirement
- * @param allMessages - Object containing all translation data (supports both namespace-grouped and locale-grouped formats)
+ * @param allMessages - Object containing all translation data in locale-grouped format: { locale: { namespace: translations } }
  * @param requirements - List of required translation keys or a single requirement
  * @param locale - Locale identifier (e.g., "en", "ja")
  * @returns Messages object with locale information
@@ -135,11 +63,11 @@ export function pickMessages<
   R extends
     | readonly TranslationRequirement<readonly string[]>[]
     | TranslationRequirement<readonly string[]>,
->(allMessages: TranslationInput, requirements: R, locale: Locale): Messages {
+>(allMessages: LocaleTranslations, requirements: R, locale: Locale): Messages {
   const translations: Record<string, string> = {};
 
-  // Extract the appropriate TranslationFile based on the format
-  const translationFile = extractTranslationFile(allMessages, locale);
+  // Extract the TranslationFile for the specified locale
+  const translationFile = allMessages[locale] || {};
 
   const requirementsArray = Array.isArray(requirements)
     ? requirements
