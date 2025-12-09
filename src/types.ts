@@ -59,6 +59,14 @@ export type Locale = "en" | "ja";
 export type LocaleTranslations = Record<string, TranslationFile>;
 
 /**
+ * Union type for translation data that can be passed to pickMessages
+ * Can be either:
+ * - TranslationFile: namespace-first structure (old format)
+ * - LocaleTranslations: locale-first structure (new format)
+ */
+export type TranslationInput = TranslationFile | LocaleTranslations;
+
+/**
  * Validation error types
  */
 type ValidationErrorType =

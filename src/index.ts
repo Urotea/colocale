@@ -7,6 +7,7 @@ export type {
   TranslationRequirement,
   Messages,
   TranslationFile,
+  TranslationInput,
   ConstrainedTranslatorFunction,
   LocaleTranslations,
   Locale,
@@ -30,8 +31,51 @@ import type {
   Messages,
   PlaceholderValues,
   TranslationFile,
+  TranslationInput,
   TranslationRequirement,
 } from "./types";
+
+/**
+ * Detect if the input is locale-grouped format or namespace-grouped format
+ * @param input - Translation input data
+ * @param locale - Target locale
+ * @returns True if input is locale-grouped format
+ */
+function isLocaleGrouped(input: TranslationInput, locale: Locale): boolean {
+  // Check if the input has the locale as a top-level key
+  // and that key's value is an object that looks like a TranslationFile
+  if (locale in input) {
+    const localeData = input[locale];
+    if (typeof localeData === "object" && localeData !== null) {
+      // Check if the structure looks like TranslationFile (namespace -> translations)
+      for (const key in localeData) {
+        const value = (localeData as Record<string, unknown>)[key];
+        if (typeof value === "object" && value !== null) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
+/**
+ * Extract TranslationFile from input based on format
+ * @param input - Translation input data (either format)
+ * @param locale - Target locale
+ * @returns TranslationFile for the specified locale
+ */
+function extractTranslationFile(
+  input: TranslationInput,
+  locale: Locale
+): TranslationFile {
+  if (isLocaleGrouped(input, locale)) {
+    // Locale-grouped format: return the translations for the specified locale
+    return (input[locale] as TranslationFile) || {};
+  }
+  // Namespace-grouped format: return as-is
+  return input as TranslationFile;
+}
 
 /**
  * Merge multiple translation requirements into a single array
@@ -53,7 +97,7 @@ export function mergeRequirements(
  * When base keys are specified, keys with _one, _other suffixes are automatically extracted
  *
  * @template R - Array of TranslationRequirements or a single TranslationRequirement
- * @param allMessages - Object containing all translation data
+ * @param allMessages - Object containing all translation data (supports both namespace-grouped and locale-grouped formats)
  * @param requirements - List of required translation keys or a single requirement
  * @param locale - Locale identifier (e.g., "en", "ja")
  * @returns Messages object with locale information
@@ -62,8 +106,11 @@ export function pickMessages<
   R extends
     | readonly TranslationRequirement<readonly string[]>[]
     | TranslationRequirement<readonly string[]>,
->(allMessages: TranslationFile, requirements: R, locale: Locale): Messages {
+>(allMessages: TranslationInput, requirements: R, locale: Locale): Messages {
   const translations: Record<string, string> = {};
+
+  // Extract the appropriate TranslationFile based on the format
+  const translationFile = extractTranslationFile(allMessages, locale);
 
   const requirementsArray = Array.isArray(requirements)
     ? requirements
@@ -71,7 +118,7 @@ export function pickMessages<
 
   for (const requirement of requirementsArray) {
     const { namespace, keys } = requirement;
-    const namespaceData = allMessages[namespace];
+    const namespaceData = translationFile[namespace];
 
     if (!namespaceData) {
       continue;
@@ -85,7 +132,7 @@ export function pickMessages<
       }
 
       // Attempt automatic extraction of plural keys
-      const pluralKeys = extractPluralKeys(allMessages, namespace, key);
+      const pluralKeys = extractPluralKeys(translationFile, namespace, key);
       for (const pluralKey of pluralKeys) {
         const value = getNestedValue(namespaceData, pluralKey);
         if (value !== undefined) {
