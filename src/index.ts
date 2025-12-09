@@ -27,6 +27,7 @@ import { getNestedValue, replacePlaceholders } from "./utils";
 import type {
   ConstrainedTranslatorFunction,
   Locale,
+  LocaleTranslations,
   Messages,
   PlaceholderValues,
   TranslationFile,
@@ -53,7 +54,7 @@ export function mergeRequirements(
  * When base keys are specified, keys with _one, _other suffixes are automatically extracted
  *
  * @template R - Array of TranslationRequirements or a single TranslationRequirement
- * @param allMessages - Object containing all translation data
+ * @param allMessages - Object containing all translation data in locale-grouped format: { locale: { namespace: translations } }
  * @param requirements - List of required translation keys or a single requirement
  * @param locale - Locale identifier (e.g., "en", "ja")
  * @returns Messages object with locale information
@@ -62,8 +63,11 @@ export function pickMessages<
   R extends
     | readonly TranslationRequirement<readonly string[]>[]
     | TranslationRequirement<readonly string[]>,
->(allMessages: TranslationFile, requirements: R, locale: Locale): Messages {
+>(allMessages: LocaleTranslations, requirements: R, locale: Locale): Messages {
   const translations: Record<string, string> = {};
+
+  // Extract the TranslationFile for the specified locale
+  const translationFile = allMessages[locale] || {};
 
   const requirementsArray = Array.isArray(requirements)
     ? requirements
@@ -71,7 +75,7 @@ export function pickMessages<
 
   for (const requirement of requirementsArray) {
     const { namespace, keys } = requirement;
-    const namespaceData = allMessages[namespace];
+    const namespaceData = translationFile[namespace];
 
     if (!namespaceData) {
       continue;
@@ -85,7 +89,7 @@ export function pickMessages<
       }
 
       // Attempt automatic extraction of plural keys
-      const pluralKeys = extractPluralKeys(allMessages, namespace, key);
+      const pluralKeys = extractPluralKeys(translationFile, namespace, key);
       for (const pluralKey of pluralKeys) {
         const value = getNestedValue(namespaceData, pluralKey);
         if (value !== undefined) {

@@ -191,20 +191,34 @@ export default function UserPage({ messages }: { messages: Messages }) {
 
 ### 6. Extract Translations in Server Components
 
+Translations must be organized in locale-grouped format. Import translation files per locale and namespace, then compose them:
+
 ```typescript
 // app/[locale]/users/page.tsx
 import { pickMessages } from "colocale";
 import { userPageTranslations } from "./translations";
 import UserPage from "./UserPage";
 
+// Import translations per locale and namespace (static imports)
+import jaCommonTranslations from "@/messages/ja/common.json";
+import jaUserTranslations from "@/messages/ja/user.json";
+import enCommonTranslations from "@/messages/en/common.json";
+import enUserTranslations from "@/messages/en/user.json";
+
 export default async function Page({ params }: { params: { locale: string } }) {
-  // Dynamically import only the needed locale's translations
+  // Compose into locale-grouped structure
   const allMessages = {
-    common: (await import(`@/messages/${params.locale}/common.json`)).default,
-    user: (await import(`@/messages/${params.locale}/user.json`)).default,
+    ja: {
+      common: jaCommonTranslations,
+      user: jaUserTranslations,
+    },
+    en: {
+      common: enCommonTranslations,
+      user: enUserTranslations,
+    },
   };
 
-  // Extract only the needed translations with locale information
+  // pickMessages filters by locale and extracts only the needed translations
   const messages = pickMessages(
     allMessages,
     userPageTranslations,
@@ -212,6 +226,61 @@ export default async function Page({ params }: { params: { locale: string } }) {
   );
 
   return <UserPage messages={messages} />;
+}
+```
+
+**For larger applications, you can use dynamic imports:**
+
+```typescript
+export default async function Page({ params }: { params: { locale: string } }) {
+  // Dynamically import only the needed locale's translations
+  const commonTranslations = (await import(`@/messages/${params.locale}/common.json`)).default;
+  const userTranslations = (await import(`@/messages/${params.locale}/user.json`)).default;
+
+  // Compose into locale-grouped structure
+  const allMessages = {
+    [params.locale]: {
+      common: commonTranslations,
+      user: userTranslations,
+    },
+  };
+  
+  // pickMessages filters to the specified locale
+  const messages = pickMessages(
+    allMessages,
+    userPageTranslations,
+    params.locale
+  );
+
+  return <UserPage messages={messages} />;
+}
+```
+
+**Translation file structure:**
+
+```
+messages/
+  ├── ja/
+  │   ├── common.json
+  │   └── user.json
+  └── en/
+      ├── common.json
+      └── user.json
+```
+
+```json
+// messages/ja/common.json
+{
+  "submit": "送信",
+  "cancel": "キャンセル"
+}
+```
+
+```json
+// messages/en/common.json
+{
+  "submit": "Submit",
+  "cancel": "Cancel"
 }
 ```
 
@@ -235,11 +304,11 @@ export default async function Page({ params }: { params: { locale: string } }) {
 
 ### pickMessages
 
-Extracts only the needed translations from translation files.
+Extracts only the needed translations from locale-grouped translation files.
 
 ```typescript
 function pickMessages(
-  allMessages: TranslationFile,
+  allMessages: LocaleTranslations,
   requirements: TranslationRequirement[] | TranslationRequirement,
   locale: Locale
 ): Messages;
@@ -247,9 +316,9 @@ function pickMessages(
 
 **Parameters:**
 
-- `allMessages`: Object containing all translation data
+- `allMessages`: Object containing translations grouped by locale: `{ [locale]: { [namespace]: { [key]: translation } } }`
 - `requirements`: Translation requirement(s) defining which keys to extract
-- `locale`: Locale identifier (see `Locale` type) - used for proper pluralization with `Intl.PluralRules`
+- `locale`: Locale identifier (see `Locale` type) - used for filtering translations and proper pluralization with `Intl.PluralRules`
 
 **Locale type**: The `Locale` type provides autocomplete for supported locale codes (`"en"`, `"ja"`) while still accepting any BCP 47 language tag as a string.
 

@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import {
+  type LocaleTranslations,
   type Messages,
-  type TranslationFile,
   createTranslator,
   mergeRequirements,
   pickMessages,
@@ -28,27 +28,51 @@ interface TestTranslationStructure {
   };
 }
 
-// Test translation files
-const testMessages: TranslationFile = {
-  common: {
-    submit: "送信",
-    cancel: "キャンセル",
-    itemCount_one: "1件のアイテム",
-    itemCount_other: "{{count}}件のアイテム",
+// Test translation files in locale-grouped format
+const testMessages: LocaleTranslations = {
+  ja: {
+    common: {
+      submit: "送信",
+      cancel: "キャンセル",
+      itemCount_one: "1件のアイテム",
+      itemCount_other: "{{count}}件のアイテム",
+    },
+    user: {
+      "profile.name": "名前",
+      "profile.email": "メールアドレス",
+    },
+    shop: {
+      "cart.item_one": "1個の商品",
+      "cart.item_other": "{{count}}個の商品",
+      cartSummary_one: "{{user}}さんのカートに1個の商品があります",
+      cartSummary_other: "{{user}}さんのカートに{{count}}個の商品があります",
+    },
+    results: {
+      itemsFound: "{{count}}件取得しました",
+      greeting: "こんにちは、{{name}}さん",
+    },
   },
-  user: {
-    "profile.name": "名前",
-    "profile.email": "メールアドレス",
-  },
-  shop: {
-    "cart.item_one": "1個の商品",
-    "cart.item_other": "{{count}}個の商品",
-    cartSummary_one: "{{user}}さんのカートに1個の商品があります",
-    cartSummary_other: "{{user}}さんのカートに{{count}}個の商品があります",
-  },
-  results: {
-    itemsFound: "{{count}}件取得しました",
-    greeting: "こんにちは、{{name}}さん",
+  en: {
+    common: {
+      submit: "Submit",
+      cancel: "Cancel",
+      itemCount_one: "1 item",
+      itemCount_other: "{{count}} items",
+    },
+    user: {
+      "profile.name": "Name",
+      "profile.email": "Email",
+    },
+    shop: {
+      "cart.item_one": "1 item",
+      "cart.item_other": "{{count}} items",
+      cartSummary_one: "{{user}}'s cart has 1 item",
+      cartSummary_other: "{{user}}'s cart has {{count}} items",
+    },
+    results: {
+      itemsFound: "Found {{count}} items",
+      greeting: "Hello, {{name}}",
+    },
   },
 };
 
@@ -225,6 +249,28 @@ describe("pickMessages", () => {
     const result = pickMessages(testMessages, requirements, "ja");
     expect(result).toEqual({
       locale: "ja",
+      translations: {},
+    });
+  });
+
+  test("Extract English translations from locale-grouped format", () => {
+    const requirements = [{ namespace: "common", keys: ["submit", "cancel"] }];
+    const result = pickMessages(testMessages, requirements, "en");
+    expect(result).toEqual({
+      locale: "en",
+      translations: {
+        "common.submit": "Submit",
+        "common.cancel": "Cancel",
+      },
+    });
+  });
+
+  test("Non-existent locale returns empty translations", () => {
+    const requirements = [{ namespace: "common", keys: ["submit"] }];
+    // biome-ignore lint/suspicious/noExplicitAny: Testing non-existent locale
+    const result = pickMessages(testMessages, requirements, "fr" as any);
+    expect(result).toEqual({
+      locale: "fr",
       translations: {},
     });
   });
