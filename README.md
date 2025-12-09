@@ -72,7 +72,40 @@ Create JSON files for each namespace using **flat structure** (level 0).
 }
 ```
 
-### 2. Generate Type-Safe defineRequirement Function (Recommended)
+### 2. Placeholder Support
+
+Colocale supports dynamic placeholders in your translation strings using the `{{variableName}}` syntax.
+
+**Translation file:**
+
+```json
+// messages/en/common.json
+{
+  "greeting": "Hello, {{name}}!",
+  "welcome": "Welcome {{user}}, you have {{count}} new messages"
+}
+```
+
+**Usage:**
+
+```typescript
+const t = createTranslator(messages, commonTranslations);
+
+t("greeting", { name: "Alice" });
+// Output: "Hello, Alice!"
+
+t("welcome", { user: "Bob", count: 5 });
+// Output: "Welcome Bob, you have 5 new messages"
+```
+
+**Placeholder rules:**
+
+- Placeholders use double curly braces: `{{variableName}}`
+- Variable names must contain only alphanumeric characters and underscores
+- Values are automatically converted to strings
+- Placeholders work seamlessly with pluralization (see pluralization examples in translation files)
+
+### 3. Generate Type-Safe defineRequirement Function (Recommended)
 
 ```bash
 npx colocale codegen messages
@@ -83,7 +116,7 @@ This automatically generates a type-safe `defineRequirement` function from your 
 - TypeScript type definitions for your translation structure
 - A ready-to-use `defineRequirement` function with full type inference
 
-### 3. Separate Translation Requirements from Components (Best Practice)
+### 4. Separate Translation Requirements from Components (Best Practice)
 
 When using colocale with Next.js App Router, separate translation requirements from component files to avoid bundler issues with the Server/Client Component boundary.
 
@@ -135,7 +168,7 @@ export default function UserProfile({ messages }: { messages: Messages }) {
 
 **⚠️ Why separate files?** If you export translation requirements from a Client Component (with `'use client'`), Next.js's bundler creates proxy functions instead of the actual values, breaking `mergeRequirements` and type safety. See [Best Practices](#best-practices-for-nextjs-app-router) for details.
 
-### 4. Aggregate Translation Requirements
+### 5. Aggregate Translation Requirements
 
 ```typescript
 // app/users/UserPage.tsx (can be Server or Client Component)
@@ -156,7 +189,7 @@ export default function UserPage({ messages }: { messages: Messages }) {
 }
 ```
 
-### 5. Extract Translations in Server Components
+### 6. Extract Translations in Server Components
 
 ```typescript
 // app/[locale]/users/page.tsx
