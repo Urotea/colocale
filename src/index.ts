@@ -43,19 +43,48 @@ import type {
  */
 function isLocaleGrouped(input: TranslationInput, locale: Locale): boolean {
   // Check if the input has the locale as a top-level key
-  // and that key's value is an object that looks like a TranslationFile
-  if (locale in input) {
-    const localeData = input[locale];
-    if (typeof localeData === "object" && localeData !== null) {
-      // Check if the structure looks like TranslationFile (namespace -> translations)
-      for (const key in localeData) {
-        const value = (localeData as Record<string, unknown>)[key];
-        if (typeof value === "object" && value !== null) {
-          return true;
-        }
+  if (!(locale in input)) {
+    return false;
+  }
+
+  const localeData = input[locale];
+  
+  // Verify that localeData is an object
+  if (typeof localeData !== "object" || localeData === null) {
+    return false;
+  }
+
+  // Check if localeData contains namespace-like structure
+  // In locale-grouped format, each key under locale should be a namespace
+  // containing translation key-value pairs (strings)
+  for (const key in localeData) {
+    const value = (localeData as Record<string, unknown>)[key];
+    
+    // Each namespace should be an object
+    if (typeof value !== "object" || value === null) {
+      return false;
+    }
+
+    // Check if the namespace contains string values (translations)
+    // At least one key should have a string value to confirm it's a namespace
+    const namespaceData = value as Record<string, unknown>;
+    let hasStringValue = false;
+    
+    for (const nsKey in namespaceData) {
+      const nsValue = namespaceData[nsKey];
+      if (typeof nsValue === "string") {
+        hasStringValue = true;
+        break;
       }
     }
+
+    // If we found at least one string value in a namespace-like structure,
+    // we can be confident this is locale-grouped format
+    if (hasStringValue) {
+      return true;
+    }
   }
+
   return false;
 }
 
