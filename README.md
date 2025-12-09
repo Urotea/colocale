@@ -292,7 +292,7 @@ function pickMessages(
 
 **Parameters:**
 
-- `allMessages`: Object containing all translation data in locale-grouped format: `{ locale: { namespace: { key: value } } }`
+- `allMessages`: Object containing translations grouped by locale: `{ [locale]: { [namespace]: { [key]: translation } } }`
 - `requirements`: Translation requirement(s) defining which keys to extract
 - `locale`: Locale identifier (see `Locale` type) - used for filtering translations and proper pluralization with `Intl.PluralRules`
 
