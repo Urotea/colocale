@@ -11,6 +11,8 @@ A simple React application demonstrating how to use colocale for internationaliz
 
 ## Installation
 
+> **Note**: This example uses `"colocale": "file:../.."` in package.json to reference the parent colocale library. If you're copying this example to your own project, replace it with `"colocale": "^0.1.1"` (or the latest version).
+
 ```bash
 npm install
 ```
