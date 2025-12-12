@@ -7,3 +7,7 @@ bun.lockb
 package-lock.json
 # Generated type definition file
 defineRequirement.ts
+# Example projects
+example/*/node_modules
+example/*/dist
+example/*/package-lock.json
