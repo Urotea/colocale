@@ -13,6 +13,57 @@ Inspired by GraphQL's fragment collocation pattern, each component can declarati
 - ⚡ **Fast**: Extract and send only the translations needed by components
 - 🔄 **Universal**: Works in both server and client components
 
+## Design Philosophy
+
+### Why No Provider/Context?
+
+Unlike many i18n libraries, colocale intentionally avoids using React Context, Vue's provide/inject, or similar dependency injection mechanisms. This design choice enables several key benefits:
+
+**🌍 True Framework Agnosticism**
+- Works identically in React, Vue, Svelte, or vanilla JavaScript
+- No framework-specific runtime dependencies
+- Same API across all environments
+
+**🔍 Explicit Dependencies**
+- Component translation requirements are clearly visible in code
+- Easy to trace which translations a component tree needs
+- Facilitates static analysis and tree-shaking
+
+**⚙️ Universal Compatibility**
+- Works seamlessly in server components, client components, and hybrid scenarios
+- No issues with framework-specific boundaries (like Next.js Server/Client Component boundary)
+- Runs in any JavaScript environment (Node.js, Deno, Bun, browsers)
+
+**🎯 Predictable Data Flow**
+- Translations flow explicitly through props, following standard component patterns
+- No hidden dependencies through context
+- Easier to test and debug
+
+### Embracing Prop Drilling
+
+Yes, colocale requires passing `messages` through props—this is intentional! While "prop drilling" is often seen as an anti-pattern, for i18n it provides significant advantages:
+
+**✅ Why It Works for i18n:**
+1. **Single prop**: Only one `messages` object needs to be passed down
+2. **Stable data**: Translations rarely change during runtime
+3. **Clear contract**: Component interfaces explicitly show i18n dependency
+4. **Performance**: No context re-renders or provider overhead
+5. **Flexibility**: Components can be used anywhere without provider setup
+
+**📚 GraphQL Inspiration:**
+This pattern is inspired by GraphQL's fragment collocation, where data requirements are defined alongside components and aggregated up the tree. Just as GraphQL fragments make data dependencies explicit, colocale makes translation dependencies explicit.
+
+### When to Use colocale
+
+colocale is ideal when you want:
+- A framework-agnostic i18n solution that works everywhere
+- Explicit, traceable translation dependencies
+- To work with server-side rendering and modern meta-frameworks
+- Type-safe translations with minimal setup
+- A simple, predictable API without magic
+
+If you prefer context-based solutions or need framework-specific features, consider alternatives like react-i18next or vue-i18n.
+
 ## Installation
 
 ```bash
