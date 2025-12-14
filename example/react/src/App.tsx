@@ -1,5 +1,5 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
-import TopPage from './pages/TopPage'
+import { Navigate, Route, Routes } from "react-router-dom";
+import TopPage from "./pages/TopPage";
 
 function App() {
   return (
@@ -7,7 +7,7 @@ function App() {
       <Route path="/" element={<Navigate to="/en/top" replace />} />
       <Route path="/:locale/top" element={<TopPage />} />
     </Routes>
-  )
+  );
 }
 
-export default App
+export default App;

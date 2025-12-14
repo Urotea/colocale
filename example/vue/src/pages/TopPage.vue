@@ -25,35 +25,35 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { useRoute } from 'vue-router'
-import { pickMessages, createTranslator, type Locale } from 'colocale'
-import { commonTranslations } from '../translations'
-import jaCommon from '../../messages/ja/common.json'
-import enCommon from '../../messages/en/common.json'
+import { type Locale, createTranslator, pickMessages } from "colocale";
+import { computed, ref } from "vue";
+import { useRoute } from "vue-router";
+import enCommon from "../../messages/en/common.json";
+import jaCommon from "../../messages/ja/common.json";
+import { commonTranslations } from "../translations";
 
-const route = useRoute()
-const inputText = ref('')
+const route = useRoute();
+const inputText = ref("");
 
 // Get current locale from route
-const locale = computed(() => (route.params.locale as string) || 'en')
+const locale = computed(() => (route.params.locale as string) || "en");
 
 // Compose messages
 const allMessages = {
   ja: { common: jaCommon },
   en: { common: enCommon },
-}
+};
 
 // Pick messages for current locale
 const messages = computed(() =>
   pickMessages(allMessages, commonTranslations, locale.value as Locale)
-)
+);
 
 // Create translator
-const t = computed(() => createTranslator(messages.value, commonTranslations))
+const t = computed(() => createTranslator(messages.value, commonTranslations));
 
 // Compute greeting message
 const greeting = computed(() =>
-  t.value('greeting', { name: inputText.value || 'World' })
-)
+  t.value("greeting", { name: inputText.value || "World" })
+);
 </script>

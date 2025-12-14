@@ -1,9 +1,9 @@
-import { useState, useMemo } from "react";
-import { useParams, Link } from "react-router-dom";
-import { pickMessages, createTranslator, Locale } from "colocale";
-import { commonTranslations } from "../translations";
-import jaCommon from "../../messages/ja/common.json";
+import { type Locale, createTranslator, pickMessages } from "colocale";
+import { useMemo, useState } from "react";
+import { Link, useParams } from "react-router-dom";
 import enCommon from "../../messages/en/common.json";
+import jaCommon from "../../messages/ja/common.json";
+import { commonTranslations } from "../translations";
 
 function TopPage() {
   const { locale = "en" } = useParams<{ locale: string }>();
