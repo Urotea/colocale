@@ -232,17 +232,30 @@ export default async function Page({ params }: { params: { locale: string } }) {
 **For larger applications, you can use dynamic imports:**
 
 ```typescript
+// app/[locale]/users/page.tsx
+import { pickMessages } from "colocale";
+import { userPageTranslations } from "./translations";
+import UserPage from "./UserPage";
+
 export default async function Page({ params }: { params: { locale: string } }) {
+  // Extract required namespaces from translation requirements
+  const namespaces = userPageTranslations.map((req) => req.namespace);
+  // Remove duplicates to avoid importing the same file multiple times
+  const uniqueNamespaces = Array.from(new Set(namespaces));
+  
   // Dynamically import only the needed locale's translations
-  const commonTranslations = (await import(`@/messages/${params.locale}/common.json`)).default;
-  const userTranslations = (await import(`@/messages/${params.locale}/user.json`)).default;
+  const translations = await Promise.all(
+    uniqueNamespaces.map(async (namespace) => ({
+      namespace,
+      data: (await import(`@/messages/${params.locale}/${namespace}.json`)).default,
+    }))
+  );
 
   // Compose into locale-grouped structure
   const allMessages = {
-    [params.locale]: {
-      common: commonTranslations,
-      user: userTranslations,
-    },
+    [params.locale]: Object.fromEntries(
+      translations.map(({ namespace, data }) => [namespace, data])
+    ),
   };
   
   // pickMessages filters to the specified locale
