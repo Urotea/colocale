@@ -240,10 +240,12 @@ import UserPage from "./UserPage";
 export default async function Page({ params }: { params: { locale: string } }) {
   // Extract required namespaces from translation requirements
   const namespaces = userPageTranslations.map((req) => req.namespace);
+  // Remove duplicates to avoid importing the same file multiple times
+  const uniqueNamespaces = Array.from(new Set(namespaces));
   
   // Dynamically import only the needed locale's translations
   const translations = await Promise.all(
-    namespaces.map(async (namespace) => ({
+    uniqueNamespaces.map(async (namespace) => ({
       namespace,
       data: (await import(`@/messages/${params.locale}/${namespace}.json`)).default,
     }))
