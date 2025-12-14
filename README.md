@@ -13,6 +13,39 @@ Inspired by GraphQL's fragment collocation pattern, each component can declarati
 - ⚡ **Fast**: Extract and send only the translations needed by components
 - 🔄 **Universal**: Works in both server and client components
 
+## Design Philosophy
+
+### Build-Time Safety Over Runtime Fallback
+
+Colocale intentionally **does not provide automatic runtime fallback** to a default language when translations are missing. This is a deliberate design choice, not a limitation.
+
+**Why no automatic fallback?**
+
+Traditional i18n libraries often fall back to a default language (like English) when translations are missing. While convenient during development, this approach has significant downsides:
+
+- ❌ **Silent failures in production**: Missing translations go unnoticed until users report them
+- ❌ **Inconsistent user experience**: Users see a mix of their language and the fallback language
+- ❌ **No accountability**: Developers aren't forced to ensure complete translations before deployment
+
+**Our approach: Fail fast at build time, not runtime**
+
+Instead of hiding problems at runtime, colocale ensures translation completeness at build/CI time:
+
+- ✅ **`npx colocale check` validates all translations** before they reach production
+- ✅ **CI/CD integration** catches missing translations in pull requests
+- ✅ **Type-safe keys** prevent typos and invalid references at compile time
+- ✅ **Consistent user experience** - all translations are complete, or the build fails
+
+**Integrate into your CI pipeline:**
+
+```yaml
+# .github/workflows/ci.yml
+- name: Validate translations
+  run: npx colocale check messages
+```
+
+This design philosophy ensures that translation issues are caught early in the development process, not by your users in production. When you do need runtime behavior for truly missing keys (edge cases), the library returns the key name itself, making the issue immediately visible during testing.
+
 ## Installation
 
 ```bash
@@ -37,7 +70,7 @@ bun add -d typescript
 # Show help
 npx colocale --help
 
-# Validate translation files
+# Validate translation files (RECOMMENDED: Add to CI/CD pipeline)
 npx colocale check messages/ja          # Single locale
 npx colocale check messages              # All locales + consistency check
 
@@ -45,6 +78,27 @@ npx colocale check messages              # All locales + consistency check
 npx colocale codegen messages            # Output: defineRequirement.ts (default)
 npx colocale codegen messages src/i18n/defineRequirement.ts  # Custom output path
 ```
+
+### Why `npx colocale check` is Essential
+
+The `check` command is your safety net for preventing translation issues in production:
+
+- **Validates translation file structure**: Ensures proper flat structure and valid JSON
+- **Checks key consistency across locales**: Detects missing or extra keys between languages
+- **Validates plural forms**: Ensures all required plural forms (`_one`, `_other`) are present
+- **Verifies placeholder syntax**: Catches malformed placeholders before they break at runtime
+- **Cross-locale validation**: When checking multiple locales, ensures all have identical key structures
+
+**Add to your CI/CD pipeline to enforce translation completeness:**
+
+```yaml
+# .github/workflows/ci.yml (or similar)
+- name: Check translation completeness
+  run: npx colocale check messages
+  # Build will fail if any translations are missing or inconsistent
+```
+
+This ensures no missing translations slip into production, maintaining a consistent user experience across all supported languages.
 
 ## Quick Start
 
