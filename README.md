@@ -233,16 +233,22 @@ export default async function Page({ params }: { params: { locale: string } }) {
 
 ```typescript
 export default async function Page({ params }: { params: { locale: string } }) {
+  // Extract required namespaces from translation requirements
+  const namespaces = userPageTranslations.map((req) => req.namespace);
+  
   // Dynamically import only the needed locale's translations
-  const commonTranslations = (await import(`@/messages/${params.locale}/common.json`)).default;
-  const userTranslations = (await import(`@/messages/${params.locale}/user.json`)).default;
+  const translations = await Promise.all(
+    namespaces.map(async (namespace) => ({
+      namespace,
+      data: (await import(`@/messages/${params.locale}/${namespace}.json`)).default,
+    }))
+  );
 
   // Compose into locale-grouped structure
   const allMessages = {
-    [params.locale]: {
-      common: commonTranslations,
-      user: userTranslations,
-    },
+    [params.locale]: Object.fromEntries(
+      translations.map(({ namespace, data }) => [namespace, data])
+    ),
   };
   
   // pickMessages filters to the specified locale
