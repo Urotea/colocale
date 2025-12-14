@@ -263,9 +263,9 @@ messages/
 }
 ```
 
-**See the [example directory](./example) for complete implementations:**
-- **React example**: Uses static imports and React Router for locale routing
-- **Vue example**: Uses dynamic imports and Vue Router for locale routing
+**See the [`example/`](./example) directory for complete implementations:**
+- **React example**: Client-side application with static imports for translations
+- **Vue example**: Client-side application with dynamic imports for translations
 
 ## Using with Next.js App Router
 
