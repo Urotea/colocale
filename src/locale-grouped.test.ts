@@ -98,8 +98,12 @@ describe("pickMessages with locale-grouped format", () => {
 
   test("Non-existent locale returns empty translations", () => {
     const requirements = [{ namespace: "common", keys: ["submit"] }];
-    // biome-ignore lint/suspicious/noExplicitAny: Testing non-existent locale
-    const result = pickMessages(localeGroupedMessages, requirements, "fr" as any);
+    const result = pickMessages(
+      localeGroupedMessages,
+      requirements,
+      // biome-ignore lint/suspicious/noExplicitAny: Testing non-existent locale
+      "fr" as any
+    );
     expect(result).toEqual({
       locale: "fr",
       translations: {},
