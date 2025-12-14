@@ -17,8 +17,16 @@ export type {
 // Validation
 export { validateTranslations, validateCrossLocale } from "./validation";
 
+// Errors
+export { InvalidPlaceholderError } from "./errors";
+
+import { InvalidPlaceholderError } from "./errors";
 import { extractPluralKeys, resolvePluralMessage } from "./plural";
-import { getNestedValue, replacePlaceholders } from "./utils";
+import {
+  extractPlaceholders,
+  getNestedValue,
+  replacePlaceholders,
+} from "./utils";
 
 // ============================================================================
 // Core API Functions
@@ -155,6 +163,14 @@ export function createTranslator<
     // If message not found, return key as-is
     if (message === undefined) {
       return key;
+    }
+
+    // Check if message contains placeholders
+    const requiredPlaceholders = extractPlaceholders(message);
+
+    // If message has placeholders but no values provided, throw error
+    if (requiredPlaceholders.length > 0 && !values) {
+      throw new InvalidPlaceholderError(requiredPlaceholders, message);
     }
 
     // Replace placeholders
