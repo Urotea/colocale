@@ -232,6 +232,11 @@ export default async function Page({ params }: { params: { locale: string } }) {
 **For larger applications, you can use dynamic imports:**
 
 ```typescript
+// app/[locale]/users/page.tsx
+import { pickMessages } from "colocale";
+import { userPageTranslations } from "./translations";
+import UserPage from "./UserPage";
+
 export default async function Page({ params }: { params: { locale: string } }) {
   // Extract required namespaces from translation requirements
   const namespaces = userPageTranslations.map((req) => req.namespace);
