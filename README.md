@@ -19,12 +19,14 @@ Inspired by GraphQL's fragment collocation pattern, each component can declarati
 Colocale is designed to work across various JavaScript runtimes and frameworks:
 
 **Runtimes:**
+
 - Node.js
 - Browsers
 - Edge runtimes (Cloudflare Workers, Vercel Edge, etc.)
 - Any JavaScript runtime with `Intl` support
 
 **Frameworks:**
+
 - Works with any component-based framework (React, Vue, Svelte, etc.)
 - Particularly effective with frameworks that support server-side rendering
 - Examples available for React and Vue in the `example/` directory
@@ -64,28 +66,30 @@ Instead of hiding problems at runtime, colocale ensures translation completeness
 
 This design philosophy ensures that translation issues are caught early in the development process, not by your users in production. When you do need runtime behavior for truly missing keys (edge cases), the library returns the key name itself, making the issue immediately visible during testing.
 
-## Design Philosophy
-
 ### Why No Provider/Context?
 
 Unlike many i18n libraries, colocale intentionally avoids using React Context, Vue's provide/inject, or similar dependency injection mechanisms. This design choice enables several key benefits:
 
 **🌍 True Framework Agnosticism**
+
 - Works identically in React, Vue, Svelte, or vanilla JavaScript
 - No framework-specific runtime dependencies
 - Same API across all environments
 
 **🔍 Explicit Dependencies**
+
 - Component translation requirements are clearly visible in code
 - Easy to trace which translations a component tree needs
 - Facilitates static analysis and tree-shaking
 
 **⚙️ Universal Compatibility**
+
 - Works seamlessly in server components, client components, and hybrid scenarios
 - No issues with framework-specific boundaries (like Next.js Server/Client Component boundary)
 - Runs in any JavaScript environment (Node.js, Deno, Bun, browsers)
 
 **🎯 Predictable Data Flow**
+
 - Translations flow explicitly through props, following standard component patterns
 - No hidden dependencies through context
 - Easier to test and debug
@@ -95,6 +99,7 @@ Unlike many i18n libraries, colocale intentionally avoids using React Context, V
 Yes, colocale requires passing `messages` through props—this is intentional! While "prop drilling" is often seen as an anti-pattern, for i18n it provides significant advantages:
 
 **✅ Why It Works for i18n:**
+
 1. **Single prop**: Only one `messages` object needs to be passed down
 2. **Stable data**: Translations rarely change during runtime
 3. **Clear contract**: Component interfaces explicitly show i18n dependency
@@ -107,6 +112,7 @@ This pattern is inspired by GraphQL's fragment collocation, where data requireme
 ### When to Use colocale
 
 colocale is ideal when you want:
+
 - A framework-agnostic i18n solution that works everywhere
 - Explicit, traceable translation dependencies
 - To work with server-side rendering and modern meta-frameworks
@@ -172,6 +178,7 @@ This ensures no missing translations slip into production, maintaining a consist
 ## Quick Start
 
 > **💡 Looking for complete examples?** Check out the working examples in the [`example/`](./example) directory:
+>
 > - [React example](./example/react) - React 18 with React Router
 > - [Vue example](./example/vue) - Vue 3 with Vue Router
 
@@ -369,6 +376,7 @@ messages/
 ```
 
 **See the [`example/`](./example) directory for complete implementations:**
+
 - **React example**: Client-side application with static imports for translations
 - **Vue example**: Client-side application with dynamic imports for translations
 
@@ -477,12 +485,14 @@ export default async function Page({ params }: { params: { locale: string } }) {
   const namespaces = userPageTranslations.map((req) => req.namespace);
   // Remove duplicates to avoid importing the same file multiple times
   const uniqueNamespaces = Array.from(new Set(namespaces));
-  
+
   // Dynamically import only the needed locale's translations
   const translations = await Promise.all(
     uniqueNamespaces.map(async (namespace) => ({
       namespace,
-      data: (await import(`@/messages/${params.locale}/${namespace}.json`)).default,
+      data: (
+        await import(`@/messages/${params.locale}/${namespace}.json`)
+      ).default,
     }))
   );
 
@@ -492,7 +502,7 @@ export default async function Page({ params }: { params: { locale: string } }) {
       translations.map(({ namespace, data }) => [namespace, data])
     ),
   };
-  
+
   // pickMessages filters to the specified locale
   const messages = pickMessages(
     allMessages,
