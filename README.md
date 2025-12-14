@@ -1,8 +1,8 @@
 # colocale
 
-A lightweight i18n library that supports both server and client components.
+A lightweight i18n library that works across frameworks and JavaScript runtimes.
 
-Inspired by GraphQL's fragment collocation pattern, each component can declaratively define the translation keys it needs. While it works great with Next.js App Router, it's framework-agnostic and can be used in any React application.
+Inspired by GraphQL's fragment collocation pattern, each component can declaratively define the translation keys it needs. Designed to work with any component-based framework including React, Vue, and others, it excels in both client-side and server-side rendering environments.
 
 ## Features
 
@@ -11,7 +11,58 @@ Inspired by GraphQL's fragment collocation pattern, each component can declarati
 - 📦 **Lightweight**: Zero dependencies, simple API
 - 🌐 **Pluralization**: Built on `Intl.PluralRules` for proper plural handling
 - ⚡ **Fast**: Extract and send only the translations needed by components
-- 🔄 **Universal**: Works in both server and client components
+- 🔄 **Universal**: Works in Node.js, browsers, edge runtimes, and any JavaScript environment
+- 🎨 **Framework-agnostic**: Compatible with React, Vue, and other component-based frameworks
+
+## Runtime & Framework Compatibility
+
+Colocale is designed to work across various JavaScript runtimes and frameworks:
+
+**Runtimes:**
+- Node.js
+- Browsers
+- Edge runtimes (Cloudflare Workers, Vercel Edge, etc.)
+- Any JavaScript runtime with `Intl` support
+
+**Frameworks:**
+- Works with any component-based framework (React, Vue, Svelte, etc.)
+- Particularly effective with frameworks that support server-side rendering
+- Examples available for React and Vue in the `example/` directory
+
+Whether you're building a client-side SPA, a server-rendered application, or a hybrid app, colocale adapts to your architecture.
+
+## Design Philosophy
+
+### Build-Time Safety Over Runtime Fallback
+
+Colocale intentionally **does not provide automatic runtime fallback** to a default language when translations are missing. This is a deliberate design choice, not a limitation.
+
+**Why no automatic fallback?**
+
+Traditional i18n libraries often fall back to a default language (like English) when translations are missing. While convenient during development, this approach has significant downsides:
+
+- ❌ **Silent failures in production**: Missing translations go unnoticed until users report them
+- ❌ **Inconsistent user experience**: Users see a mix of their language and the fallback language
+- ❌ **No accountability**: Developers aren't forced to ensure complete translations before deployment
+
+**Our approach: Fail fast at build time, not runtime**
+
+Instead of hiding problems at runtime, colocale ensures translation completeness at build/CI time:
+
+- ✅ **`npx colocale check` validates all translations** before they reach production
+- ✅ **CI/CD integration** catches missing translations in pull requests
+- ✅ **Type-safe keys** prevent typos and invalid references at compile time
+- ✅ **Consistent user experience** - all translations are complete, or the build fails
+
+**Integrate into your CI pipeline:**
+
+```yaml
+# .github/workflows/ci.yml
+- name: Validate translations
+  run: npx colocale check messages
+```
+
+This design philosophy ensures that translation issues are caught early in the development process, not by your users in production. When you do need runtime behavior for truly missing keys (edge cases), the library returns the key name itself, making the issue immediately visible during testing.
 
 ## Design Philosophy
 
@@ -88,7 +139,7 @@ bun add -d typescript
 # Show help
 npx colocale --help
 
-# Validate translation files
+# Validate translation files (RECOMMENDED: Add to CI/CD pipeline)
 npx colocale check messages/ja          # Single locale
 npx colocale check messages              # All locales + consistency check
 
@@ -97,7 +148,32 @@ npx colocale codegen messages            # Output: defineRequirement.ts (default
 npx colocale codegen messages src/i18n/defineRequirement.ts  # Custom output path
 ```
 
+### Why `npx colocale check` is Essential
+
+The `check` command is your safety net for preventing translation issues in production:
+
+- **Validates translation file structure**: Ensures proper flat structure and valid JSON
+- **Checks key consistency across locales**: Detects missing or extra keys between languages
+- **Validates plural forms**: Ensures all required plural forms (`_one`, `_other`) are present
+- **Verifies placeholder syntax**: Catches malformed placeholders before they break at runtime
+- **Cross-locale validation**: When checking multiple locales, ensures all have identical key structures
+
+**Add to your CI/CD pipeline to enforce translation completeness:**
+
+```yaml
+# .github/workflows/ci.yml (or similar)
+- name: Check translation completeness
+  run: npx colocale check messages
+  # Build will fail if any translations are missing or inconsistent
+```
+
+This ensures no missing translations slip into production, maintaining a consistent user experience across all supported languages.
+
 ## Quick Start
+
+> **💡 Looking for complete examples?** Check out the working examples in the [`example/`](./example) directory:
+> - [React example](./example/react) - React 18 with React Router
+> - [Vue example](./example/vue) - Vue 3 with Vue Router
 
 ### 1. Create Translation Files
 
@@ -167,14 +243,12 @@ This automatically generates a type-safe `defineRequirement` function from your 
 - TypeScript type definitions for your translation structure
 - A ready-to-use `defineRequirement` function with full type inference
 
-### 4. Separate Translation Requirements from Components (Best Practice)
+### 4. Define Translation Requirements
 
-When using colocale with Next.js App Router, separate translation requirements from component files to avoid bundler issues with the Server/Client Component boundary.
-
-**Create a separate `translations.ts` file** (without `'use client'`):
+**Create a dedicated file for translation requirements:**
 
 ```typescript
-// app/users/translations.ts
+// translations.ts (or wherever you organize your i18n code)
 import defineRequirement from "@/defineRequirement"; // Generated by codegen
 import { mergeRequirements } from "colocale";
 
@@ -198,7 +272,138 @@ export const userPageTranslations = mergeRequirements(
 
 **Note:** The `defineRequirement` function generated by `codegen` provides full type inference and compile-time validation automatically.
 
-**Use in Client Component:**
+**Use in your components:**
+
+```typescript
+// UserProfile.tsx (React) or UserProfile.vue (Vue)
+import { createTranslator, type Messages } from "colocale";
+import { userProfileTranslations } from "./translations";
+
+export default function UserProfile({ messages }: { messages: Messages }) {
+  const t = createTranslator(messages, userProfileTranslations);
+  return (
+    <div>
+      <label>{t("profile.name")}</label>
+      <label>{t("profile.email")}</label>
+    </div>
+  );
+}
+```
+
+### 5. Use Translations in Your Application
+
+```typescript
+// UserPage.tsx (React) or UserPage.vue (Vue)
+import { createTranslator, type Messages } from "colocale";
+import { commonTranslations, userPageTranslations } from "./translations";
+import UserProfile from "./UserProfile";
+
+export default function UserPage({ messages }: { messages: Messages }) {
+  const t = createTranslator(messages, commonTranslations);
+
+  return (
+    <div>
+      <UserProfile messages={messages} />
+      <button>{t("submit")}</button>
+      <button>{t("cancel")}</button>
+    </div>
+  );
+}
+```
+
+### 6. Load and Extract Translations
+
+Colocale requires translations to be organized in a locale-grouped format. How you load translations depends on your framework and architecture:
+
+**Basic structure:**
+
+```typescript
+// Compose translations into locale-grouped structure
+const allMessages = {
+  ja: {
+    common: jaCommonTranslations,
+    user: jaUserTranslations,
+  },
+  en: {
+    common: enCommonTranslations,
+    user: enUserTranslations,
+  },
+};
+
+// Use pickMessages to extract only the needed translations for a specific locale
+import { pickMessages } from "colocale";
+
+const messages = pickMessages(
+  allMessages,
+  userPageTranslations,
+  locale // e.g., "ja" or "en"
+);
+```
+
+**Translation file structure:**
+
+```
+messages/
+  ├── ja/
+  │   ├── common.json
+  │   └── user.json
+  └── en/
+      ├── common.json
+      └── user.json
+```
+
+```json
+// messages/ja/common.json
+{
+  "submit": "送信",
+  "cancel": "キャンセル"
+}
+```
+
+```json
+// messages/en/common.json
+{
+  "submit": "Submit",
+  "cancel": "Cancel"
+}
+```
+
+**See the [`example/`](./example) directory for complete implementations:**
+- **React example**: Client-side application with static imports for translations
+- **Vue example**: Client-side application with dynamic imports for translations
+
+## Using with Next.js App Router
+
+When using colocale with Next.js App Router, you can take advantage of server-side rendering for optimal performance. This pattern applies to any server-rendering framework, but Next.js is shown as a practical example.
+
+### Best Practices for Next.js
+
+**Separate translation requirements from Client Components** to avoid bundler issues:
+
+1. **Create a dedicated `translations.ts` file** (without `'use client'`):
+
+```typescript
+// app/users/translations.ts
+import defineRequirement from "@/defineRequirement";
+import { mergeRequirements } from "colocale";
+
+export const userProfileTranslations = defineRequirement("user", [
+  "profile.name",
+  "profile.email",
+]);
+
+export const commonTranslations = defineRequirement("common", [
+  "submit",
+  "cancel",
+]);
+
+export const userPageTranslations = mergeRequirements(
+  commonTranslations,
+  userProfileTranslations
+);
+```
+
+2. **Use in Client Components:**
 
 ```typescript
 // components/UserProfile.tsx
@@ -217,30 +422,9 @@ export default function UserProfile({ messages }: { messages: Messages }) {
 }
 ```
 
-**⚠️ Why separate files?** If you export translation requirements from a Client Component (with `'use client'`), Next.js's bundler creates proxy functions instead of the actual values, breaking `mergeRequirements` and type safety. See [Best Practices](#best-practices-for-nextjs-app-router) for details.
+**⚠️ Why separate files?** If you export translation requirements from a Client Component (with `'use client'`), Next.js's bundler creates proxy functions instead of the actual values, breaking `mergeRequirements` and type safety.
 
-### 5. Aggregate Translation Requirements
-
-```typescript
-// app/users/UserPage.tsx (can be Server or Client Component)
-import { createTranslator, type Messages } from "colocale";
-import { commonTranslations, userPageTranslations } from "./translations";
-import UserProfile from "@/components/UserProfile";
-
-export default function UserPage({ messages }: { messages: Messages }) {
-  const t = createTranslator(messages, commonTranslations);
-
-  return (
-    <div>
-      <UserProfile messages={messages} />
-      <button>{t("submit")}</button>
-      <button>{t("cancel")}</button>
-    </div>
-  );
-}
-```
-
-### 6. Extract Translations in Server Components
+### Loading Translations in Server Components
 
 Translations must be organized in locale-grouped format. Import translation files per locale and namespace, then compose them:
 
@@ -320,43 +504,7 @@ export default async function Page({ params }: { params: { locale: string } }) {
 }
 ```
 
-**Translation file structure:**
-
-```
-messages/
-  ├── ja/
-  │   ├── common.json
-  │   └── user.json
-  └── en/
-      ├── common.json
-      └── user.json
-```
-
-```json
-// messages/ja/common.json
-{
-  "submit": "送信",
-  "cancel": "キャンセル"
-}
-```
-
-```json
-// messages/en/common.json
-{
-  "submit": "Submit",
-  "cancel": "Cancel"
-}
-```
-
-### Benefits of This Pattern
-
-1. **Avoids Next.js bundler issues**: Translation requirements remain as plain objects, not proxy functions
-2. **Better collocation**: All translation requirements for a feature/page are in one place
-3. **Type safety maintained**: TypeScript inference works correctly across Server/Client boundaries
-4. **Cleaner imports**: Single source of truth for translation requirements
-5. **Clear separation of concerns**: Translation requirements are separate from component logic
-
-### Key Takeaways
+### Next.js Best Practices Summary
 
 - ✅ **DO** create a separate `translations.ts` file (without `'use client'`) for translation requirements
 - ✅ **DO** import translation requirements from this shared file in both Server and Client Components

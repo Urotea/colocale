@@ -1,7 +1,7 @@
 {
   "name": "colocale",
   "version": "0.1.1",
-  "description": "A lightweight i18n library for Next.js App Router with fragment collocation pattern",
+  "description": "A lightweight i18n library with fragment collocation pattern that works across frameworks and runtimes",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
