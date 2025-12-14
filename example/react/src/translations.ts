@@ -1,7 +1,6 @@
-import type { TranslationRequirement } from 'colocale'
+import defineRequirement from "../defineRequirement";
 
 // Define translation requirements for common namespace
-export const commonTranslations: TranslationRequirement<readonly ["greeting"]> = {
-  namespace: "common",
-  keys: ["greeting"]
-}
+export const commonTranslations = defineRequirement("common", [
+  "greeting",
+] as const);

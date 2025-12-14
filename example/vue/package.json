@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "codegen": "colocale codegen messages",
     "dev": "vite",
     "build": "vue-tsc && vite build",
     "preview": "vite preview"
@@ -11,7 +12,7 @@
   "dependencies": {
     "vue": "^3.5.13",
     "vue-router": "^4.5.0",
-    "colocale": "file:../.."
+    "colocale": "^0.1.13"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.2.1",

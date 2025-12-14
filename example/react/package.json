@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "codegen": "colocale codegen messages",
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview"
@@ -12,7 +13,7 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.28.0",
-    "colocale": "file:../.."
+    "colocale": "^0.1.13"
   },
   "devDependencies": {
     "@types/react": "^18.3.18",

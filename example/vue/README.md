@@ -11,16 +11,16 @@ A simple Vue application demonstrating how to use colocale for internationalizat
 
 ## Installation
 
-> **Note**: This example uses `"colocale": "file:../.."` in package.json to reference the parent colocale library. If you're copying this example to your own project, replace it with `"colocale": "^0.1.1"` (or the latest version).
+> **Note**: This example uses `"colocale": "file:../.."` in package.json to reference the parent colocale library. If you're copying this example to your own project, replace it with `"colocale": "latest"` or the desired version.
 
 ```bash
-npm install
+bun install && bun run codegen
 ```
 
 ## Development
 
 ```bash
-npm run dev
+bun run dev
 ```
 
 Visit http://localhost:5173/ (will redirect to /en/top)
