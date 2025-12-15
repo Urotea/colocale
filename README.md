@@ -35,37 +35,6 @@ Whether you're building a client-side SPA, a server-rendered application, or a h
 
 ## Design Philosophy
 
-### Build-Time Safety Over Runtime Fallback
-
-Colocale intentionally **does not provide automatic runtime fallback** to a default language when translations are missing. This is a deliberate design choice, not a limitation.
-
-**Why no automatic fallback?**
-
-Traditional i18n libraries often fall back to a default language (like English) when translations are missing. While convenient during development, this approach has significant downsides:
-
-- ❌ **Silent failures in production**: Missing translations go unnoticed until users report them
-- ❌ **Inconsistent user experience**: Users see a mix of their language and the fallback language
-- ❌ **No accountability**: Developers aren't forced to ensure complete translations before deployment
-
-**Our approach: Fail fast at build time, not runtime**
-
-Instead of hiding problems at runtime, colocale ensures translation completeness at build/CI time:
-
-- ✅ **`npx colocale check` validates all translations** before they reach production
-- ✅ **CI/CD integration** catches missing translations in pull requests
-- ✅ **Type-safe keys** prevent typos and invalid references at compile time
-- ✅ **Consistent user experience** - all translations are complete, or the build fails
-
-**Integrate into your CI pipeline:**
-
-```yaml
-# .github/workflows/ci.yml
-- name: Validate translations
-  run: npx colocale check messages
-```
-
-This design philosophy ensures that translation issues are caught early in the development process, not by your users in production. When you do need runtime behavior for truly missing keys (edge cases), the library returns the key name itself, making the issue immediately visible during testing.
-
 ### Why No Provider/Context?
 
 Unlike many i18n libraries, colocale intentionally avoids using React Context, Vue's provide/inject, or similar dependency injection mechanisms. This design choice enables several key benefits:
@@ -86,13 +55,16 @@ Unlike many i18n libraries, colocale intentionally avoids using React Context, V
 
 - Works seamlessly in server components, client components, and hybrid scenarios
 - No issues with framework-specific boundaries (like Next.js Server/Client Component boundary)
-- Runs in any JavaScript environment (Node.js, Deno, Bun, browsers)
+- Runs in any JavaScript environment (Node.js, Deno, Bun, browsers, edge runtimes)
 
-**🎯 Predictable Data Flow**
+**🎯 Pure Functions by Design**
 
+- Components remain pure functions—same input (props) produces same output
+- No hidden dependencies through context means components are fully predictable
 - Translations flow explicitly through props, following standard component patterns
-- No hidden dependencies through context
-- Easier to test and debug
+- Easier to test, debug, and reason about component behavior
+
+By passing `messages` explicitly through props ("prop drilling"), colocale guarantees that the same code works across all frameworks and runtimes. This is not a compromise—it's the foundation that enables universal compatibility and keeps your components as pure, predictable functions.
 
 ### Embracing Prop Drilling
 
@@ -120,6 +92,36 @@ colocale is ideal when you want:
 - A simple, predictable API without magic
 
 If you prefer context-based solutions or need framework-specific features, consider alternatives like react-i18next or vue-i18n.
+
+## Key Features
+
+### Type-Safe by Design
+
+Colocale prioritizes catching errors as early as possible in the development cycle, ideally at compile time with TypeScript.
+
+**🔒 Compile-Time Validation**
+
+- Generated `defineRequirement` function provides full type inference
+- TypeScript catches typos and invalid translation keys before runtime
+- Auto-completion for namespaces and keys in your IDE
+
+**🛡️ Build-Time Validation**
+
+When compile-time validation isn't possible, colocale validates at build/CI time:
+
+- ✅ **`npx colocale check` validates all translations** before they reach production
+- ✅ **Validates translation file structure** and ensures proper flat structure
+- ✅ **Checks key consistency across locales** to catch missing translations
+- ✅ **Verifies plural forms and placeholder syntax**
+- ✅ **CI/CD integration** catches issues in pull requests
+
+**Integrate into your CI pipeline:**
+
+```yaml
+# .github/workflows/ci.yml
+- name: Validate translations
+  run: npx colocale check messages
+```
 
 ## Installation
 
@@ -519,7 +521,6 @@ export default async function Page({ params }: { params: { locale: string } }) {
 - ✅ **DO** create a separate `translations.ts` file (without `'use client'`) for translation requirements
 - ✅ **DO** import translation requirements from this shared file in both Server and Client Components
 - ✅ **DO** colocate `translations.ts` with the components that use them (e.g., per page or feature folder)
-- ❌ **DON'T** export translation requirements from files with `'use client'` directive
 - ❌ **DON'T** define translation requirements inside Client Components if they need to be used in Server Components
 
 ## API Reference
@@ -542,7 +543,7 @@ function pickMessages(
 - `requirements`: Translation requirement(s) defining which keys to extract
 - `locale`: Locale identifier (see `Locale` type) - used for filtering translations and proper pluralization with `Intl.PluralRules`
 
-**Locale type**: The `Locale` type provides autocomplete for supported locale codes (`"en"`, `"ja"`) while still accepting any BCP 47 language tag as a string.
+**Locale type**: The `Locale` type currently supports `"en"` and `"ja"`. Additional locales will be supported in future releases.
 
 **Automatic plural extraction**: When you specify a base key (e.g., `"itemCount"`), keys with `_one`, `_other` suffixes are automatically extracted based on `Intl.PluralRules`.
 
