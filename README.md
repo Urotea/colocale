@@ -521,7 +521,6 @@ export default async function Page({ params }: { params: { locale: string } }) {
 - ✅ **DO** create a separate `translations.ts` file (without `'use client'`) for translation requirements
 - ✅ **DO** import translation requirements from this shared file in both Server and Client Components
 - ✅ **DO** colocate `translations.ts` with the components that use them (e.g., per page or feature folder)
-- ❌ **DON'T** export translation requirements from files with `'use client'` directive
 - ❌ **DON'T** define translation requirements inside Client Components if they need to be used in Server Components
 
 ## API Reference
@@ -544,7 +543,7 @@ function pickMessages(
 - `requirements`: Translation requirement(s) defining which keys to extract
 - `locale`: Locale identifier (see `Locale` type) - used for filtering translations and proper pluralization with `Intl.PluralRules`
 
-**Locale type**: The `Locale` type provides autocomplete for supported locale codes (`"en"`, `"ja"`) while still accepting any BCP 47 language tag as a string.
+**Locale type**: The `Locale` type currently supports `"en"` and `"ja"`. Additional locales will be supported in future releases.
 
 **Automatic plural extraction**: When you specify a base key (e.g., `"itemCount"`), keys with `_one`, `_other` suffixes are automatically extracted based on `Intl.PluralRules`.
 
