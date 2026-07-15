@@ -1,5 +1,5 @@
-import { readFile, readdir, stat } from "node:fs/promises";
-import { basename, join } from "node:path";
+import { readdir, readFile, stat } from "node:fs/promises";
+import { join } from "node:path";
 import type { LocaleTranslations, TranslationFile } from "../types";
 
 /**
@@ -71,7 +71,7 @@ export async function loadAllLocaleTranslations(
     let stats;
     try {
       stats = await stat(entryPath);
-    } catch (error) {
+    } catch (_error) {
       // Skip entries that can't be accessed
       continue;
     }
@@ -85,7 +85,7 @@ export async function loadAllLocaleTranslations(
         if (Object.keys(translations).length > 0) {
           localeTranslations[locale] = translations;
         }
-      } catch (error) {
+      } catch (_error) {
         // Skip directories that can't be read as translation directories
         continue;
       }
@@ -109,7 +109,7 @@ export async function getFirstLocaleDirectory(
   let entries: string[];
   try {
     entries = await readdir(basePath);
-  } catch (error) {
+  } catch (_error) {
     return null;
   }
 
@@ -119,7 +119,7 @@ export async function getFirstLocaleDirectory(
     let stats;
     try {
       stats = await stat(entryPath);
-    } catch (error) {
+    } catch (_error) {
       continue;
     }
 
@@ -132,7 +132,7 @@ export async function getFirstLocaleDirectory(
         if (hasJsonFiles) {
           return entryPath;
         }
-      } catch (error) {
+      } catch (_error) {
         // Skip directories that can't be read
         continue;
       }

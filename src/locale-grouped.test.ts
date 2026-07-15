@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import type { LocaleTranslations, Messages } from "./index";
+import type { LocaleTranslations } from "./index";
 import { pickMessages } from "./index";
 
 // Test locale-grouped translation structure

@@ -2,23 +2,21 @@
 // Re-exports from separate modules
 // ============================================================================
 
-// Types
-export type {
-  TranslationRequirement,
-  Messages,
-  TranslationFile,
-  ConstrainedTranslatorFunction,
-  LocaleTranslations,
-  Locale,
-  Namespace,
-  KeysForNamespace,
-} from "./types";
-
-// Validation
-export { validateTranslations, validateCrossLocale } from "./validation";
-
 // Errors
 export { InvalidPlaceholderError } from "./errors";
+// Types
+export type {
+  ConstrainedTranslatorFunction,
+  KeysForNamespace,
+  Locale,
+  LocaleTranslations,
+  Messages,
+  Namespace,
+  TranslationFile,
+  TranslationRequirement,
+} from "./types";
+// Validation
+export { validateCrossLocale, validateTranslations } from "./validation";
 
 import { InvalidPlaceholderError } from "./errors";
 import { extractPluralKeys, resolvePluralMessage } from "./plural";
@@ -38,7 +36,6 @@ import type {
   LocaleTranslations,
   Messages,
   PlaceholderValues,
-  TranslationFile,
   TranslationRequirement,
 } from "./types";
 

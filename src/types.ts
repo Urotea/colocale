@@ -108,9 +108,8 @@ export interface ValidationResult {
  * Type utility to extract keys from a TranslationRequirement
  * @template R - TranslationRequirement type
  */
-type RequirementKeys<R> = R extends TranslationRequirement<infer K>
-  ? K[number]
-  : never;
+type RequirementKeys<R> =
+  R extends TranslationRequirement<infer K> ? K[number] : never;
 
 /**
  * Translator function type constrained to specific keys from a TranslationRequirement
