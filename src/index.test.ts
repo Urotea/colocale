@@ -1,32 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import {
+  createTranslator,
   type LocaleTranslations,
   type Messages,
-  createTranslator,
   mergeRequirements,
   pickMessages,
 } from "./index";
-
-// Test translation structure type
-interface TestTranslationStructure {
-  common: {
-    submit: string;
-    cancel: string;
-    itemCount: string;
-  };
-  user: {
-    "profile.name": string;
-    "profile.email": string;
-  };
-  shop: {
-    "cart.item": string;
-    cartSummary: string;
-  };
-  results: {
-    itemsFound: string;
-    greeting: string;
-  };
-}
 
 // Test translation files in locale-grouped format
 const testMessages: LocaleTranslations = {

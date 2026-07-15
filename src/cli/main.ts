@@ -76,7 +76,7 @@ program
       } else {
         throw new Error("No locales found");
       }
-    } catch (error) {
+    } catch (_error) {
       // Fallback to single-locale mode (original behavior)
       for (const arg of paths) {
         const path = resolve(arg);
@@ -143,11 +143,9 @@ program
       const localeDir = await getFirstLocaleDirectory(resolvedTranslationPath);
 
       let translations;
-      let actualPath: string;
 
       if (localeDir) {
         // Found locale subdirectories, use the first one
-        actualPath = localeDir;
         const localeName = basename(localeDir);
         console.log(
           `📁 Detected locale subdirectories, using locale: ${localeName}`
@@ -155,7 +153,6 @@ program
         translations = await loadTranslationsFromDirectory(localeDir);
       } else {
         // No locale subdirectories found, try to load directly
-        actualPath = resolvedTranslationPath;
         translations = await loadTranslationsFromDirectory(
           resolvedTranslationPath
         );

@@ -1,4 +1,4 @@
-import type { Locale, NamespaceTranslations } from "./types";
+import type { Locale } from "./types";
 import { getNestedValue } from "./utils";
 
 /**

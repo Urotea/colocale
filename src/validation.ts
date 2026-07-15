@@ -9,7 +9,7 @@ import type {
 /**
  * Collect all keys from a translation object (flat structure only)
  */
-function collectAllKeys(obj: NamespaceTranslations, prefix = ""): Set<string> {
+function collectAllKeys(obj: NamespaceTranslations, _prefix = ""): Set<string> {
   const keys = new Set<string>();
 
   for (const key in obj) {
@@ -34,7 +34,9 @@ function validatePluralKeys(
 
   // Collect all keys (including nested keys) using the helper function
   const allKeys = collectAllKeys(translations);
-  allKeys.forEach((key) => keys.add(key));
+  for (const key of allKeys) {
+    keys.add(key);
+  }
 
   // Classify plural keys
   for (const key of keys) {
@@ -206,7 +208,9 @@ export function validateCrossLocale(
   const allNamespaces = new Set<string>();
   for (const locale of locales) {
     const namespaces = Object.keys(localeTranslations[locale]);
-    namespaces.forEach((ns) => allNamespaces.add(ns));
+    for (const ns of namespaces) {
+      allNamespaces.add(ns);
+    }
   }
 
   // For each namespace, compare keys across locales

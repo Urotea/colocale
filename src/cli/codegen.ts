@@ -21,15 +21,6 @@ function removePluralSuffix(key: string): string {
 }
 
 /**
- * Check if a key has a plural suffix
- * @param key - Translation key to check
- * @returns True if the key has a plural suffix
- */
-function hasPluralSuffix(key: string): boolean {
-  return PLURAL_SUFFIXES.some((suffix) => key.endsWith(suffix));
-}
-
-/**
  * Capitalize first letter
  */
 function capitalizeFirst(str: string): string {
