@@ -348,9 +348,14 @@ requirements = [{
 #### 5.3. 1 createTranslator
 
 ```typescript
+function createTranslator<R extends TranslationRequirement>(
+  messages: Messages,
+  requirement: R
+): ConstrainedTranslatorFunction<R>;
+
 function createTranslator(
   messages: Messages,
-  namespace: string
+  requirement?: TranslationRequirement | null
 ): TranslatorFunction;
 
 type TranslatorFunction = (key: string, values?: PlaceholderValues) => string;
@@ -361,11 +366,27 @@ type TranslatorFunction = (key: string, values?: PlaceholderValues) => string;
 **引数:**
 
 - `messages`: `Messages` オブジェクト
-- `namespace`: 翻訳の名前空間
+- `requirement`: 名前空間と許可キーを定義する `TranslationRequirement`。省略または `null` を指定した場合はキーの型制約を無効化する
 
 **戻り値:**
 
-- 翻訳関数（`TranslatorFunction`）
+- `requirement` を指定した場合: キーが `requirement` に制約された翻訳関数（`ConstrainedTranslatorFunction<R>`）
+- `requirement` を省略または `null` の場合: 任意の文字列キーを受け付ける翻訳関数（`TranslatorFunction`）
+
+**型制約の無効化:**
+
+`requirement` を省略または `null` にした場合、名前空間の前置が行われないため、キーは `"namespace.key"` 形式の完全修飾キーで指定する。`pickMessages(allMessages, null, locale)` と組み合わせて使うことを想定する。
+
+```typescript
+const messages = pickMessages(allMessages, null, "ja");
+const t = createTranslator(messages); // createTranslator(messages, null) と同義
+
+t("common.submit"); // "送信"
+t("common.itemCount", { count: 3 }); // "3件のアイテム"（複数形解決は有効）
+t("common.unknown"); // "common.unknown"（見つからないキーはそのまま返す）
+```
+
+プレースホルダー置換・複数形解決・`InvalidPlaceholderError` の挙動は制約あり版と同一で、コンパイル時のキー検査のみが失われる。
 
 **翻訳関数の動作:**
 
@@ -934,6 +955,7 @@ t("cartSummary", { count: 5, user: "田中" });
    - **複数形 + プレースホルダーの組み合わせ**
    - 存在しないキー
    - **count なしで複数形キーを使用**
+   - **`requirement` を省略/`null` にした場合の完全修飾キーによる解決**
 
 3. **replacePlaceholders:**
 

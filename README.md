@@ -573,9 +573,31 @@ function createTranslator<R extends TranslationRequirement<string>>(
   messages: Messages,
   requirement: R
 ): ConstrainedTranslatorFunction<R>;
+
+// Requirement omitted or null: key constraints disabled
+function createTranslator(
+  messages: Messages,
+  requirement?: TranslationRequirement | null
+): TranslatorFunction;
 ```
 
 **Key constraint**: The returned translator function is constrained to only accept keys defined in the `TranslationRequirement`.
+
+**Disabling key constraints**: Omitting the requirement (or passing `null`) returns a `TranslatorFunction` that accepts any string. Since there is no namespace to prefix, keys must be given in their fully qualified `"namespace.key"` form. Pairs well with `pickMessages(allMessages, null, locale)`.
+
+```typescript
+const messages = pickMessages(allMessages, null, "ja");
+const t = createTranslator(messages); // or createTranslator(messages, null)
+
+t("common.submit"); // "送信"
+t("user.profile.name"); // "名前"
+t("common.itemCount", { count: 3 }); // plural resolution still works
+t("common.unknown"); // "common.unknown" (missing keys return the key as-is)
+```
+
+Placeholder replacement, plural resolution via `Intl.PluralRules`, and the `InvalidPlaceholderError` behavior are identical to the constrained version - only the compile-time key checking is dropped.
+
+> **Note**: Without a requirement, typos in keys are no longer caught at compile time and silently fall back to returning the key. Use it for tests, prototypes, and small apps where the extra freedom is worth more than the safety net; prefer a `TranslationRequirement` in application code.
 
 ### mergeRequirements
 

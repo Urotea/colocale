@@ -14,6 +14,7 @@ export type {
   Namespace,
   TranslationFile,
   TranslationRequirement,
+  TranslatorFunction,
 } from "./types";
 // Validation
 export { validateCrossLocale, validateTranslations } from "./validation";
@@ -37,6 +38,7 @@ import type {
   Messages,
   PlaceholderValues,
   TranslationRequirement,
+  TranslatorFunction,
 } from "./types";
 
 /**
@@ -147,10 +149,14 @@ export function pickMessages<
  *
  * When values contain a count property, automatic plural handling is performed
  *
+ * When the requirement is omitted or `null`, key constraints are disabled: the
+ * returned function accepts any string, and keys must be passed in their fully
+ * qualified `"namespace.key"` form since there is no namespace to prefix
+ *
  * @template R - TranslationRequirement type that defines allowed keys
  * @param messages - Messages object
- * @param requirement - TranslationRequirement that defines the namespace and allowed keys
- * @returns Translation function constrained to keys in the requirement
+ * @param requirement - TranslationRequirement that defines the namespace and allowed keys, or `null`/omitted to disable key constraints
+ * @returns Translation function constrained to keys in the requirement, or an unconstrained one when no requirement is given
  *
  * @example
  * ```typescript
@@ -165,11 +171,28 @@ export function pickMessages<
  * t("profile.name"); // ✓ OK
  * t("profile.invalid"); // ✗ Type error
  * ```
+ *
+ * @example
+ * ```typescript
+ * // No requirement: no key constraints, fully qualified keys
+ * const t = createTranslator(messages);
+ * t("user.profile.name"); // ✓ OK
+ * t("anything.at.all"); // ✓ OK (returns the key as-is when missing)
+ * ```
  */
 export function createTranslator<
   R extends TranslationRequirement<readonly string[]>,
->(messages: Messages, requirement: R): ConstrainedTranslatorFunction<R> {
-  const namespace = requirement.namespace;
+>(messages: Messages, requirement: R): ConstrainedTranslatorFunction<R>;
+export function createTranslator(
+  messages: Messages,
+  requirement?: TranslationRequirement<readonly string[]> | null
+): TranslatorFunction;
+export function createTranslator(
+  messages: Messages,
+  requirement?: TranslationRequirement<readonly string[]> | null
+): TranslatorFunction {
+  // An empty namespace means keys are used as-is (already fully qualified)
+  const namespace = requirement?.namespace ?? "";
   const locale = messages.locale;
 
   return (key: string, values?: PlaceholderValues): string => {
@@ -188,7 +211,7 @@ export function createTranslator<
 
     // If not plural or plural resolution failed, try regular key
     if (message === undefined) {
-      const fullKey = `${namespace}.${key}`;
+      const fullKey = namespace ? `${namespace}.${key}` : key;
       message = messages.translations[fullKey];
     }
 
