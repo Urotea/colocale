@@ -62,7 +62,7 @@ export async function loadAllLocaleTranslations(
     entries = await readdir(basePath);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    throw new Error(`Failed to read base directory: ${basePath} - ${message}`);
+    throw new Error(`Failed to read directory: ${basePath} - ${message}`);
   }
 
   for (const entry of entries) {

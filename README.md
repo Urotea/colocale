@@ -167,6 +167,16 @@ The `check` command is your safety net for preventing translation issues in prod
 - **Verifies placeholder syntax**: Catches malformed placeholders before they break at runtime
 - **Cross-locale validation**: When checking multiple locales, ensures all have identical key structures
 
+`check` exits with code `1` — and never reports success — in any of these cases:
+
+- a translation file contains a validation error
+- keys are inconsistent between locales
+- a given path holds no translation files at all (an empty or mistyped directory)
+- a path exists but none of its locale subdirectories could be loaded (for example every file has a JSON syntax error)
+- any of the given paths cannot be read
+
+Every path passed on the command line is validated, so a failure in the second or third argument still fails the build.
+
 **Add to your CI/CD pipeline to enforce translation completeness:**
 
 ```yaml
