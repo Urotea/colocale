@@ -72,7 +72,7 @@ export type LocaleTranslations = Record<string, TranslationFile>;
 /**
  * Validation error types
  */
-type ValidationErrorType =
+export type ValidationErrorType =
   | "missing-plural-one"
   | "missing-plural-other"
   | "invalid-nesting"

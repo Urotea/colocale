@@ -643,6 +643,52 @@ const req: TranslationRequirement<readonly ["submit", "cancel"]> = {
 
 Note: Manual usage does not provide compile-time validation of namespaces and keys. Use the `codegen` command for full type safety.
 
+### Exported Types
+
+Every type used in the public API is exported, so you can annotate your own wrappers and props without redeclaring anything:
+
+```typescript
+import type {
+  ConstrainedTranslatorFunction, // return type of createTranslator
+  KeysForNamespace, // valid keys of a namespace (hand-written requirements)
+  Locale, // any BCP 47 language tag
+  LocaleTranslations, // { [locale]: { [namespace]: { [key]: string } } }
+  Messages, // result of pickMessages; Messages<L> to pin the locale
+  Namespace, // valid namespace names
+  NamespaceTranslations, // { [key]: string }
+  PlaceholderValues, // second argument of t()
+  TranslationFile, // { [namespace]: NamespaceTranslations }
+  TranslationRequirement, // { namespace, keys }
+  ValidationError, // one entry of ValidationResult.errors
+  ValidationErrorType, // "missing-key" | "invalid-nesting" | ...
+  ValidationResult, // return type of validateTranslations / validateCrossLocale
+} from "colocale";
+```
+
+```typescript
+import { validateTranslations } from "colocale";
+import type { ValidationError, ValidationResult } from "colocale";
+
+// Annotating results of the exported validators requires no type gymnastics
+function formatErrors(result: ValidationResult): string {
+  return result.errors.map((e: ValidationError) => `${e.type}: ${e.key}`).join("\n");
+}
+```
+
+`InvalidPlaceholderError` is exported as a value, so `instanceof` checks work:
+
+```typescript
+import { InvalidPlaceholderError } from "colocale";
+
+try {
+  t("welcome");
+} catch (error) {
+  if (error instanceof InvalidPlaceholderError) {
+    console.error(error.missingPlaceholders, error.template);
+  }
+}
+```
+
 ## License
 
 MIT

@@ -15,7 +15,7 @@ bun install
 bun test                                   # all tests (bun:test)
 bun test src/cli/codegen.test.ts           # single file
 bun test --test-name-pattern "plural"      # single test/describe by name
-bun run typecheck                          # tsc --noEmit
+bun run typecheck                          # tsc --noEmit (src) THEN tsc -p tsconfig.test.json (src + *.test.ts)
 bun run lint                               # biome lint .
 bun run format                             # biome check --write . (formats + fixes + organizes imports)
 bun run build                              # tsup (esm+cjs bundles) THEN tsc (emitDeclarationOnly for .d.ts)
@@ -27,6 +27,8 @@ Exercising the CLI against the fixture translations in `test-messages/` (runs fr
 bun run check test-messages         # or: bun run src/cli/main.ts check test-messages/ja
 bun run codegen test-messages       # writes ./defineRequirement.ts (gitignored artifact)
 ```
+
+Test files are **not** covered by the build `tsconfig.json` (it excludes `**/*.test.ts` so `tsc` does not emit `.d.ts` for them into `dist`), and `bun test` strips types instead of checking them. `tsconfig.test.json` exists purely so `bun run typecheck` also type-checks the tests — keep it in the `typecheck` script, otherwise type errors in tests become invisible again.
 
 CI on PRs runs `typecheck`, `lint`, and `bun test`. Biome is the formatting source of truth even though `.vscode/settings.json` still names Prettier as the default formatter.
 
@@ -51,7 +53,7 @@ t(key, values?)             namespace bound, key union constrained by the requir
 - `src/index.ts` — public surface: `mergeRequirements`, `pickMessages`, `createTranslator`, plus re-exports of types, `InvalidPlaceholderError`, and the two validators.
 - `src/plural.ts` / `src/utils.ts` — internal helpers (plural key selection/extraction; placeholder extraction and substitution). Not exported from the package.
 - `src/validation.ts` — pure validators shared by the library export and the CLI: `validateTranslations` (per-locale) and `validateCrossLocale`.
-- `src/cli/` — `main.ts` (commander wiring) → `loader.ts` (fs/JSON) → `validation.ts` → `formatter.ts` (console output). `codegen.ts` is a pure string-building function (`TranslationFile` → TypeScript source), which is why it is directly unit-testable.
+- `src/cli/` — `main.ts` (commander wiring) → `loader.ts` (fs/JSON; the namespace is the file name minus the **trailing** `.json`, so `shop.items.json` → `shop.items`) → `validation.ts` → `formatter.ts` (console output). `codegen.ts` is a pure string-building function (`TranslationFile` → TypeScript source), which is why it is directly unit-testable.
 
 ### Invariants to preserve when changing behavior
 

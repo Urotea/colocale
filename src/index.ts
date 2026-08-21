@@ -12,8 +12,13 @@ export type {
   LocaleTranslations,
   Messages,
   Namespace,
+  NamespaceTranslations,
+  PlaceholderValues,
   TranslationFile,
   TranslationRequirement,
+  ValidationError,
+  ValidationErrorType,
+  ValidationResult,
 } from "./types";
 // Validation
 export { validateCrossLocale, validateTranslations } from "./validation";

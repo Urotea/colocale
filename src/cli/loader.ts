@@ -2,6 +2,9 @@ import { readdir, readFile, stat } from "node:fs/promises";
 import { join } from "node:path";
 import type { LocaleTranslations, TranslationFile } from "../types";
 
+/** Extension of translation files; the namespace is the file name without it */
+const JSON_EXTENSION = ".json";
+
 /**
  * Load all JSON files from a directory and merge into one TranslationFile
  * @throws {Error} When directory cannot be read or JSON parsing fails
@@ -20,8 +23,9 @@ export async function loadTranslationsFromDirectory(
   }
 
   for (const file of files) {
-    if (file.endsWith(".json")) {
-      const namespace = file.replace(".json", "");
+    if (file.endsWith(JSON_EXTENSION)) {
+      // Strip the trailing extension only: "my.json.backup.json" -> "my.json.backup"
+      const namespace = file.slice(0, -JSON_EXTENSION.length);
       const filePath = join(dir, file);
 
       let content: string;
@@ -128,7 +132,9 @@ export async function getFirstLocaleDirectory(
       // Check if directory contains JSON files (translation files)
       try {
         const files = await readdir(entryPath);
-        const hasJsonFiles = files.some((file) => file.endsWith(".json"));
+        const hasJsonFiles = files.some((file) =>
+          file.endsWith(JSON_EXTENSION)
+        );
         if (hasJsonFiles) {
           return entryPath;
         }
