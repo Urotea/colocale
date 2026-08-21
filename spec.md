@@ -269,7 +269,7 @@ const requirements = mergeRequirements(
 ```typescript
 function pickMessages(
   allMessages: TranslationFile,
-  requirements: TranslationRequirement[],
+  requirements: TranslationRequirement[] | null,
   locale: Locale
 ): Messages;
 ```
@@ -279,7 +279,7 @@ function pickMessages(
 **引数:**
 
 - `allMessages`: 全翻訳データを含むオブジェクト
-- `requirements`: 必要な翻訳キーのリスト
+- `requirements`: 必要な翻訳キーのリスト。`null` を指定した場合はキーによる絞り込みを行わず、指定ロケールの辞書全体を抽出する
 - `locale`: ロケール識別子（`Locale` 型）。オートコンプリート対応
 
 **戻り値:**
@@ -301,6 +301,25 @@ function pickMessages(
 5. ロケール情報を含む `Messages` オブジェクトを返す
 6. 見つからないキーは警告をログ出力（開発環境のみ）
 7. `"namespace.key"` 形式で `Messages` オブジェクトに格納
+8. `requirements` が `null` の場合は 1〜4 をスキップし、指定ロケールの全名前空間・全キーを `"namespace.key"` 形式で格納する（ロケールによる絞り込みは維持される）
+
+**辞書全体の抽出例:**
+
+```typescript
+// 入力
+pickMessages(allMessages, null, "ja");
+
+// 出力 Messages
+{
+  locale: 'ja',
+  translations: {
+    'common.submit': '送信',
+    'common.cancel': 'キャンセル',
+    'user.profile.name': '名前',
+    // ... ja ロケールの全名前空間・全キー
+  }
+}
+```
 
 **複数形キーの解決例:**
 
@@ -905,6 +924,7 @@ t("cartSummary", { count: 5, user: "田中" });
    - **複数形キーの自動抽出（\_one, \_other）**
    - **部分的な複数形キー（\_other のみ、など）**
    - **複数形キーとネストの組み合わせ**
+   - **`requirements` が `null` の場合の辞書全体の抽出**
 
 2. **createTranslator:**
 

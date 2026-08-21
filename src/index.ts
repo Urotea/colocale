@@ -58,21 +58,56 @@ export function mergeRequirements(
  *
  * When base keys are specified, keys with _one, _other suffixes are automatically extracted
  *
+ * When `requirements` is `null`, key-based filtering is skipped and every translation
+ * of the specified locale is included instead
+ *
  * @template R - Array of TranslationRequirements or a single TranslationRequirement
  * @param allMessages - Object containing all translation data in locale-grouped format: { locale: { namespace: translations } }
- * @param requirements - List of required translation keys or a single requirement
+ * @param requirements - List of required translation keys, a single requirement, or `null` to pick all translations of the locale
  * @param locale - Locale identifier (e.g., "en", "ja")
  * @returns Messages object with locale information
+ *
+ * @example
+ * ```typescript
+ * // Pick only the required keys
+ * pickMessages(allMessages, userPageTranslations, "ja");
+ *
+ * // Pick every translation of the "ja" locale
+ * pickMessages(allMessages, null, "ja");
+ * ```
  */
 export function pickMessages<
   R extends
     | readonly TranslationRequirement<readonly string[]>[]
     | TranslationRequirement<readonly string[]>,
->(allMessages: LocaleTranslations, requirements: R, locale: Locale): Messages {
+>(
+  allMessages: LocaleTranslations,
+  requirements: R | null,
+  locale: Locale
+): Messages {
   const translations: Record<string, string> = {};
 
   // Extract the TranslationFile for the specified locale
   const translationFile = allMessages[locale] || {};
+
+  // When requirements is null, skip key-based filtering and pick every
+  // translation belonging to the specified locale
+  if (requirements === null) {
+    for (const [namespace, namespaceData] of Object.entries(translationFile)) {
+      if (!namespaceData) {
+        continue;
+      }
+
+      for (const key of Object.keys(namespaceData)) {
+        const value = getNestedValue(namespaceData, key);
+        if (value !== undefined) {
+          translations[`${namespace}.${key}`] = value;
+        }
+      }
+    }
+
+    return { locale, translations };
+  }
 
   const requirementsArray = Array.isArray(requirements)
     ? requirements

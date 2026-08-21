@@ -532,7 +532,7 @@ Extracts only the needed translations from locale-grouped translation files.
 ```typescript
 function pickMessages(
   allMessages: LocaleTranslations,
-  requirements: TranslationRequirement[] | TranslationRequirement,
+  requirements: TranslationRequirement[] | TranslationRequirement | null,
   locale: Locale
 ): Messages;
 ```
@@ -540,12 +540,29 @@ function pickMessages(
 **Parameters:**
 
 - `allMessages`: Object containing translations grouped by locale: `{ [locale]: { [namespace]: { [key]: translation } } }`
-- `requirements`: Translation requirement(s) defining which keys to extract
+- `requirements`: Translation requirement(s) defining which keys to extract, or `null` to pick every translation of the locale
 - `locale`: Locale identifier (see `Locale` type) - used for filtering translations and proper pluralization with `Intl.PluralRules`
 
 **Locale type**: The `Locale` type currently supports `"en"` and `"ja"`. Additional locales will be supported in future releases.
 
 **Automatic plural extraction**: When you specify a base key (e.g., `"itemCount"`), keys with `_one`, `_other` suffixes are automatically extracted based on `Intl.PluralRules`.
+
+**Picking a whole locale**: Passing `null` as `requirements` skips key-based filtering entirely and packs every translation of the specified locale into `messages`. Locale filtering still applies, so only the requested locale is included.
+
+```typescript
+const messages = pickMessages(allMessages, null, "ja");
+// {
+//   locale: "ja",
+//   translations: {
+//     "common.submit": "送信",
+//     "common.cancel": "キャンセル",
+//     "user.profile.name": "名前",
+//     ... every key of every namespace in the "ja" locale
+//   }
+// }
+```
+
+> **Note**: This bypasses the fragment collocation pattern that keeps payloads minimal, so the whole dictionary for that locale ends up in `messages` (and, when passed to a Client Component, in the client bundle). Use it for cases where enumerating requirements is impractical - a global dictionary for tests, a debug/preview screen, or a small app - and prefer explicit requirements everywhere else.
 
 ### createTranslator
 
