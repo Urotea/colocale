@@ -114,6 +114,20 @@ describe("colocale check", () => {
     expect(exitCode).toBe(1);
   });
 
+  test("Does not invent errors for a namespace named __proto__", async () => {
+    const dir = await fixture("proto", {
+      "en/common.json": VALID_EN,
+      "en/__proto__.json": JSON.stringify({ submit: "Submit" }),
+      "ja/common.json": VALID_JA,
+      "ja/__proto__.json": JSON.stringify({ submit: "送信" }),
+    });
+
+    const { exitCode, output } = runCheck(dir);
+    expect(output).toContain("Found 2 locale(s)");
+    expect(output).not.toContain("Invalid key name");
+    expect(exitCode).toBe(0);
+  });
+
   test("Passes when all of several paths are valid", async () => {
     const a = await fixture("multi-a", { "en/common.json": VALID_EN });
     const b = await fixture("multi-b", { "ja/common.json": VALID_JA });

@@ -6,6 +6,24 @@ import type { LocaleTranslations, TranslationFile } from "../types";
 const JSON_EXTENSION = ".json";
 
 /**
+ * Store a value under a key that comes from the file system.
+ *
+ * A plain assignment cannot be used here: a file or directory literally named
+ * `__proto__` would replace the target's prototype instead of adding an entry,
+ * which silently drops the namespace and makes the prototype's keys show up in
+ * every `for...in` over the result. `Object.defineProperty` bypasses the
+ * `__proto__` setter and always creates a normal own property.
+ */
+function setEntry<T>(target: Record<string, T>, key: string, value: T): void {
+  Object.defineProperty(target, key, {
+    value,
+    enumerable: true,
+    writable: true,
+    configurable: true,
+  });
+}
+
+/**
  * Load all JSON files from a directory and merge into one TranslationFile
  * @throws {Error} When directory cannot be read or JSON parsing fails
  */
@@ -37,7 +55,7 @@ export async function loadTranslationsFromDirectory(
       }
 
       try {
-        translations[namespace] = JSON.parse(content);
+        setEntry(translations, namespace, JSON.parse(content));
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         throw new Error(`JSON parse error in ${filePath}: ${message}`);
@@ -87,7 +105,7 @@ export async function loadAllLocaleTranslations(
         const translations = await loadTranslationsFromDirectory(entryPath);
         // Only add if there are any translations
         if (Object.keys(translations).length > 0) {
-          localeTranslations[locale] = translations;
+          setEntry(localeTranslations, locale, translations);
         }
       } catch (_error) {
         // Skip directories that can't be read as translation directories

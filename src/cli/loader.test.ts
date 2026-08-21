@@ -136,6 +136,49 @@ describe("loadAllLocaleTranslations", () => {
   });
 });
 
+describe("file system names that could pollute prototypes", () => {
+  test("A file named __proto__.json becomes a normal namespace", async () => {
+    const dir = await fixture("proto-file", {
+      "common.json": JSON.stringify({ submit: "Submit" }),
+      "__proto__.json": JSON.stringify({ POLLUTED: "yes" }),
+    });
+
+    const translations = await loadTranslationsFromDirectory(dir);
+
+    expect(Object.keys(translations).sort()).toEqual(["__proto__", "common"]);
+    expect(Object.getPrototypeOf(translations)).toBe(Object.prototype);
+
+    // Stored as a plain own data property, not as the object's prototype
+    const entry = Object.getOwnPropertyDescriptor(translations, "__proto__");
+    expect(entry?.value).toEqual({ POLLUTED: "yes" });
+
+    // The keys of the loaded file must not appear as phantom namespaces
+    const enumerated: string[] = [];
+    for (const namespace in translations) {
+      enumerated.push(namespace);
+    }
+    expect(enumerated.sort()).toEqual(["__proto__", "common"]);
+  });
+
+  test("A locale directory named __proto__ becomes a normal locale", async () => {
+    const dir = await fixture("proto-dir", {
+      "en/common.json": JSON.stringify({ submit: "Submit" }),
+      "__proto__/common.json": JSON.stringify({ submit: "Polluted" }),
+    });
+
+    const localeTranslations = await loadAllLocaleTranslations(dir);
+
+    expect(Object.keys(localeTranslations).sort()).toEqual(["__proto__", "en"]);
+    expect(Object.getPrototypeOf(localeTranslations)).toBe(Object.prototype);
+
+    const entry = Object.getOwnPropertyDescriptor(
+      localeTranslations,
+      "__proto__"
+    );
+    expect(entry?.value).toEqual({ common: { submit: "Polluted" } });
+  });
+});
+
 describe("getFirstLocaleDirectory", () => {
   test("Returns a subdirectory that contains .json files", async () => {
     const dir = await fixture("with-locale", {

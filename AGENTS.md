@@ -53,7 +53,7 @@ t(key, values?)             namespace bound, key union constrained by the requir
 - `src/index.ts` — public surface: `mergeRequirements`, `pickMessages`, `createTranslator`, plus re-exports of types, `InvalidPlaceholderError`, and the two validators.
 - `src/plural.ts` / `src/utils.ts` — internal helpers (plural key selection/extraction; placeholder extraction and substitution). Not exported from the package.
 - `src/validation.ts` — pure validators shared by the library export and the CLI: `validateTranslations` (per-locale) and `validateCrossLocale`.
-- `src/cli/` — `main.ts` (commander wiring) → `loader.ts` (fs/JSON; the namespace is the file name minus the **trailing** `.json`, so `shop.items.json` → `shop.items`) → `validation.ts` → `formatter.ts` (console output). `codegen.ts` is a pure string-building function (`TranslationFile` → TypeScript source), which is why it is directly unit-testable.
+- `src/cli/` — `main.ts` (commander wiring) → `loader.ts` (fs/JSON; the namespace is the file name minus the **trailing** `.json`, so `shop.items.json` → `shop.items`) → `validation.ts` → `formatter.ts` (console output). Names taken from the file system are stored through `setEntry` (`Object.defineProperty`), never by plain assignment — a file or directory named `__proto__` would otherwise replace the accumulator's prototype, dropping that entry and leaking the loaded file's keys into every `for...in` as phantom namespaces. `codegen.ts` is a pure string-building function (`TranslationFile` → TypeScript source), which is why it is directly unit-testable.
 
 ### Invariants to preserve when changing behavior
 
