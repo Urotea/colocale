@@ -59,16 +59,18 @@ export function mergeRequirements(
  * When base keys are specified, keys with _one, _other suffixes are automatically extracted
  *
  * @template R - Array of TranslationRequirements or a single TranslationRequirement
+ * @template L - Locale type, inferred from the `locale` argument
  * @param allMessages - Object containing all translation data in locale-grouped format: { locale: { namespace: translations } }
  * @param requirements - List of required translation keys or a single requirement
- * @param locale - Locale identifier (e.g., "en", "ja")
- * @returns Messages object with locale information
+ * @param locale - Locale identifier: any BCP 47 language tag (e.g., "en", "ja", "en-US")
+ * @returns Messages object carrying the locale it was resolved for
  */
 export function pickMessages<
   R extends
     | readonly TranslationRequirement<readonly string[]>[]
     | TranslationRequirement<readonly string[]>,
->(allMessages: LocaleTranslations, requirements: R, locale: Locale): Messages {
+  L extends Locale = Locale,
+>(allMessages: LocaleTranslations, requirements: R, locale: L): Messages<L> {
   const translations: Record<string, string> = {};
 
   // Extract the TranslationFile for the specified locale

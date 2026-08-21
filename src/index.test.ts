@@ -246,8 +246,7 @@ describe("pickMessages", () => {
 
   test("Non-existent locale returns empty translations", () => {
     const requirements = [{ namespace: "common", keys: ["submit"] }];
-    // biome-ignore lint/suspicious/noExplicitAny: Testing non-existent locale
-    const result = pickMessages(testMessages, requirements, "fr" as any);
+    const result = pickMessages(testMessages, requirements, "fr");
     expect(result).toEqual({
       locale: "fr",
       translations: {},

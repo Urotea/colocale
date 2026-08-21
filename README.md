@@ -10,6 +10,7 @@ Inspired by GraphQL's fragment collocation pattern, each component can declarati
 - 🔒 **Type-safe**: Full TypeScript support with auto-generated types
 - 📦 **Lightweight**: Zero dependencies, simple API
 - 🌐 **Pluralization**: Built on `Intl.PluralRules` for proper plural handling
+- 🗺️ **Any language**: `Locale` accepts any BCP 47 language tag (`"en"`, `"ja"`, `"fr"`, `"en-US"`, `"zh-Hant-TW"`, ...)
 - ⚡ **Fast**: Extract and send only the translations needed by components
 - 🔄 **Universal**: Works in Node.js, browsers, edge runtimes, and any JavaScript environment
 - 🎨 **Framework-agnostic**: Compatible with React, Vue, and other component-based frameworks
@@ -186,7 +187,7 @@ This ensures no missing translations slip into production, maintaining a consist
 
 ### 1. Create Translation Files
 
-Create JSON files for each namespace using **flat structure** (level 0).
+Create one directory per locale (any BCP 47 language tag, e.g. `en`, `ja`, `fr`, `pt-BR`), and inside it one JSON file per namespace using **flat structure** (level 0).
 
 **Important:** Translation files now use flat structure only. Nested objects are not allowed. Use dot notation for grouping (e.g., `"profile.name"` instead of nested `{"profile": {"name": "..."}}`).
 
@@ -530,11 +531,11 @@ export default async function Page({ params }: { params: { locale: string } }) {
 Extracts only the needed translations from locale-grouped translation files.
 
 ```typescript
-function pickMessages(
+function pickMessages<L extends Locale = Locale>(
   allMessages: LocaleTranslations,
   requirements: TranslationRequirement[] | TranslationRequirement,
-  locale: Locale
-): Messages;
+  locale: L
+): Messages<L>;
 ```
 
 **Parameters:**
@@ -543,7 +544,28 @@ function pickMessages(
 - `requirements`: Translation requirement(s) defining which keys to extract
 - `locale`: Locale identifier (see `Locale` type) - used for filtering translations and proper pluralization with `Intl.PluralRules`
 
-**Locale type**: The `Locale` type currently supports `"en"` and `"ja"`. Additional locales will be supported in future releases.
+**Locale type**: `Locale` is any BCP 47 language tag (`string`), so every language is supported out of the box — `"en"`, `"ja"`, `"fr"`, `"pt-BR"`, `"zh-Hant-TW"`, and so on. The tag is passed straight to `Intl.PluralRules`, and a value coming from an untrusted source (such as a URL segment) never throws: a malformed tag simply resolves to the `_other` plural form.
+
+Because `pickMessages` is generic, the locale you pass is preserved in the result type (`pickMessages(all, req, "fr")` returns `Messages<"fr">`). If your application should only ever handle a fixed set of languages, declare your own union and use it in your component props — the compiler then rejects any other locale:
+
+```typescript
+// src/i18n/locale.ts
+export type AppLocale = "en" | "ja" | "fr";
+
+// components/UserPage.tsx
+import type { Messages } from "colocale";
+import type { AppLocale } from "@/i18n/locale";
+
+// Only accepts messages resolved for a locale this app supports
+export default function UserPage({ messages }: { messages: Messages<AppLocale> }) { /* ... */ }
+```
+
+```typescript
+const messages: Messages<AppLocale> = pickMessages(allMessages, requirements, "fr"); // ✓ OK
+const invalid: Messages<AppLocale> = pickMessages(allMessages, requirements, "de");  // ✗ Type error
+```
+
+> **Plural forms**: only the `_one` / `_other` suffixes are supported. Languages with additional `Intl.PluralRules` categories (such as `few` / `many` in Russian, Polish, or Arabic) resolve to the `_other` form.
 
 **Automatic plural extraction**: When you specify a base key (e.g., `"itemCount"`), keys with `_one`, `_other` suffixes are automatically extracted based on `Intl.PluralRules`.
 
