@@ -27,7 +27,7 @@ function selectPluralKey(
  * - Falls back to _other if the selected form is not found
  *
  * @param messages - Translation messages map
- * @param namespace - Namespace
+ * @param namespace - Namespace, or an empty string when baseKey is already fully qualified
  * @param baseKey - Base key
  * @param count - Count value
  * @param locale - Locale for pluralization rules (optional, defaults to "en")
@@ -40,8 +40,10 @@ export function resolvePluralMessage(
   count: number,
   locale: Locale = "en"
 ): string | undefined {
+  // An empty namespace means baseKey already contains the namespace prefix
+  const prefix = namespace ? `${namespace}.` : "";
   const selectedKey = selectPluralKey(baseKey, count, locale);
-  const fullKey = `${namespace}.${selectedKey}`;
+  const fullKey = `${prefix}${selectedKey}`;
 
   // Try selected key
   if (fullKey in messages) {
@@ -49,7 +51,7 @@ export function resolvePluralMessage(
   }
 
   // Fallback to _other if the selected form is not found
-  const otherKey = `${namespace}.${baseKey}_other`;
+  const otherKey = `${prefix}${baseKey}_other`;
   if (otherKey in messages) {
     return messages[otherKey];
   }
