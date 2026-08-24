@@ -14,10 +14,13 @@ export interface TranslationRequirement<
 /**
  * Object storing resolved translation messages
  * Key format: "namespace.key" (e.g., "common.submit")
+ *
+ * @template L - Locale type. Defaults to any locale string. Pass a narrower union
+ * to restrict which locales a component accepts (e.g. `Messages<"en" | "ja">`).
  */
-export interface Messages {
-  /** Locale identifier (e.g., "en", "ja") */
-  locale: Locale;
+export interface Messages<L extends Locale = Locale> {
+  /** Locale identifier (e.g., "en", "ja", "en-US") */
+  locale: L;
   /** Translation messages map */
   translations: Record<string, string>;
 }
@@ -38,18 +41,26 @@ export type NamespaceTranslations = Record<string, string>;
 
 /**
  * Locale identifier type
- * Compatible with Intl APIs (BCP 47 language tags)
+ * Any BCP 47 language tag is accepted (e.g. "en", "ja", "en-US", "zh-Hant-TW"),
+ * so the library supports every language without patching this type.
  *
- * This is a branded string type that provides autocomplete for common locales
- * while accepting any valid BCP 47 language tag.
+ * Pluralization is delegated to `Intl.PluralRules`, which accepts the same tags.
+ * A malformed tag does not throw: plural resolution falls back to the `_other` form.
+ *
+ * If your application wants a closed set of locales, declare your own union and
+ * pass it to the generic types instead of narrowing this one:
+ *
+ * ```typescript
+ * export type AppLocale = "en" | "ja" | "fr";
+ *
+ * // Only accepts messages for a known locale
+ * function UserPage(props: { messages: Messages<AppLocale> }) { ... }
+ *
+ * // Inferred as Messages<"fr">, assignable to Messages<AppLocale>
+ * const messages = pickMessages(allMessages, requirements, "fr");
+ * ```
  */
-export type Locale = "en" | "ja";
-
-/**
- * Alternative: Use Intl API's locale parameter type directly
- * This would be: string | string[] | Intl.Locale
- * However, for this library's use case, we constrain it to string only.
- */
+export type Locale = string;
 
 /**
  * Type for locale-indexed translation files
@@ -61,7 +72,7 @@ export type LocaleTranslations = Record<string, TranslationFile>;
 /**
  * Validation error types
  */
-type ValidationErrorType =
+export type ValidationErrorType =
   | "missing-plural-one"
   | "missing-plural-other"
   | "invalid-nesting"

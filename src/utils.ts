@@ -3,6 +3,11 @@ import type { PlaceholderValues } from "./types";
 
 /**
  * Get value from flat object (no longer needs nested traversal)
+ *
+ * Only own properties count. A key such as "toString", "constructor" or
+ * "__proto__" must read as absent instead of resolving to the inherited member
+ * of `Object.prototype`, which is not a translation and is not even a string.
+ *
  * @param obj - Object to search
  * @param key - Key (may contain dots in flat structure)
  * @returns Found string, or undefined
@@ -12,6 +17,10 @@ export function getNestedValue(
   obj: Record<string, unknown>,
   key: string
 ): string | undefined {
+  if (!Object.hasOwn(obj, key)) {
+    return undefined;
+  }
+
   const value = obj[key];
   return typeof value === "string" ? value : undefined;
 }
@@ -50,8 +59,10 @@ export function replacePlaceholders(
   const requiredPlaceholders = extractPlaceholders(message);
 
   // Check if all required placeholders are provided
+  // Own properties only: "{{toString}}" is missing from an empty `values`,
+  // even though `"toString" in values` is true for every plain object
   const missingPlaceholders = requiredPlaceholders.filter(
-    (placeholder) => !(placeholder in values)
+    (placeholder) => !Object.hasOwn(values, placeholder)
   );
 
   if (missingPlaceholders.length > 0) {

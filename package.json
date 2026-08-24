@@ -44,7 +44,7 @@
     "check": "bun run src/cli/main.ts check",
     "codegen": "bun run src/cli/main.ts codegen",
     "test": "bun test",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json",
     "lint": "biome lint .",
     "format": "biome check --write ."
   },

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import type { LocaleTranslations } from "./cli/loader";
+import type { LocaleTranslations } from "./index";
 import { validateCrossLocale } from "./validation";
 
 describe("validateCrossLocale", () => {

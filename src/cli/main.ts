@@ -5,7 +5,7 @@ import { basename, dirname, resolve } from "node:path";
 import { Command } from "commander";
 import { validateCrossLocale, validateTranslations } from "../validation";
 import { generateTypescriptInterface } from "./codegen";
-import { printValidationResult } from "./formatter";
+import { printSummary, printValidationResult } from "./formatter";
 import {
   getFirstLocaleDirectory,
   loadAllLocaleTranslations,
@@ -17,7 +17,124 @@ const program = new Command();
 program
   .name("colocale")
   .description("CLI tool for i18n translation management")
-  .version("0.1.0");
+  // Keep in sync with the "version" field of package.json. It cannot be
+  // imported: package.json sits outside tsconfig's rootDir ("./src").
+  .version("0.1.1");
+
+/**
+ * Result of validating a single path
+ */
+interface CheckOutcome {
+  hasErrors: boolean;
+  checkedLocales: string[];
+}
+
+/**
+ * Validate one path, which is either a base directory containing locale
+ * subdirectories (multi-locale mode) or a single locale directory.
+ *
+ * @throws {Error} When the path cannot be read, when it contains no translation
+ * files at all, or when none of its locale subdirectories could be loaded - an
+ * empty path is never reported as valid.
+ */
+async function checkPath(path: string): Promise<CheckOutcome> {
+  const checkedLocales: string[] = [];
+  let hasErrors = false;
+
+  // Multi-locale mode: the path is a base directory of locale subdirectories
+  const { localeTranslations, failures } =
+    await loadAllLocaleTranslations(path);
+  const locales = Object.keys(localeTranslations);
+
+  // A locale that failed to load still means the path holds locale
+  // subdirectories, so it selects multi-locale mode exactly like a loaded one.
+  // Falling through to single-locale mode here would validate the base
+  // directory, which has no translation files of its own, and report success.
+  if (locales.length > 0 || failures.length > 0) {
+    console.log(`📁 Found ${locales.length + failures.length} locale(s)\n`);
+
+    // Validate each locale individually
+    for (const [locale, translations] of Object.entries(localeTranslations)) {
+      const result = validateTranslations(translations);
+      checkedLocales.push(locale);
+      printValidationResult(locale, result);
+
+      if (!result.valid) {
+        hasErrors = true;
+      }
+    }
+
+    // A locale that could not be loaded is an error, never an absent locale:
+    // nothing validates it and nothing compares against it, so swallowing it
+    // is what used to report a tree with a broken locale as valid.
+    for (const failure of failures) {
+      console.error(`📁 ${failure.locale}`);
+      console.error(`  ❌ Failed to load: ${failure.message}\n`);
+      hasErrors = true;
+    }
+
+    if (locales.length === 0) {
+      throw new Error(
+        `Found locale subdirectories in ${path}, but none of them could be loaded. Fix the errors above and run check again.`
+      );
+    }
+
+    // Perform cross-locale validation over the locales that did load
+    if (locales.length > 1) {
+      console.log("\n" + "=".repeat(50));
+      console.log("🌐 Cross-locale consistency check\n");
+
+      if (failures.length > 0) {
+        console.log(
+          `⚠️  ${failures.length} locale(s) could not be loaded and are excluded from this comparison.\n`
+        );
+      }
+
+      const crossLocaleResult = validateCrossLocale(localeTranslations);
+      printValidationResult("Cross-locale", crossLocaleResult);
+
+      if (!crossLocaleResult.valid) {
+        hasErrors = true;
+      }
+    } else if (failures.length > 0) {
+      // Do not blame the project structure for a check skipped by a load error
+      console.log(
+        `\nℹ️  Cross-locale consistency check skipped: only 1 of ${
+          locales.length + failures.length
+        } locales could be loaded.`
+      );
+    } else {
+      console.log(
+        "\nℹ️  Only one locale was loaded, so the cross-locale consistency check was skipped."
+      );
+    }
+
+    return { hasErrors, checkedLocales };
+  }
+
+  // No subdirectory held a translation file, so there is no locale subdirectory
+  // to report on. Single-locale mode: the path itself is a locale directory
+  const translations = await loadTranslationsFromDirectory(path);
+  if (Object.keys(translations).length === 0) {
+    throw new Error(
+      `No translation files found in ${path}. Expected .json translation files in this directory, or locale subdirectories containing them.`
+    );
+  }
+
+  const result = validateTranslations(translations);
+
+  // Extract locale name (last part of the path)
+  const locale = basename(path) || path;
+  checkedLocales.push(locale);
+
+  printValidationResult(locale, result);
+
+  if (!result.valid) {
+    hasErrors = true;
+  }
+
+  return { hasErrors, checkedLocales };
+}
 
 /**
  * Check command - validates translation files
@@ -33,89 +150,41 @@ program
     console.log("🔍 Checking translation files...\n");
 
     let hasErrors = false;
-    const checkedLocales: string[] = [];
+    // Keyed by path so the same locale in two different trees counts twice
+    // while the same path passed twice does not
+    const checkedLocales = new Set<string>();
 
-    // Check if the first argument is a base directory containing locale subdirectories
-    const firstArg = resolve(paths[0]);
-    let localeTranslations;
+    // Every path is validated; none is silently ignored
+    for (const arg of paths) {
+      const path = resolve(arg);
 
-    try {
-      localeTranslations = await loadAllLocaleTranslations(firstArg);
+      if (paths.length > 1) {
+        console.log(`📂 ${path}`);
+      }
 
-      if (Object.keys(localeTranslations).length > 0) {
-        // Multi-locale mode: validate each locale and cross-locale consistency
-        console.log(
-          `📁 Found ${Object.keys(localeTranslations).length} locale(s)\n`
+      try {
+        const outcome = await checkPath(path);
+        for (const locale of outcome.checkedLocales) {
+          checkedLocales.add(`${path}\u0000${locale}`);
+        }
+
+        if (outcome.hasErrors) {
+          hasErrors = true;
+        }
+      } catch (error) {
+        console.error(
+          `❌ ${error instanceof Error ? error.message : String(error)}`
         );
-
-        // Validate each locale individually
-        for (const [locale, translations] of Object.entries(
-          localeTranslations
-        )) {
-          const result = validateTranslations(translations);
-          checkedLocales.push(locale);
-          printValidationResult(locale, result);
-
-          if (!result.valid) {
-            hasErrors = true;
-          }
-        }
-
-        // Perform cross-locale validation
-        if (Object.keys(localeTranslations).length > 1) {
-          console.log("\n" + "=".repeat(50));
-          console.log("🌐 Cross-locale consistency check\n");
-
-          const crossLocaleResult = validateCrossLocale(localeTranslations);
-          printValidationResult("Cross-locale", crossLocaleResult);
-
-          if (!crossLocaleResult.valid) {
-            hasErrors = true;
-          }
-        }
-      } else {
-        throw new Error("No locales found");
+        hasErrors = true;
       }
-    } catch (_error) {
-      // Fallback to single-locale mode (original behavior)
-      for (const arg of paths) {
-        const path = resolve(arg);
 
-        try {
-          const translations = await loadTranslationsFromDirectory(path);
-          const result = validateTranslations(translations);
-
-          // Extract locale name (last part of the path)
-          const locale = path.split("/").pop() || path;
-          checkedLocales.push(locale);
-
-          printValidationResult(locale, result);
-
-          if (!result.valid) {
-            hasErrors = true;
-          }
-        } catch (error) {
-          console.error(
-            `❌ ${error instanceof Error ? error.message : String(error)}`
-          );
-          process.exit(1);
-        }
+      if (paths.length > 1) {
+        console.log("");
       }
     }
 
-    // Display summary
-    console.log("\n" + "=".repeat(50));
-    if (hasErrors) {
-      console.log("❌ Validation failed: Errors found");
-      process.exit(1);
-    } else {
-      console.log(
-        `✅ Validation passed: All translation files are valid (${
-          checkedLocales.length
-        } locale${checkedLocales.length !== 1 ? "s" : ""})`
-      );
-      process.exit(0);
-    }
+    printSummary(hasErrors, checkedLocales.size);
+    process.exit(hasErrors ? 1 : 0);
   });
 
 /**

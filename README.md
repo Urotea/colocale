@@ -10,6 +10,7 @@ Inspired by GraphQL's fragment collocation pattern, each component can declarati
 - 🔒 **Type-safe**: Full TypeScript support with auto-generated types
 - 📦 **Lightweight**: Zero dependencies, simple API
 - 🌐 **Pluralization**: Built on `Intl.PluralRules` for proper plural handling
+- 🗺️ **Any language**: `Locale` accepts any BCP 47 language tag (`"en"`, `"ja"`, `"fr"`, `"en-US"`, `"zh-Hant-TW"`, ...)
 - ⚡ **Fast**: Extract and send only the translations needed by components
 - 🔄 **Universal**: Works in Node.js, browsers, edge runtimes, and any JavaScript environment
 - 🎨 **Framework-agnostic**: Compatible with React, Vue, and other component-based frameworks
@@ -166,6 +167,18 @@ The `check` command is your safety net for preventing translation issues in prod
 - **Verifies placeholder syntax**: Catches malformed placeholders before they break at runtime
 - **Cross-locale validation**: When checking multiple locales, ensures all have identical key structures
 
+`check` exits with code `1` — and never reports success — in any of these cases:
+
+- a translation file contains a validation error
+- keys are inconsistent between locales
+- a given path holds no translation files at all (an empty or mistyped directory)
+- any locale subdirectory cannot be loaded, for example because a translation file has a JSON syntax error - the failing locale is reported by name and never silently dropped, even when the other locales are fine
+- any of the given paths cannot be read
+
+Every path passed on the command line is validated, so a failure in the second or third argument still fails the build.
+
+Subdirectories whose name starts with a dot (`.vscode`, `.git`, ...) are never treated as locales, so the JSON they contain is neither validated nor required to parse.
+
 **Add to your CI/CD pipeline to enforce translation completeness:**
 
 ```yaml
@@ -186,7 +199,7 @@ This ensures no missing translations slip into production, maintaining a consist
 
 ### 1. Create Translation Files
 
-Create JSON files for each namespace using **flat structure** (level 0).
+Create one directory per locale (any BCP 47 language tag, e.g. `en`, `ja`, `fr`, `pt-BR`), and inside it one JSON file per namespace using **flat structure** (level 0).
 
 **Important:** Translation files now use flat structure only. Nested objects are not allowed. Use dot notation for grouping (e.g., `"profile.name"` instead of nested `{"profile": {"name": "..."}}`).
 
@@ -275,7 +288,7 @@ export const commonTranslations = defineRequirement("common", [
 // Page-level merged requirements
 export const userPageTranslations = mergeRequirements(
   commonTranslations,
-  userProfileTranslations
+  userProfileTranslations,
 );
 ```
 
@@ -345,7 +358,7 @@ import { pickMessages } from "colocale";
 const messages = pickMessages(
   allMessages,
   userPageTranslations,
-  locale // e.g., "ja" or "en"
+  locale, // e.g., "ja" or "en"
 );
 ```
 
@@ -409,7 +422,7 @@ export const commonTranslations = defineRequirement("common", [
 
 export const userPageTranslations = mergeRequirements(
   commonTranslations,
-  userProfileTranslations
+  userProfileTranslations,
 );
 ```
 
@@ -530,12 +543,17 @@ export default async function Page({ params }: { params: { locale: string } }) {
 Extracts only the needed translations from locale-grouped translation files.
 
 ```typescript
-function pickMessages(
+function pickMessages<
+  R extends TranslationRequirement[] | TranslationRequirement,
+  L extends Locale = Locale,
+>(
   allMessages: LocaleTranslations,
-  requirements: TranslationRequirement[] | TranslationRequirement | null,
-  locale: Locale
-): Messages;
+  requirements: R | null,
+  locale: L,
+): Messages<L>;
 ```
+
+Both type parameters are inferred from the arguments, so you never write them out. `R` comes first, which matters only if you ever specify them explicitly: that would be `pickMessages<typeof requirements, "ja">(...)`.
 
 **Parameters:**
 
@@ -543,7 +561,42 @@ function pickMessages(
 - `requirements`: Translation requirement(s) defining which keys to extract, or `null` to pick every translation of the locale
 - `locale`: Locale identifier (see `Locale` type) - used for filtering translations and proper pluralization with `Intl.PluralRules`
 
-**Locale type**: The `Locale` type currently supports `"en"` and `"ja"`. Additional locales will be supported in future releases.
+**Locale type**: `Locale` is any BCP 47 language tag (`string`), so every language is supported out of the box — `"en"`, `"ja"`, `"fr"`, `"pt-BR"`, `"zh-Hant-TW"`, and so on. The tag is passed straight to `Intl.PluralRules`, and a value coming from an untrusted source (such as a URL segment) never throws: a malformed tag simply resolves to the `_other` plural form.
+
+Because `pickMessages` is generic, the locale you pass is preserved in the result type (`pickMessages(all, req, "fr")` returns `Messages<"fr">`). If your application should only ever handle a fixed set of languages, declare your own union and use it in your component props — the compiler then rejects any other locale:
+
+```typescript
+// src/i18n/locale.ts
+export type AppLocale = "en" | "ja" | "fr";
+
+// components/UserPage.tsx
+import type { Messages } from "colocale";
+import type { AppLocale } from "@/i18n/locale";
+
+// Only accepts messages resolved for a locale this app supports
+export default function UserPage({
+  messages,
+}: {
+  messages: Messages<AppLocale>;
+}) {
+  /* ... */
+}
+```
+
+```typescript
+const messages: Messages<AppLocale> = pickMessages(
+  allMessages,
+  requirements,
+  "fr",
+); // ✓ OK
+const invalid: Messages<AppLocale> = pickMessages(
+  allMessages,
+  requirements,
+  "de",
+); // ✗ Type error
+```
+
+> **Plural forms**: only the `_one` / `_other` suffixes are supported. Languages with additional `Intl.PluralRules` categories (such as `few` / `many` in Russian, Polish, or Arabic) resolve to the `_other` form.
 
 **Automatic plural extraction**: When you specify a base key (e.g., `"itemCount"`), keys with `_one`, `_other` suffixes are automatically extracted based on `Intl.PluralRules`.
 
@@ -569,15 +622,15 @@ const messages = pickMessages(allMessages, null, "ja");
 Creates a translation function bound to a specific namespace from a TranslationRequirement.
 
 ```typescript
-function createTranslator<R extends TranslationRequirement<string>>(
+function createTranslator<R extends TranslationRequirement<readonly string[]>>(
   messages: Messages,
-  requirement: R
+  requirement: R,
 ): ConstrainedTranslatorFunction<R>;
 
 // Requirement omitted or null: key constraints disabled
 function createTranslator(
   messages: Messages,
-  requirement?: TranslationRequirement | null
+  requirement?: TranslationRequirement | null,
 ): TranslatorFunction;
 ```
 
@@ -605,8 +658,11 @@ Merges multiple translation requirements into a single array.
 
 ```typescript
 function mergeRequirements(
-  ...requirements: TranslationRequirement<string>[]
-): TranslationRequirement<string>[];
+  ...requirements: (
+    | TranslationRequirement<readonly string[]>
+    | TranslationRequirement<readonly string[]>[]
+  )[]
+): TranslationRequirement<readonly string[]>[];
 ```
 
 ### defineRequirement
@@ -649,6 +705,55 @@ const req: TranslationRequirement<readonly ["submit", "cancel"]> = {
 ```
 
 Note: Manual usage does not provide compile-time validation of namespaces and keys. Use the `codegen` command for full type safety.
+
+### Exported Types
+
+Every type used in the public API is exported, so you can annotate your own wrappers and props without redeclaring anything:
+
+```typescript
+import type {
+  ConstrainedTranslatorFunction, // return type of createTranslator
+  KeysForNamespace, // valid keys of a namespace (hand-written requirements)
+  Locale, // any BCP 47 language tag
+  LocaleTranslations, // { [locale]: { [namespace]: { [key]: string } } }
+  Messages, // result of pickMessages; Messages<L> to pin the locale
+  Namespace, // valid namespace names
+  NamespaceTranslations, // { [key]: string }
+  PlaceholderValues, // second argument of t()
+  TranslationFile, // { [namespace]: NamespaceTranslations }
+  TranslationRequirement, // { namespace, keys }
+  TranslatorFunction, // return type of createTranslator without a requirement
+  ValidationError, // one entry of ValidationResult.errors
+  ValidationErrorType, // "missing-key" | "invalid-nesting" | ...
+  ValidationResult, // return type of validateTranslations / validateCrossLocale
+} from "colocale";
+```
+
+```typescript
+import { validateTranslations } from "colocale";
+import type { ValidationError, ValidationResult } from "colocale";
+
+// Annotating results of the exported validators requires no type gymnastics
+function formatErrors(result: ValidationResult): string {
+  return result.errors
+    .map((e: ValidationError) => `${e.type}: ${e.key}`)
+    .join("\n");
+}
+```
+
+`InvalidPlaceholderError` is exported as a value, so `instanceof` checks work:
+
+```typescript
+import { InvalidPlaceholderError } from "colocale";
+
+try {
+  t("welcome");
+} catch (error) {
+  if (error instanceof InvalidPlaceholderError) {
+    console.error(error.missingPlaceholders, error.template);
+  }
+}
+```
 
 ## License
 
