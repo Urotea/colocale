@@ -103,9 +103,12 @@ describe("loadAllLocaleTranslations", () => {
     });
 
     expect(await loadAllLocaleTranslations(dir)).toEqual({
-      en: { common: { submit: "Submit" } },
-      ja: { common: { submit: "送信" } },
-      "pt-BR": { common: { submit: "Enviar" } },
+      localeTranslations: {
+        en: { common: { submit: "Submit" } },
+        ja: { common: { submit: "送信" } },
+        "pt-BR": { common: { submit: "Enviar" } },
+      },
+      failures: [],
     });
   });
 
@@ -116,17 +119,69 @@ describe("loadAllLocaleTranslations", () => {
       "scripts/build.sh": "echo hi",
     });
 
-    expect(Object.keys(await loadAllLocaleTranslations(dir))).toEqual(["en"]);
+    const { localeTranslations, failures } =
+      await loadAllLocaleTranslations(dir);
+    expect(Object.keys(localeTranslations)).toEqual(["en"]);
+    expect(failures).toEqual([]);
   });
 
-  test("Skips a locale whose files cannot be parsed (known limitation: the failure is not surfaced here)", async () => {
+  test("Reports a locale whose files cannot be parsed instead of dropping it", async () => {
     const dir = await fixture("partially-broken", {
       "en/common.json": JSON.stringify({ submit: "Submit" }),
       "ja/common.json": "not json at all",
     });
 
-    // `colocale check` compensates by failing when no locale at all could be loaded
-    expect(Object.keys(await loadAllLocaleTranslations(dir))).toEqual(["en"]);
+    const { localeTranslations, failures } =
+      await loadAllLocaleTranslations(dir);
+
+    // The broken locale must not simply disappear from the result: callers
+    // cannot tell "no such locale" apart from "this locale is broken" then
+    expect(Object.keys(localeTranslations)).toEqual(["en"]);
+    expect(failures).toHaveLength(1);
+    expect(failures[0].locale).toBe("ja");
+    expect(failures[0].path).toBe(join(dir, "ja"));
+    expect(failures[0].message).toMatch(/JSON parse error in .*common\.json/);
+  });
+
+  test("Reports every locale that cannot be parsed", async () => {
+    const dir = await fixture("all-broken-loader", {
+      "en/common.json": "{ BROKEN",
+      "ja/common.json": "also not json",
+    });
+
+    const { localeTranslations, failures } =
+      await loadAllLocaleTranslations(dir);
+
+    expect(localeTranslations).toEqual({});
+    expect(failures.map((failure) => failure.locale).sort()).toEqual([
+      "en",
+      "ja",
+    ]);
+  });
+
+  test("A dot-directory is neither a locale nor a failure", async () => {
+    const dir = await fixture("dot-dirs", {
+      "en/common.json": JSON.stringify({ submit: "Submit" }),
+      // Not JSON at all, and not a translation file either
+      ".vscode/settings.json": '{\n  // a comment\n  "editor.tabSize": 2\n}',
+      ".git/config.json": JSON.stringify({ some: "value" }),
+    });
+
+    const { localeTranslations, failures } =
+      await loadAllLocaleTranslations(dir);
+
+    expect(Object.keys(localeTranslations)).toEqual(["en"]);
+    expect(failures).toEqual([]);
+  });
+
+  test("A subdirectory without .json files is not reported as a failure", async () => {
+    const dir = await fixture("not-a-locale", {
+      "en/common.json": JSON.stringify({ submit: "Submit" }),
+      "scripts/build.sh": "echo hi",
+    });
+
+    const { failures } = await loadAllLocaleTranslations(dir);
+    expect(failures).toEqual([]);
   });
 
   test("Throws when the base directory cannot be read", async () => {
@@ -166,7 +221,7 @@ describe("file system names that could pollute prototypes", () => {
       "__proto__/common.json": JSON.stringify({ submit: "Polluted" }),
     });
 
-    const localeTranslations = await loadAllLocaleTranslations(dir);
+    const { localeTranslations } = await loadAllLocaleTranslations(dir);
 
     expect(Object.keys(localeTranslations).sort()).toEqual(["__proto__", "en"]);
     expect(Object.getPrototypeOf(localeTranslations)).toBe(Object.prototype);
@@ -182,6 +237,15 @@ describe("file system names that could pollute prototypes", () => {
 describe("getFirstLocaleDirectory", () => {
   test("Returns a subdirectory that contains .json files", async () => {
     const dir = await fixture("with-locale", {
+      "en/common.json": JSON.stringify({ submit: "Submit" }),
+    });
+
+    expect(await getFirstLocaleDirectory(dir)).toBe(join(dir, "en"));
+  });
+
+  test("Skips dot-directories when picking the reference locale", async () => {
+    const dir = await fixture("dot-dir-first", {
+      ".vscode/settings.json": JSON.stringify({ "editor.tabSize": 2 }),
       "en/common.json": JSON.stringify({ submit: "Submit" }),
     });
 

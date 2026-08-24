@@ -16,7 +16,7 @@ import { getNestedValue } from "./utils";
 function selectPluralKey(
   baseKey: string,
   count: number,
-  locale: Locale = "en",
+  locale: Locale = "en"
 ): string | undefined {
   let rule: Intl.LDMLPluralRule;
   try {
@@ -51,27 +51,23 @@ export function resolvePluralMessage(
   namespace: string,
   baseKey: string,
   count: number,
-  locale: Locale = "en",
+  locale: Locale = "en"
 ): string | undefined {
   // An empty namespace means baseKey already contains the namespace prefix
   const prefix = namespace ? `${namespace}.` : "";
   const selectedKey = selectPluralKey(baseKey, count, locale);
 
-  // Try selected key
+  // Lookups go through getNestedValue rather than `in` so that a key inherited
+  // from Object.prototype (e.g. t("toString", { count: 1 })) counts as missing
   if (selectedKey !== undefined) {
-    const fullKey = `${prefix}${selectedKey}`;
-    if (fullKey in messages) {
-      return messages[fullKey];
+    const selected = getNestedValue(messages, `${prefix}${selectedKey}`);
+    if (selected !== undefined) {
+      return selected;
     }
   }
 
   // Fallback to _other if the selected form is not found
-  const otherKey = `${prefix}${baseKey}_other`;
-  if (otherKey in messages) {
-    return messages[otherKey];
-  }
-
-  return undefined;
+  return getNestedValue(messages, `${prefix}${baseKey}_other`);
 }
 
 /**
@@ -85,8 +81,12 @@ export function resolvePluralMessage(
 export function extractPluralKeys(
   allMessages: Record<string, unknown>,
   namespace: string,
-  baseKey: string,
+  baseKey: string
 ): string[] {
+  if (!Object.hasOwn(allMessages, namespace)) {
+    return [];
+  }
+
   const namespaceData = allMessages[namespace];
   if (!namespaceData || typeof namespaceData !== "object") {
     return [];
@@ -100,7 +100,7 @@ export function extractPluralKeys(
     // Check direct key in flat structure
     const value = getNestedValue(
       namespaceData as Record<string, unknown>,
-      keyWithSuffix,
+      keyWithSuffix
     );
     if (value !== undefined) {
       pluralKeys.push(keyWithSuffix);

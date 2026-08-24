@@ -12,7 +12,9 @@ import type {
 function collectAllKeys(obj: NamespaceTranslations, _prefix = ""): Set<string> {
   const keys = new Set<string>();
 
-  for (const key in obj) {
+  // Object.keys, not for...in: own enumerable properties only, so a prototype
+  // with enumerable members can never contribute phantom translation keys
+  for (const key of Object.keys(obj)) {
     if (typeof obj[key] === "string") {
       keys.add(key);
     }
@@ -83,7 +85,7 @@ function validateNesting(
 ): ValidationError[] {
   const errors: ValidationError[] = [];
 
-  for (const key in translations) {
+  for (const key of Object.keys(translations)) {
     const value = translations[key];
     if (typeof value === "object" && value !== null) {
       errors.push({
@@ -109,7 +111,7 @@ function validateKeyNames(
   // Allow dots in keys for flat structure (e.g., "profile.name")
   const validKeyPattern = /^[a-zA-Z_][a-zA-Z0-9_.]*$/;
 
-  for (const key in translations) {
+  for (const key of Object.keys(translations)) {
     if (!validKeyPattern.test(key)) {
       errors.push({
         type: "invalid-key-name",
@@ -133,7 +135,7 @@ function validatePlaceholders(
   const errors: ValidationError[] = [];
   const placeholderPattern = /\{\{([^{}]+)\}\}/g;
 
-  for (const key in translations) {
+  for (const key of Object.keys(translations)) {
     if (typeof translations[key] === "string") {
       const matches = translations[key].matchAll(placeholderPattern);
       for (const match of matches) {
@@ -165,7 +167,7 @@ export function validateTranslations(
   const errors: ValidationError[] = [];
   const warnings: ValidationError[] = [];
 
-  for (const namespace in translations) {
+  for (const namespace of Object.keys(translations)) {
     const namespaceTranslations = translations[namespace];
 
     // Execute various validations

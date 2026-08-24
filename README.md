@@ -172,10 +172,12 @@ The `check` command is your safety net for preventing translation issues in prod
 - a translation file contains a validation error
 - keys are inconsistent between locales
 - a given path holds no translation files at all (an empty or mistyped directory)
-- a path exists but none of its locale subdirectories could be loaded (for example every file has a JSON syntax error)
+- any locale subdirectory cannot be loaded, for example because a translation file has a JSON syntax error - the failing locale is reported by name and never silently dropped, even when the other locales are fine
 - any of the given paths cannot be read
 
 Every path passed on the command line is validated, so a failure in the second or third argument still fails the build.
+
+Subdirectories whose name starts with a dot (`.vscode`, `.git`, ...) are never treated as locales, so the JSON they contain is neither validated nor required to parse.
 
 **Add to your CI/CD pipeline to enforce translation completeness:**
 
@@ -541,12 +543,17 @@ export default async function Page({ params }: { params: { locale: string } }) {
 Extracts only the needed translations from locale-grouped translation files.
 
 ```typescript
-function pickMessages<L extends Locale = Locale>(
+function pickMessages<
+  R extends TranslationRequirement[] | TranslationRequirement,
+  L extends Locale = Locale,
+>(
   allMessages: LocaleTranslations,
-  requirements: TranslationRequirement[] | TranslationRequirement | null,
+  requirements: R | null,
   locale: L,
 ): Messages<L>;
 ```
+
+Both type parameters are inferred from the arguments, so you never write them out. `R` comes first, which matters only if you ever specify them explicitly: that would be `pickMessages<typeof requirements, "ja">(...)`.
 
 **Parameters:**
 
@@ -615,7 +622,7 @@ const messages = pickMessages(allMessages, null, "ja");
 Creates a translation function bound to a specific namespace from a TranslationRequirement.
 
 ```typescript
-function createTranslator<R extends TranslationRequirement<string>>(
+function createTranslator<R extends TranslationRequirement<readonly string[]>>(
   messages: Messages,
   requirement: R,
 ): ConstrainedTranslatorFunction<R>;
@@ -651,8 +658,11 @@ Merges multiple translation requirements into a single array.
 
 ```typescript
 function mergeRequirements(
-  ...requirements: TranslationRequirement<string>[]
-): TranslationRequirement<string>[];
+  ...requirements: (
+    | TranslationRequirement<readonly string[]>
+    | TranslationRequirement<readonly string[]>[]
+  )[]
+): TranslationRequirement<readonly string[]>[];
 ```
 
 ### defineRequirement
@@ -712,6 +722,7 @@ import type {
   PlaceholderValues, // second argument of t()
   TranslationFile, // { [namespace]: NamespaceTranslations }
   TranslationRequirement, // { namespace, keys }
+  TranslatorFunction, // return type of createTranslator without a requirement
   ValidationError, // one entry of ValidationResult.errors
   ValidationErrorType, // "missing-key" | "invalid-nesting" | ...
   ValidationResult, // return type of validateTranslations / validateCrossLocale

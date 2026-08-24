@@ -24,6 +24,19 @@ function setEntry<T>(target: Record<string, T>, key: string, value: T): void {
 }
 
 /**
+ * Whether a directory name can be a locale at all.
+ *
+ * A BCP 47 language tag never starts with a dot, so tooling directories such as
+ * `.vscode`, `.git` or `.idea` are not locale directories. They must not be
+ * loaded as one, and must not be reported as a *broken* one either: they often
+ * hold JSON that is not a translation file and does not even parse as JSON,
+ * such as a `.vscode/settings.json` with comments.
+ */
+function isLocaleDirectoryName(name: string): boolean {
+  return !name.startsWith(".");
+}
+
+/**
  * Load all JSON files from a directory and merge into one TranslationFile
  * @throws {Error} When directory cannot be read or JSON parsing fails
  */
@@ -67,17 +80,51 @@ export async function loadTranslationsFromDirectory(
 }
 
 /**
+ * A locale subdirectory that holds translation files but could not be loaded
+ */
+export interface LocaleLoadFailure {
+  /** Directory name, which would have been the locale */
+  locale: string;
+  /** Full path of the directory */
+  path: string;
+  /** Reason the directory could not be loaded */
+  message: string;
+}
+
+/**
+ * Outcome of scanning a base directory for locale subdirectories
+ */
+export interface LocaleLoadResult {
+  /** Locales that were loaded successfully */
+  localeTranslations: LocaleTranslations;
+  /**
+   * Locale subdirectories that exist but could not be loaded, e.g. because a
+   * translation file has a JSON syntax error.
+   *
+   * Callers must treat a non-empty list as an error. A locale that silently
+   * disappears from `localeTranslations` is neither validated nor compared
+   * against the other locales, so ignoring these makes broken input look valid.
+   */
+  failures: LocaleLoadFailure[];
+}
+
+/**
  * Load translations from multiple locale directories
  * Expected structure: basePath/[locale]/[namespace].json
  *
+ * Subdirectories without any `.json` file are not locale directories and are
+ * skipped silently. Subdirectories that do hold translation files but fail to
+ * load are reported in `failures` instead of being dropped.
+ *
  * @param basePath - Base directory containing locale subdirectories
- * @returns Object with locale as key and TranslationFile as value
+ * @returns Successfully loaded locales plus the locales that failed to load
  * @throws {Error} When base directory cannot be read
  */
 export async function loadAllLocaleTranslations(
   basePath: string
-): Promise<LocaleTranslations> {
+): Promise<LocaleLoadResult> {
   const localeTranslations: LocaleTranslations = {};
+  const failures: LocaleLoadFailure[] = [];
 
   let entries: string[];
   try {
@@ -88,6 +135,10 @@ export async function loadAllLocaleTranslations(
   }
 
   for (const entry of entries) {
+    if (!isLocaleDirectoryName(entry)) {
+      continue;
+    }
+
     const entryPath = join(basePath, entry);
 
     let stats;
@@ -103,18 +154,23 @@ export async function loadAllLocaleTranslations(
       const locale = entry;
       try {
         const translations = await loadTranslationsFromDirectory(entryPath);
-        // Only add if there are any translations
+        // A directory without any .json file is not a locale directory at all
         if (Object.keys(translations).length > 0) {
           setEntry(localeTranslations, locale, translations);
         }
-      } catch (_error) {
-        // Skip directories that can't be read as translation directories
-        continue;
+      } catch (error) {
+        // Record instead of skip: a locale that cannot be parsed must not
+        // vanish from the result, or callers report it as nothing to validate
+        failures.push({
+          locale,
+          path: entryPath,
+          message: error instanceof Error ? error.message : String(error),
+        });
       }
     }
   }
 
-  return localeTranslations;
+  return { localeTranslations, failures };
 }
 
 /**
@@ -136,6 +192,10 @@ export async function getFirstLocaleDirectory(
   }
 
   for (const entry of entries) {
+    if (!isLocaleDirectoryName(entry)) {
+      continue;
+    }
+
     const entryPath = join(basePath, entry);
 
     let stats;

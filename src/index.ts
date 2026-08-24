@@ -16,10 +16,10 @@ export type {
   PlaceholderValues,
   TranslationFile,
   TranslationRequirement,
+  TranslatorFunction,
   ValidationError,
   ValidationErrorType,
   ValidationResult,
-  TranslatorFunction,
 } from "./types";
 // Validation
 export { validateCrossLocale, validateTranslations } from "./validation";
@@ -83,12 +83,16 @@ export function pickMessages<
 >(
   allMessages: LocaleTranslations,
   requirements: R | null,
-  locale: L,
+  locale: L
 ): Messages<L> {
   const translations: Record<string, string> = {};
 
-  // Extract the TranslationFile for the specified locale
-  const translationFile = allMessages[locale] || {};
+  // Extract the TranslationFile for the specified locale. Own properties only:
+  // a locale such as "constructor" must read as absent rather than resolving to
+  // the inherited member of Object.prototype.
+  const translationFile = Object.hasOwn(allMessages, locale)
+    ? (allMessages[locale] ?? {})
+    : {};
 
   // When requirements is null, skip key-based filtering and pick every
   // translation belonging to the specified locale
@@ -115,7 +119,10 @@ export function pickMessages<
 
   for (const requirement of requirementsArray) {
     const { namespace, keys } = requirement;
-    const namespaceData = translationFile[namespace];
+    // Own properties only, for the same reason as the locale lookup above
+    const namespaceData = Object.hasOwn(translationFile, namespace)
+      ? translationFile[namespace]
+      : undefined;
 
     if (!namespaceData) {
       continue;
@@ -183,11 +190,11 @@ export function createTranslator<
 >(messages: Messages, requirement: R): ConstrainedTranslatorFunction<R>;
 export function createTranslator(
   messages: Messages,
-  requirement?: TranslationRequirement<readonly string[]> | null,
+  requirement?: TranslationRequirement<readonly string[]> | null
 ): TranslatorFunction;
 export function createTranslator(
   messages: Messages,
-  requirement?: TranslationRequirement<readonly string[]> | null,
+  requirement?: TranslationRequirement<readonly string[]> | null
 ): TranslatorFunction {
   // An empty namespace means keys are used as-is (already fully qualified)
   const namespace = requirement?.namespace ?? "";
@@ -197,20 +204,26 @@ export function createTranslator(
     let message: string | undefined;
 
     // If count is provided, attempt plural handling
-    if (values && "count" in values && typeof values.count === "number") {
+    if (
+      values &&
+      Object.hasOwn(values, "count") &&
+      typeof values.count === "number"
+    ) {
       message = resolvePluralMessage(
         messages.translations,
         namespace,
         key,
         values.count,
-        locale,
+        locale
       );
     }
 
-    // If not plural or plural resolution failed, try regular key
+    // If not plural or plural resolution failed, try regular key.
+    // getNestedValue checks own properties only, so t("toString") is missing
+    // instead of returning Object.prototype.toString.
     if (message === undefined) {
       const fullKey = namespace ? `${namespace}.${key}` : key;
-      message = messages.translations[fullKey];
+      message = getNestedValue(messages.translations, fullKey);
     }
 
     // If message not found, return key as-is

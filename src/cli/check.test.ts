@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import { mkdirSync } from "node:fs";
+import { chmodSync, mkdirSync } from "node:fs";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -76,6 +76,76 @@ describe("colocale check", () => {
     expect(output).toContain("none of them could be loaded");
     expect(output).toContain("Validation failed");
     expect(exitCode).toBe(1);
+  });
+
+  test("Fails when only one of several locales contains invalid JSON", async () => {
+    const dir = await fixture("partially-broken", {
+      "en/common.json": VALID_EN,
+      "ja/common.json": '{ "submit": "送信", BROKEN',
+    });
+
+    const { exitCode, output } = runCheck(dir);
+
+    // The broken locale must be named, not quietly dropped from the run
+    expect(output).toContain("Found 2 locale(s)");
+    expect(output).toContain("Failed to load");
+    expect(output).toContain("ja");
+    expect(output).toContain("Validation failed");
+    expect(output).not.toContain("Validation passed");
+    expect(exitCode).toBe(1);
+  });
+
+  // Running as root bypasses the permission bits, so the directory stays readable
+  const asRoot = process.getuid?.() === 0;
+
+  test.skipIf(asRoot)(
+    "Fails when a locale directory cannot be read",
+    async () => {
+      const dir = await fixture("unreadable-locale", {
+        "en/common.json": VALID_EN,
+        "ja/common.json": VALID_JA,
+      });
+      const jaDir = join(dir, "ja");
+      chmodSync(jaDir, 0o000);
+
+      try {
+        const { exitCode, output } = runCheck(dir);
+        expect(output).toContain("Failed to load");
+        expect(exitCode).toBe(1);
+      } finally {
+        chmodSync(jaDir, 0o755);
+      }
+    }
+  );
+
+  test("Still compares the locales that did load when another one is broken", async () => {
+    const dir = await fixture("partially-broken-cross", {
+      "en/common.json": VALID_EN,
+      "fr/common.json": JSON.stringify({ submit: "Envoyer" }),
+      "ja/common.json": "not json at all",
+    });
+
+    const { exitCode, output } = runCheck(dir);
+
+    // fr is missing "cancel", which the cross-locale check must still catch
+    expect(output).toContain("Cross-locale");
+    expect(output).toContain("excluded from this comparison");
+    expect(output).toContain("cancel");
+    expect(exitCode).toBe(1);
+  });
+
+  test("Ignores dot-directories that hold non-translation JSON", async () => {
+    const dir = await fixture("dot-dir", {
+      "en/common.json": VALID_EN,
+      "ja/common.json": VALID_JA,
+      // Valid JSONC, invalid JSON - and not a locale, so it must not fail
+      ".vscode/settings.json": '{\n  // a comment\n  "editor.tabSize": 2\n}',
+    });
+
+    const { exitCode, output } = runCheck(dir);
+    expect(output).toContain("Found 2 locale(s)");
+    expect(output).not.toContain(".vscode");
+    expect(exitCode).toBe(0);
   });
 
   test("Fails when a directory holds no translation files", async () => {
