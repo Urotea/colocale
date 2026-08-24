@@ -286,7 +286,7 @@ export const commonTranslations = defineRequirement("common", [
 // Page-level merged requirements
 export const userPageTranslations = mergeRequirements(
   commonTranslations,
-  userProfileTranslations
+  userProfileTranslations,
 );
 ```
 
@@ -356,7 +356,7 @@ import { pickMessages } from "colocale";
 const messages = pickMessages(
   allMessages,
   userPageTranslations,
-  locale // e.g., "ja" or "en"
+  locale, // e.g., "ja" or "en"
 );
 ```
 
@@ -420,7 +420,7 @@ export const commonTranslations = defineRequirement("common", [
 
 export const userPageTranslations = mergeRequirements(
   commonTranslations,
-  userProfileTranslations
+  userProfileTranslations,
 );
 ```
 
@@ -543,15 +543,15 @@ Extracts only the needed translations from locale-grouped translation files.
 ```typescript
 function pickMessages<L extends Locale = Locale>(
   allMessages: LocaleTranslations,
-  requirements: TranslationRequirement[] | TranslationRequirement,
-  locale: L
+  requirements: TranslationRequirement[] | TranslationRequirement | null,
+  locale: L,
 ): Messages<L>;
 ```
 
 **Parameters:**
 
 - `allMessages`: Object containing translations grouped by locale: `{ [locale]: { [namespace]: { [key]: translation } } }`
-- `requirements`: Translation requirement(s) defining which keys to extract
+- `requirements`: Translation requirement(s) defining which keys to extract, or `null` to pick every translation of the locale
 - `locale`: Locale identifier (see `Locale` type) - used for filtering translations and proper pluralization with `Intl.PluralRules`
 
 **Locale type**: `Locale` is any BCP 47 language tag (`string`), so every language is supported out of the box — `"en"`, `"ja"`, `"fr"`, `"pt-BR"`, `"zh-Hant-TW"`, and so on. The tag is passed straight to `Intl.PluralRules`, and a value coming from an untrusted source (such as a URL segment) never throws: a malformed tag simply resolves to the `_other` plural form.
@@ -567,17 +567,48 @@ import type { Messages } from "colocale";
 import type { AppLocale } from "@/i18n/locale";
 
 // Only accepts messages resolved for a locale this app supports
-export default function UserPage({ messages }: { messages: Messages<AppLocale> }) { /* ... */ }
+export default function UserPage({
+  messages,
+}: {
+  messages: Messages<AppLocale>;
+}) {
+  /* ... */
+}
 ```
 
 ```typescript
-const messages: Messages<AppLocale> = pickMessages(allMessages, requirements, "fr"); // ✓ OK
-const invalid: Messages<AppLocale> = pickMessages(allMessages, requirements, "de");  // ✗ Type error
+const messages: Messages<AppLocale> = pickMessages(
+  allMessages,
+  requirements,
+  "fr",
+); // ✓ OK
+const invalid: Messages<AppLocale> = pickMessages(
+  allMessages,
+  requirements,
+  "de",
+); // ✗ Type error
 ```
 
 > **Plural forms**: only the `_one` / `_other` suffixes are supported. Languages with additional `Intl.PluralRules` categories (such as `few` / `many` in Russian, Polish, or Arabic) resolve to the `_other` form.
 
 **Automatic plural extraction**: When you specify a base key (e.g., `"itemCount"`), keys with `_one`, `_other` suffixes are automatically extracted based on `Intl.PluralRules`.
+
+**Picking a whole locale**: Passing `null` as `requirements` skips key-based filtering entirely and packs every translation of the specified locale into `messages`. Locale filtering still applies, so only the requested locale is included.
+
+```typescript
+const messages = pickMessages(allMessages, null, "ja");
+// {
+//   locale: "ja",
+//   translations: {
+//     "common.submit": "送信",
+//     "common.cancel": "キャンセル",
+//     "user.profile.name": "名前",
+//     ... every key of every namespace in the "ja" locale
+//   }
+// }
+```
+
+> **Note**: This bypasses the fragment collocation pattern that keeps payloads minimal, so the whole dictionary for that locale ends up in `messages` (and, when passed to a Client Component, in the client bundle). Use it for cases where enumerating requirements is impractical - a global dictionary for tests, a debug/preview screen, or a small app - and prefer explicit requirements everywhere else.
 
 ### createTranslator
 
@@ -586,11 +617,33 @@ Creates a translation function bound to a specific namespace from a TranslationR
 ```typescript
 function createTranslator<R extends TranslationRequirement<string>>(
   messages: Messages,
-  requirement: R
+  requirement: R,
 ): ConstrainedTranslatorFunction<R>;
+
+// Requirement omitted or null: key constraints disabled
+function createTranslator(
+  messages: Messages,
+  requirement?: TranslationRequirement | null,
+): TranslatorFunction;
 ```
 
 **Key constraint**: The returned translator function is constrained to only accept keys defined in the `TranslationRequirement`.
+
+**Disabling key constraints**: Omitting the requirement (or passing `null`) returns a `TranslatorFunction` that accepts any string. Since there is no namespace to prefix, keys must be given in their fully qualified `"namespace.key"` form. Pairs well with `pickMessages(allMessages, null, locale)`.
+
+```typescript
+const messages = pickMessages(allMessages, null, "ja");
+const t = createTranslator(messages); // or createTranslator(messages, null)
+
+t("common.submit"); // "送信"
+t("user.profile.name"); // "名前"
+t("common.itemCount", { count: 3 }); // plural resolution still works
+t("common.unknown"); // "common.unknown" (missing keys return the key as-is)
+```
+
+Placeholder replacement, plural resolution via `Intl.PluralRules`, and the `InvalidPlaceholderError` behavior are identical to the constrained version - only the compile-time key checking is dropped.
+
+> **Note**: Without a requirement, typos in keys are no longer caught at compile time and silently fall back to returning the key. Use it for tests, prototypes, and small apps where the extra freedom is worth more than the safety net; prefer a `TranslationRequirement` in application code.
 
 ### mergeRequirements
 
@@ -671,7 +724,9 @@ import type { ValidationError, ValidationResult } from "colocale";
 
 // Annotating results of the exported validators requires no type gymnastics
 function formatErrors(result: ValidationResult): string {
-  return result.errors.map((e: ValidationError) => `${e.type}: ${e.key}`).join("\n");
+  return result.errors
+    .map((e: ValidationError) => `${e.type}: ${e.key}`)
+    .join("\n");
 }
 ```
 

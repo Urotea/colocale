@@ -130,6 +130,18 @@ export type ConstrainedTranslatorFunction<
   R extends TranslationRequirement<readonly string[]>,
 > = (key: RequirementKeys<R>, values?: PlaceholderValues) => string;
 
+/**
+ * Unconstrained translator function type
+ *
+ * Returned by `createTranslator` when no TranslationRequirement is given. Since
+ * there is no namespace to prefix, keys must be passed in their fully qualified
+ * `"namespace.key"` form (e.g. `"common.submit"`)
+ */
+export type TranslatorFunction = (
+  key: string,
+  values?: PlaceholderValues
+) => string;
+
 // ============================================================================
 // Type Constraints for defineRequirement
 // ============================================================================

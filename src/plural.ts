@@ -16,7 +16,7 @@ import { getNestedValue } from "./utils";
 function selectPluralKey(
   baseKey: string,
   count: number,
-  locale: Locale = "en"
+  locale: Locale = "en",
 ): string | undefined {
   let rule: Intl.LDMLPluralRule;
   try {
@@ -40,7 +40,7 @@ function selectPluralKey(
  * - Falls back to _other if the locale tag is malformed (never throws)
  *
  * @param messages - Translation messages map
- * @param namespace - Namespace
+ * @param namespace - Namespace, or an empty string when baseKey is already fully qualified
  * @param baseKey - Base key
  * @param count - Count value
  * @param locale - Locale for pluralization rules (optional, defaults to "en")
@@ -51,8 +51,10 @@ export function resolvePluralMessage(
   namespace: string,
   baseKey: string,
   count: number,
-  locale: Locale = "en"
+  locale: Locale = "en",
 ): string | undefined {
+  // An empty namespace means baseKey already contains the namespace prefix
+  const prefix = namespace ? `${namespace}.` : "";
   const selectedKey = selectPluralKey(baseKey, count, locale);
 
   // Try selected key
@@ -64,7 +66,7 @@ export function resolvePluralMessage(
   }
 
   // Fallback to _other if the selected form is not found
-  const otherKey = `${namespace}.${baseKey}_other`;
+  const otherKey = `${prefix}${baseKey}_other`;
   if (otherKey in messages) {
     return messages[otherKey];
   }
@@ -83,7 +85,7 @@ export function resolvePluralMessage(
 export function extractPluralKeys(
   allMessages: Record<string, unknown>,
   namespace: string,
-  baseKey: string
+  baseKey: string,
 ): string[] {
   const namespaceData = allMessages[namespace];
   if (!namespaceData || typeof namespaceData !== "object") {
@@ -98,7 +100,7 @@ export function extractPluralKeys(
     // Check direct key in flat structure
     const value = getNestedValue(
       namespaceData as Record<string, unknown>,
-      keyWithSuffix
+      keyWithSuffix,
     );
     if (value !== undefined) {
       pluralKeys.push(keyWithSuffix);

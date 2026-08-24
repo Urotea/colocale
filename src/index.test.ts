@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import {
   createTranslator,
+  InvalidPlaceholderError,
   type LocaleTranslations,
   type Messages,
   mergeRequirements,
@@ -432,6 +433,88 @@ describe("createTranslator with TranslationRequirement", () => {
     const requirement = { namespace: "results", keys: ["itemsFound"] };
     const t = createTranslator(messages, requirement);
     expect(t("itemsFound", { price: 1000 })).toBe("価格: 1000円");
+  });
+});
+
+describe("createTranslator without TranslationRequirement", () => {
+  const messages: Messages = {
+    locale: "ja",
+    translations: {
+      "common.submit": "送信",
+      "common.itemCount_one": "1件のアイテム",
+      "common.itemCount_other": "{{count}}件のアイテム",
+      "user.profile.name": "名前",
+      "results.greeting": "こんにちは、{{name}}さん",
+    },
+  };
+
+  test("Omitted requirement resolves fully qualified keys", () => {
+    const t = createTranslator(messages);
+    expect(t("common.submit")).toBe("送信");
+    expect(t("user.profile.name")).toBe("名前");
+  });
+
+  test("null requirement resolves fully qualified keys", () => {
+    const t = createTranslator(messages, null);
+    expect(t("common.submit")).toBe("送信");
+    expect(t("user.profile.name")).toBe("名前");
+  });
+
+  test("Placeholder replacement works without requirement", () => {
+    const t = createTranslator(messages, null);
+    expect(t("results.greeting", { name: "田中" })).toBe(
+      "こんにちは、田中さん"
+    );
+  });
+
+  test("Plural handling works without requirement", () => {
+    const t = createTranslator(messages, null);
+    expect(t("common.itemCount", { count: 3 })).toBe("3件のアイテム");
+  });
+
+  test("Plural falls back to _other when selected form is missing", () => {
+    const enMessages: Messages = {
+      locale: "en",
+      translations: { "common.itemCount_other": "{{count}} items" },
+    };
+    const t = createTranslator(enMessages, null);
+    expect(t("common.itemCount", { count: 1 })).toBe("1 items");
+  });
+
+  test("Plural selects _one for English count = 1", () => {
+    const enMessages: Messages = {
+      locale: "en",
+      translations: {
+        "common.itemCount_one": "1 item",
+        "common.itemCount_other": "{{count}} items",
+      },
+    };
+    const t = createTranslator(enMessages, null);
+    expect(t("common.itemCount", { count: 1 })).toBe("1 item");
+    expect(t("common.itemCount", { count: 5 })).toBe("5 items");
+  });
+
+  test("Missing key returns the key as-is", () => {
+    const t = createTranslator(messages, null);
+    expect(t("common.unknown")).toBe("common.unknown");
+  });
+
+  test("Namespace-less key is not resolved with a prefix", () => {
+    const t = createTranslator(messages, null);
+    expect(t("submit")).toBe("submit");
+  });
+
+  test("Throws when placeholders are required but no values are given", () => {
+    const t = createTranslator(messages, null);
+    expect(() => t("results.greeting")).toThrow(InvalidPlaceholderError);
+  });
+
+  test("Works with messages picked via pickMessages(_, null, _)", () => {
+    const picked = pickMessages(testMessages, null, "ja");
+    const t = createTranslator(picked, null);
+    expect(t("common.submit")).toBe("送信");
+    expect(t("user.profile.email")).toBe("メールアドレス");
+    expect(t("shop.cart.item", { count: 2 })).toBe("2個の商品");
   });
 });
 

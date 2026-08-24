@@ -19,6 +19,7 @@ export type {
   ValidationError,
   ValidationErrorType,
   ValidationResult,
+  TranslatorFunction,
 } from "./types";
 // Validation
 export { validateCrossLocale, validateTranslations } from "./validation";
@@ -42,6 +43,7 @@ import type {
   Messages,
   PlaceholderValues,
   TranslationRequirement,
+  TranslatorFunction,
 } from "./types";
 
 /**
@@ -63,6 +65,9 @@ export function mergeRequirements(
  *
  * When base keys are specified, keys with _one, _other suffixes are automatically extracted
  *
+ * When `requirements` is `null`, key-based filtering is skipped and every translation
+ * of the specified locale is included instead
+ *
  * @template R - Array of TranslationRequirements or a single TranslationRequirement
  * @template L - Locale type, inferred from the `locale` argument
  * @param allMessages - Object containing all translation data in locale-grouped format: { locale: { namespace: translations } }
@@ -75,11 +80,34 @@ export function pickMessages<
     | readonly TranslationRequirement<readonly string[]>[]
     | TranslationRequirement<readonly string[]>,
   L extends Locale = Locale,
->(allMessages: LocaleTranslations, requirements: R, locale: L): Messages<L> {
+>(
+  allMessages: LocaleTranslations,
+  requirements: R | null,
+  locale: L,
+): Messages<L> {
   const translations: Record<string, string> = {};
 
   // Extract the TranslationFile for the specified locale
   const translationFile = allMessages[locale] || {};
+
+  // When requirements is null, skip key-based filtering and pick every
+  // translation belonging to the specified locale
+  if (requirements === null) {
+    for (const [namespace, namespaceData] of Object.entries(translationFile)) {
+      if (!namespaceData) {
+        continue;
+      }
+
+      for (const key of Object.keys(namespaceData)) {
+        const value = getNestedValue(namespaceData, key);
+        if (value !== undefined) {
+          translations[`${namespace}.${key}`] = value;
+        }
+      }
+    }
+
+    return { locale, translations };
+  }
 
   const requirementsArray = Array.isArray(requirements)
     ? requirements
@@ -119,10 +147,14 @@ export function pickMessages<
  *
  * When values contain a count property, automatic plural handling is performed
  *
+ * When the requirement is omitted or `null`, key constraints are disabled: the
+ * returned function accepts any string, and keys must be passed in their fully
+ * qualified `"namespace.key"` form since there is no namespace to prefix
+ *
  * @template R - TranslationRequirement type that defines allowed keys
  * @param messages - Messages object
- * @param requirement - TranslationRequirement that defines the namespace and allowed keys
- * @returns Translation function constrained to keys in the requirement
+ * @param requirement - TranslationRequirement that defines the namespace and allowed keys, or `null`/omitted to disable key constraints
+ * @returns Translation function constrained to keys in the requirement, or an unconstrained one when no requirement is given
  *
  * @example
  * ```typescript
@@ -137,11 +169,28 @@ export function pickMessages<
  * t("profile.name"); // ✓ OK
  * t("profile.invalid"); // ✗ Type error
  * ```
+ *
+ * @example
+ * ```typescript
+ * // No requirement: no key constraints, fully qualified keys
+ * const t = createTranslator(messages);
+ * t("user.profile.name"); // ✓ OK
+ * t("anything.at.all"); // ✓ OK (returns the key as-is when missing)
+ * ```
  */
 export function createTranslator<
   R extends TranslationRequirement<readonly string[]>,
->(messages: Messages, requirement: R): ConstrainedTranslatorFunction<R> {
-  const namespace = requirement.namespace;
+>(messages: Messages, requirement: R): ConstrainedTranslatorFunction<R>;
+export function createTranslator(
+  messages: Messages,
+  requirement?: TranslationRequirement<readonly string[]> | null,
+): TranslatorFunction;
+export function createTranslator(
+  messages: Messages,
+  requirement?: TranslationRequirement<readonly string[]> | null,
+): TranslatorFunction {
+  // An empty namespace means keys are used as-is (already fully qualified)
+  const namespace = requirement?.namespace ?? "";
   const locale = messages.locale;
 
   return (key: string, values?: PlaceholderValues): string => {
@@ -154,13 +203,13 @@ export function createTranslator<
         namespace,
         key,
         values.count,
-        locale
+        locale,
       );
     }
 
     // If not plural or plural resolution failed, try regular key
     if (message === undefined) {
-      const fullKey = `${namespace}.${key}`;
+      const fullKey = namespace ? `${namespace}.${key}` : key;
       message = messages.translations[fullKey];
     }
 
