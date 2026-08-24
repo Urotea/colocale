@@ -59,7 +59,7 @@ export function resolvePluralMessage(
 
   // Try selected key
   if (selectedKey !== undefined) {
-    const fullKey = `${namespace}.${selectedKey}`;
+    const fullKey = `${prefix}${selectedKey}`;
     if (fullKey in messages) {
       return messages[fullKey];
     }
